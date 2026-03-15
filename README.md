@@ -62,18 +62,55 @@ promilia-map-tool/
 
 ---
 
-## 🗺️ 替换地图图片
+## 🗺️ 添加地图图片
+
+### 默认地图配置
+
+工具预置了 3 张地图：
+
+| 地图 ID | 名称 | 图片文件 | 存储键 |
+|--------|------|----------|--------|
+| `shalulu` | 夏露露村 | `maps/shalulu.jpg` | `promilia-markers-shalulu` |
+| `xinaya` | 新芽山谷 | `maps/xinaya.jpg` | `promilia-markers-xinaya` |
+| `fulisi` | 弗利斯 | `maps/fulisi.jpg` | `promilia-markers-fulisi` |
+
+### 添加地图步骤
 
 1. 准备地图图片（建议 2048×2048 或 4096×4096）
-2. 命名为 `promilia-map.jpg`
-3. 放入 `maps/` 目录
-4. 刷新页面即可
+2. 放入 `maps/` 目录，命名为对应文件名
+3. 刷新页面，在下拉菜单中选择地图
 
-**修改地图尺寸：**
-编辑 `index.html`，找到并修改：
+### 修改地图配置
+
+编辑 `index.html`，找到 `MAP_CONFIGS` 对象：
+
 ```javascript
-const MAP_WIDTH = 2048;   // 地图宽度
-const MAP_HEIGHT = 2048;  // 地图高度
+const MAP_CONFIGS = {
+    shalulu: {
+        name: '夏露露村',
+        width: 2048,
+        height: 2048,
+        image: 'maps/shalulu.jpg',
+        storageKey: 'promilia-markers-shalulu'
+    },
+    // 添加更多地图...
+};
+```
+
+**添加新地图：**
+```javascript
+newmap: {
+    name: '新地图',
+    width: 2048,
+    height: 2048,
+    image: 'maps/newmap.jpg',
+    storageKey: 'promilia-markers-newmap'
+}
+```
+
+然后在 HTML 的 `<select id="map-select">` 中添加选项：
+```html
+<option value="newmap">🗺️ 新地图</option>
 ```
 
 ---
@@ -158,6 +195,14 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 ## 📝 更新日志
+
+### v1.2 (2026-03-16) - 🗺️ 多地图切换
+- ✨ **新增：** 多地图切换功能（下拉菜单选择）
+- ✨ **新增：** 预置 3 张地图（夏露露村/新芽山谷/弗利斯）
+- ✨ **新增：** 每张地图独立存储标记数据
+- ✨ **新增：** 导出文件包含地图 ID 和名称
+- 💡 **优化：** 侧边栏显示当前地图信息
+- 💡 **优化：** 统计面板区分当前地图标记数
 
 ### v1.1 (2026-03-16) - 🔧 修复和优化
 - 🔧 **修复：** 筛选功能隐藏的标记取消筛选后不显示的问题

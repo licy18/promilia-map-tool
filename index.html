@@ -52,6 +52,41 @@
             margin-bottom: 20px;
         }
         
+        /* 地图切换器 */
+        .map-switcher {
+            margin-bottom: 20px;
+            background: #0f3460;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .map-switcher select {
+            width: 100%;
+            padding: 12px;
+            background: #16213e;
+            border: none;
+            color: #eee;
+            font-size: 1em;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .map-switcher select:focus {
+            background: #1a2a4a;
+        }
+        
+        .map-info {
+            padding: 10px 12px;
+            background: #0a1a2a;
+            font-size: 0.8em;
+            color: #888;
+            border-top: 1px solid #1a4a7a;
+        }
+        
+        .map-info strong {
+            color: #00d9ff;
+        }
+        
         .section {
             margin-bottom: 25px;
         }
@@ -281,7 +316,20 @@
         <!-- 侧边栏 -->
         <div id="sidebar">
             <h1>🗺️ 普罗米利亚地图</h1>
-            <p class="subtitle">本地标记工具 v1.0</p>
+            <p class="subtitle">本地标记工具 v1.1</p>
+            
+            <!-- 地图切换器 -->
+            <div class="map-switcher">
+                <select id="map-select" onchange="switchMap(this.value)">
+                    <option value="shalulu">🏡 夏露露村</option>
+                    <option value="xinaya">🌱 新芽山谷</option>
+                    <option value="fulisi">❄️ 弗利斯</option>
+                </select>
+                <div class="map-info">
+                    当前地图：<strong id="current-map-name">夏露露村</strong><br>
+                    标记数：<span id="current-map-count">0</span> | 尺寸：<span id="current-map-size">2048×2048</span>
+                </div>
+            </div>
             
             <!-- 统计 -->
             <div class="section">
@@ -468,9 +516,34 @@
         // 隐藏的标记层（用于筛选）
         const hiddenMarkers = new Map();
         
-        // 地图尺寸（需要根据实际图片调整）
-        const MAP_WIDTH = 2048;
-        const MAP_HEIGHT = 2048;
+        // ==================== 多地图配置 ====================
+        const MAP_CONFIGS = {
+            shalulu: {
+                name: '夏露露村',
+                width: 2048,
+                height: 2048,
+                image: 'maps/shalulu.jpg',
+                storageKey: 'promilia-markers-shalulu'
+            },
+            xinaya: {
+                name: '新芽山谷',
+                width: 2048,
+                height: 2048,
+                image: 'maps/xinaya.jpg',
+                storageKey: 'promilia-markers-xinaya'
+            },
+            fulisi: {
+                name: '弗利斯',
+                width: 2048,
+                height: 2048,
+                image: 'maps/fulisi.jpg',
+                storageKey: 'promilia-markers-fulisi'
+            }
+        };
+        
+        // 当前地图
+        let currentMapId = 'shalulu';
+        let currentMapConfig = MAP_CONFIGS.shalulu;
         
         // ==================== 地图初始化 ====================
         console.log('📍 初始化地图...');
@@ -483,64 +556,7 @@
             zoomControl: true
         });
         
-        // 设置地图边界
-        const bounds = [[0, 0], [MAP_HEIGHT, MAP_WIDTH]];
-        
-        // 使用空白背景（等待用户提供地图图片）
-        // 创建一个简单的网格背景
-        const gridCanvas = document.createElement('canvas');
-        gridCanvas.width = MAP_WIDTH;
-        gridCanvas.height = MAP_HEIGHT;
-        const ctx = gridCanvas.getContext('2d');
-        
-        // 填充深色背景
-        ctx.fillStyle = '#1a1a2e';
-        ctx.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-        
-        // 绘制网格线
-        ctx.strokeStyle = '#2a2a4e';
-        ctx.lineWidth = 1;
-        const gridSize = 128;
-        for (let x = 0; x <= MAP_WIDTH; x += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, MAP_HEIGHT);
-            ctx.stroke();
-        }
-        for (let y = 0; y <= MAP_HEIGHT; y += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(MAP_WIDTH, y);
-            ctx.stroke();
-        }
-        
-        // 绘制中心点
-        ctx.fillStyle = '#e94560';
-        ctx.beginPath();
-        ctx.arc(MAP_WIDTH / 2, MAP_HEIGHT / 2, 8, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 绘制坐标文字
-        ctx.fillStyle = '#444';
-        ctx.font = '20px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('普罗米利亚大陆', MAP_WIDTH / 2, MAP_HEIGHT / 2 - 20);
-        ctx.font = '14px Arial';
-        ctx.fillText('(等待地图图片)', MAP_WIDTH / 2, MAP_HEIGHT / 2 + 20);
-        
-        // 转换为图片并添加到地图
-        const gridImage = gridCanvas.toDataURL('image/png');
-        mapOverlay = L.imageOverlay(gridImage, bounds).addTo(map);
-        
-        console.log('✅ 空白网格背景已加载');
-        map.fitBounds(bounds);
-        
-        // 提示用户
-        setTimeout(() => {
-            showToast('提示：可将地图图片放入 maps/promilia-map.jpg', 'info');
-        }, 2000);
-        
-        // ==================== 标记集群 ====================
+        // 标记集群
         console.log('📌 初始化标记集群...');
         const markers = L.markerClusterGroup({
             showCoverageOnHover: true,
@@ -549,9 +565,141 @@
         });
         map.addLayer(markers);
         
-        // ==================== 标记管理 ====================
+        // 加载地图
+        function loadMap(mapId) {
+            const config = MAP_CONFIGS[mapId];
+            currentMapId = mapId;
+            currentMapConfig = config;
+            
+            // 清除旧地图
+            if (mapOverlay) {
+                map.removeLayer(mapOverlay);
+            }
+            
+            // 设置新边界
+            const bounds = [[0, 0], [config.height, config.width]];
+            
+            // 创建网格背景（如果图片不存在）
+            const gridCanvas = document.createElement('canvas');
+            gridCanvas.width = config.width;
+            gridCanvas.height = config.height;
+            const ctx = gridCanvas.getContext('2d');
+            
+            // 填充深色背景
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, config.width, config.height);
+            
+            // 绘制网格线
+            ctx.strokeStyle = '#2a2a4e';
+            ctx.lineWidth = 1;
+            const gridSize = 128;
+            for (let x = 0; x <= config.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, config.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= config.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(config.width, y);
+                ctx.stroke();
+            }
+            
+            // 绘制地图名称
+            ctx.fillStyle = '#e94560';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(config.name, config.width / 2, config.height / 2 - 20);
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#888';
+            ctx.fillText('(等待地图图片)', config.width / 2, config.height / 2 + 20);
+            
+            // 转换为图片并添加到地图
+            const gridImage = gridCanvas.toDataURL('image/png');
+            mapOverlay = L.imageOverlay(gridImage, bounds).addTo(map);
+            
+            map.fitBounds(bounds);
+            
+            // 更新 UI
+            document.getElementById('current-map-name').textContent = config.name;
+            document.getElementById('current-map-size').textContent = `${config.width}×${config.height}`;
+            document.getElementById('map-select').value = mapId;
+            
+            // 加载该地图的标记
+            loadMarkersForMap(mapId);
+            updateStats();
+            
+            console.log(`✅ 地图已切换：${config.name}`);
+            showToast(`已切换至：${config.name}`, 'success');
+        }
+        
+        // 切换地图
+        window.switchMap = function(mapId) {
+            loadMap(mapId);
+        };
+        
+        // 标记数据（按地图分离）
         let markerIdCounter = 0;
-        const markerData = {}; // 存储标记详细数据
+        const markerData = {}; // 当前地图的标记数据
+        const allMarkersData = {}; // 所有地图的标记数据 { mapId: { markerId: data } }
+        
+        // 加载指定地图的标记
+        function loadMarkersForMap(mapId) {
+            // 清空当前标记
+            markers.clearLayers();
+            Object.keys(markerData).forEach(key => delete markerData[key]);
+            
+            // 从 localStorage 加载
+            const storageKey = MAP_CONFIGS[mapId].storageKey;
+            try {
+                const saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    markerIdCounter = data.counter || 0;
+                    allMarkersData[mapId] = data.markers || {};
+                    
+                    // 复制到当前 markerData
+                    Object.assign(markerData, allMarkersData[mapId]);
+                    
+                    // 添加到地图
+                    Object.values(markerData).forEach(marker => {
+                        const m = L.marker([marker.lat, marker.lng], {
+                            icon: createMarkerIcon(marker.type)
+                        });
+                        m.bindPopup(createPopupContent(marker));
+                        markers.addLayer(m);
+                    });
+                    
+                    console.log(`✅ 加载了 ${Object.keys(markerData).length} 个标记 (${mapId})`);
+                } else {
+                    allMarkersData[mapId] = {};
+                }
+            } catch (e) {
+                console.error('❌ 加载标记失败:', e);
+                allMarkersData[mapId] = {};
+            }
+            
+            updateStats();
+        }
+        
+        // 保存当前地图的标记
+        function saveCurrentMapMarkers() {
+            const storageKey = currentMapConfig.storageKey;
+            try {
+                const data = {
+                    markers: markerData,
+                    counter: markerIdCounter,
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem(storageKey, data);
+                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markerData));
+                updateLastSaved();
+            } catch (e) {
+                console.error('❌ 保存失败:', e);
+                showToast('保存失败：存储空间不足', 'error');
+            }
+        }
         
         // 创建自定义标记图标
         function createMarkerIcon(type) {
@@ -781,23 +929,9 @@
             });
         }
         
-        // ==================== 本地存储 ====================
-        const STORAGE_KEY = 'promilia-map-markers';
-        
-        function saveToLocalStorage() {
-            try {
-                const data = {
-                    markers: markerData,
-                    counter: markerIdCounter,
-                    savedAt: new Date().toISOString()
-                };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                updateLastSaved();
-            } catch (e) {
-                console.error('❌ 保存失败:', e);
-                showToast('保存失败：存储空间不足', 'error');
-            }
-        }
+        // ==================== 本地存储（多地图） ====================
+        // saveToLocalStorage 改为 saveCurrentMapMarkers（已在上面定义）
+        const saveToLocalStorage = saveCurrentMapMarkers;
         
         function loadFromLocalStorage() {
             try {
@@ -826,10 +960,12 @@
         
         // ==================== 导入导出 ====================
         window.exportData = function() {
+            // 导出当前地图
             const data = {
-                version: '1.0',
+                version: '1.1',
                 exportedAt: new Date().toISOString(),
-                mapSize: { width: MAP_WIDTH, height: MAP_HEIGHT },
+                mapId: currentMapId,
+                mapName: currentMapConfig.name,
                 markers: Object.values(markerData)
             };
             
@@ -839,7 +975,7 @@
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = `promilia-markers-${Date.now()}.json`;
+            a.download = `promilia-${currentMapId}-${Date.now()}.json`;
             a.click();
             
             URL.revokeObjectURL(url);
@@ -859,25 +995,43 @@
                         throw new Error('无效的数据格式');
                     }
                     
-                    // 清空现有标记
-                    markers.clearLayers();
-                    Object.keys(markerData).forEach(key => delete markerData[key]);
+                    // 询问导入到当前地图还是所有地图
+                    const importToCurrent = confirm(
+                        `检测到 ${data.markers.length} 个标记\n\n` +
+                        `点击"确定"导入到当前地图（${currentMapConfig.name}）\n` +
+                        `点击"取消"将覆盖所有地图数据`
+                    );
                     
-                    // 导入新标记
-                    data.markers.forEach(marker => {
-                        markerData[marker.id] = marker;
-                        const m = L.marker([marker.lat, marker.lng], {
-                            icon: createMarkerIcon(marker.type)
+                    if (importToCurrent) {
+                        // 导入到当前地图
+                        markers.clearLayers();
+                        Object.keys(markerData).forEach(key => delete markerData[key]);
+                        
+                        data.markers.forEach(marker => {
+                            markerData[marker.id] = marker;
+                            const m = L.marker([marker.lat, marker.lng], {
+                                icon: createMarkerIcon(marker.type)
+                            });
+                            m.bindPopup(createPopupContent(marker));
+                            markers.addLayer(m);
                         });
-                        m.bindPopup(createPopupContent(marker));
-                        markers.addLayer(m);
-                    });
-                    
-                    markerIdCounter = Date.now();
-                    saveToLocalStorage();
-                    updateStats();
-                    
-                    showToast(`已导入 ${data.markers.length} 个标记`, 'success');
+                        
+                        markerIdCounter = Date.now();
+                        saveToLocalStorage();
+                        updateStats();
+                        showToast(`已导入 ${data.markers.length} 个标记到 ${currentMapConfig.name}`, 'success');
+                    } else {
+                        // 覆盖所有地图
+                        if (confirm('确定要覆盖所有地图数据吗？此操作不可恢复！')) {
+                            Object.keys(MAP_CONFIGS).forEach(mapId => {
+                                localStorage.setItem(MAP_CONFIGS[mapId].storageKey, JSON.stringify({
+                                    markers: {},
+                                    counter: 0
+                                }));
+                            });
+                            showToast('已清空所有地图数据，请手动导入', 'success');
+                        }
+                    }
                 } catch (err) {
                     console.error('❌ 导入失败:', err);
                     showToast('导入失败：文件格式错误', 'error');
@@ -908,6 +1062,7 @@
         function updateStats() {
             const total = Object.keys(markerData).length;
             document.getElementById('total-markers').textContent = total;
+            document.getElementById('current-map-count').textContent = total;
             
             // 按类型统计
             const counts = { chest: 0, quest: 0, flower: 0, enemy: 0, teleport: 0, custom: 0 };
@@ -971,11 +1126,10 @@
         
         // ==================== 启动 ====================
         console.log('🚀 启动应用...');
-        loadFromLocalStorage();
-        loadFromShareUrl();
-        restoreView();  // 恢复地图视图
-        updateStats();
-        updateLastSaved();
+        
+        // 初始化第一张地图
+        loadMap('shalulu');
+        
         console.log('✅ 应用启动完成');
         showToast('普罗米利亚地图工具已就绪', 'success');
     </script>
