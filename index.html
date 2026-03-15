@@ -547,6 +547,7 @@
         // 当前地图
         let currentMapId = 'shalulu';
         let currentMapConfig = MAP_CONFIGS.shalulu;
+        let mapOverlay = null;  // 地图图片覆盖层
         
         // ==================== 地图初始化 ====================
         console.log('📍 初始化地图...');
@@ -568,59 +569,26 @@
         });
         map.addLayer(markers);
         
-        // 加载地图
-        function loadMap(mapId) {
+        // 创建彩色占位背景
+        function createPlaceholder(mapId) {
             const config = MAP_CONFIGS[mapId];
-            currentMapId = mapId;
-            currentMapConfig = config;
+            console.log(`🎨 创建占位背景：${config.name}, 颜色：${config.color}`);
             
-            console.log(`🔄 切换地图：${mapId} -> ${config.name}`);
+            const canvas = document.createElement('canvas');
+            canvas.width = config.width;
+            canvas.height = config.height;
+            const ctx = canvas.getContext('2d');
             
-            // 清除旧地图
-            if (mapOverlay) {
-                map.removeLayer(mapOverlay);
-            }
-            
-            // 设置新边界
-            const bounds = [[0, 0], [config.height, config.width]];
-            
-            // 尝试加载真实图片，如果不存在则创建彩色网格背景
-            fetch(config.image)
-                .then(response => {
-                    if (response.ok) {
-                        console.log(`✅ 地图图片存在：${config.image}`);
-                        mapOverlay = L.imageOverlay(config.image, bounds).addTo(map);
-                        map.fitBounds(bounds);
-                    } else {
-                        console.warn(`⚠️ 地图图片不存在，创建占位背景：${config.image}`);
-                        createPlaceholderMap(config, bounds);
-                    }
-                    finishMapLoad();
-                })
-                .catch(() => {
-                    console.warn(`⚠️ 地图图片加载失败，创建占位背景：${config.image}`);
-                    createPlaceholderMap(config, bounds);
-                    finishMapLoad();
-                });
-        }
-        
-        // 创建彩色占位地图
-        function createPlaceholderMap(config, bounds) {
-            const gridCanvas = document.createElement('canvas');
-            gridCanvas.width = config.width;
-            gridCanvas.height = config.height;
-            const ctx = gridCanvas.getContext('2d');
-            
-            // 填充带颜色的背景（每张地图不同颜色）
+            // 渐变背景
             const gradient = ctx.createLinearGradient(0, 0, config.width, config.height);
             gradient.addColorStop(0, config.color);
             gradient.addColorStop(1, '#1a1a2e');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, config.width, config.height);
             
-            // 绘制网格线
-            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-            ctx.lineWidth = 1;
+            // 网格线
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 2;
             const gridSize = 128;
             for (let x = 0; x <= config.width; x += gridSize) {
                 ctx.beginPath();
@@ -635,7 +603,7 @@
                 ctx.stroke();
             }
             
-            // 绘制大图标
+            // 图标
             ctx.fillStyle = 'rgba(255,255,255,0.3)';
             ctx.font = 'bold 120px Arial';
             ctx.textAlign = 'center';
@@ -643,31 +611,49 @@
             const icons = { shalulu: '🏡', xinaya: '🌱', fulisi: '🌾' };
             ctx.fillText(icons[mapId] || '🗺️', config.width / 2, config.height / 2 - 60);
             
-            // 绘制地图名称
-            ctx.fillStyle = '#ffffff';
+            // 名称
+            ctx.fillStyle = '#fff';
             ctx.font = 'bold 36px Arial';
             ctx.fillText(config.name, config.width / 2, config.height / 2 + 20);
-            ctx.font = '18px Arial';
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
-            ctx.fillText('(占位背景 - 等待地图图片)', config.width / 2, config.height / 2 + 60);
+            ctx.font = '16px Arial';
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.fillText('(占位背景)', config.width / 2, config.height / 2 + 50);
             
-            // 转换为图片并添加到地图
-            const gridImage = gridCanvas.toDataURL('image/png');
-            mapOverlay = L.imageOverlay(gridImage, bounds).addTo(map);
+            return canvas.toDataURL('image/png');
         }
         
-        // 完成地图加载
-        function finishMapLoad() {
-            // 更新 UI
-            document.getElementById('current-map-name').textContent = currentMapConfig.name;
-            document.getElementById('current-map-size').textContent = `${currentMapConfig.width}×${currentMapConfig.height}`;
-            document.getElementById('map-select').value = currentMapId;
+        // 加载/切换地图
+        function loadMap(mapId) {
+            const config = MAP_CONFIGS[mapId];
+            currentMapId = mapId;
+            currentMapConfig = config;
             
-            // 加载该地图的标记
-            loadMarkersForMap(currentMapId);
+            console.log(`🔄 切换地图：${mapId} -> ${config.name}`);
+            
+            // 清除旧地图
+            if (mapOverlay) {
+                map.removeLayer(mapOverlay);
+            }
+            
+            // 边界
+            const bounds = [[0, 0], [config.height, config.width]];
+            
+            // 直接创建占位背景（简化逻辑）
+            const placeholderImage = createPlaceholder(mapId);
+            mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
+            map.fitBounds(bounds);
+            
+            // 更新 UI
+            document.getElementById('current-map-name').textContent = config.name;
+            document.getElementById('current-map-size').textContent = `${config.width}×${config.height}`;
+            document.getElementById('map-select').value = mapId;
+            
+            // 加载标记
+            loadMarkersForMap(mapId);
             updateStats();
             
-            console.log(`✅ 地图加载完成：${currentMapConfig.name}`);
+            console.log(`✅ 地图加载完成：${config.name}`);
+            showToast(`已切换至：${config.name}`, 'success');
         }
         
         // 切换地图
