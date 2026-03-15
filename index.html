@@ -321,7 +321,11 @@
             <div class="section">
                 <h2><i class="fas fa-map-marker-alt"></i> 标记类型</h2>
                 <div class="marker-types" id="marker-types">
-                    <div class="marker-type active" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
+                    <div class="marker-type" data-type="none" data-color="#888" data-icon="fa-mouse-pointer">
+                        <i class="fas fa-mouse-pointer" style="color: #888;"></i>
+                        <span>浏览</span>
+                    </div>
+                    <div class="marker-type" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
                         <i class="fas fa-gift" style="color: #f39c12;"></i>
                         <span>宝箱</span>
                     </div>
@@ -345,6 +349,10 @@
                         <i class="fas fa-star" style="color: #2ecc71;"></i>
                         <span>自定义</span>
                     </div>
+                </div>
+                <div style="margin-top: 10px; padding: 10px; background: #0f3460; border-radius: 6px; font-size: 0.85em;">
+                    <i class="fas fa-info-circle" style="color: #00d9ff;"></i>
+                    <span id="marker-tip" style="color: #aaa;">请选择一个标记类型后点击地图</span>
                 </div>
             </div>
             
@@ -406,10 +414,11 @@
                 <div class="help-tip">
                     <i class="fas fa-info-circle"></i>
                     <strong>使用说明：</strong><br>
-                    • 点击地图添加标记<br>
-                    • 点击标记查看详情<br>
+                    • 选择标记类型后点击地图添加<br>
+                    • 点击标记查看详情/编辑<br>
                     • 数据自动保存<br>
-                    • 可导出分享给好友
+                    • 可导出分享给好友<br>
+                    • 地图视图自动保存
                 </div>
             </div>
         </div>
@@ -442,8 +451,8 @@
             custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义' }
         };
         
-        // 当前选中的标记类型
-        let currentMarkerType = 'chest';
+        // 当前选中的标记类型（默认不选择，避免误触）
+        let currentMarkerType = null;
         
         // 筛选状态
         const filterState = {
@@ -455,6 +464,9 @@
             teleport: true,
             custom: true
         };
+        
+        // 隐藏的标记层（用于筛选）
+        const hiddenMarkers = new Map();
         
         // 地图尺寸（需要根据实际图片调整）
         const MAP_WIDTH = 2048;
@@ -660,8 +672,43 @@
         
         // ==================== 地图点击事件 ====================
         map.on('click', function(e) {
-            addMarker(e.latlng);
+            if (!currentMarkerType || currentMarkerType === 'none') {
+                showToast('请先选择一个标记类型', 'info');
+                // 闪烁提示
+                const markerSection = document.getElementById('marker-types');
+                markerSection.style.transition = 'opacity 0.3s';
+                markerSection.style.opacity = '0.5';
+                setTimeout(() => { markerSection.style.opacity = '1'; }, 300);
+                return;
+            }
+            addMarker(e.latlng, currentMarkerType);
         });
+        
+        // 保存地图视图（缩放级别和中心点）
+        let saveViewTimeout;
+        map.on('moveend zoomend', function() {
+            clearTimeout(saveViewTimeout);
+            saveViewTimeout = setTimeout(() => {
+                const view = {
+                    center: map.getCenter(),
+                    zoom: map.getZoom()
+                };
+                localStorage.setItem('promilia-map-view', JSON.stringify(view));
+            }, 500);
+        });
+        
+        // 恢复地图视图
+        function restoreView() {
+            try {
+                const saved = localStorage.getItem('promilia-map-view');
+                if (saved) {
+                    const view = JSON.parse(saved);
+                    map.setView([view.center.lat, view.center.lng], view.zoom);
+                }
+            } catch (e) {
+                console.error('❌ 恢复视图失败:', e);
+            }
+        }
         
         // ==================== 标记类型选择 ====================
         document.querySelectorAll('#marker-types .marker-type').forEach(el => {
@@ -669,6 +716,18 @@
                 document.querySelectorAll('#marker-types .marker-type').forEach(e => e.classList.remove('active'));
                 this.classList.add('active');
                 currentMarkerType = this.dataset.type;
+                
+                // 更新提示信息
+                const tipEl = document.getElementById('marker-tip');
+                if (currentMarkerType === 'none') {
+                    tipEl.textContent = '浏览模式：点击地图不会添加标记';
+                    tipEl.style.color = '#888';
+                } else {
+                    const config = MARKER_CONFIGS[currentMarkerType];
+                    tipEl.textContent = `当前类型：${config.label}，点击地图添加标记`;
+                    tipEl.style.color = config.color;
+                }
+                
                 console.log(`📍 切换标记类型：${currentMarkerType}`);
             });
         });
@@ -701,29 +760,23 @@
             });
         });
         
-        // 更新标记可见性
+        // 更新标记可见性（修复：使用 markerData 而不是从 popup 解析）
         function updateMarkerVisibility() {
+            // 先显示所有标记
             markers.eachLayer(layer => {
                 if (layer instanceof L.Marker) {
-                    const content = layer.getPopup()?.getContent();
-                    if (content) {
-                        // 从弹窗内容中提取类型
-                        let type = null;
-                        Object.keys(MARKER_CONFIGS).forEach(t => {
-                            if (content.includes(MARKER_CONFIGS[t].icon)) type = t;
-                        });
-                        
-                        if (type) {
-                            const shouldShow = filterState[type];
-                            if (shouldShow) {
-                                if (!markers.hasLayer(layer)) {
-                                    markers.addLayer(layer);
-                                }
-                            } else {
-                                markers.removeLayer(layer);
-                            }
-                        }
-                    }
+                    markers.removeLayer(layer);
+                }
+            });
+            
+            // 根据筛选状态重新添加
+            Object.values(markerData).forEach(data => {
+                if (filterState[data.type]) {
+                    const marker = L.marker([data.lat, data.lng], {
+                        icon: createMarkerIcon(data.type)
+                    });
+                    marker.bindPopup(createPopupContent(data));
+                    markers.addLayer(marker);
                 }
             });
         }
@@ -920,6 +973,7 @@
         console.log('🚀 启动应用...');
         loadFromLocalStorage();
         loadFromShareUrl();
+        restoreView();  // 恢复地图视图
         updateStats();
         updateLastSaved();
         console.log('✅ 应用启动完成');
