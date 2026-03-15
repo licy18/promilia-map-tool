@@ -625,10 +625,17 @@
         // 加载/切换地图
         function loadMap(mapId) {
             const config = MAP_CONFIGS[mapId];
+            
+            console.log(`🔄 切换地图：${currentMapId} -> ${mapId}`);
+            
+            // 【关键】切换前保存当前地图的标记数据
+            if (currentMapId) {
+                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markerData));
+                console.log(`💾 已保存 ${currentMapId} 的 ${Object.keys(markerData).length} 个标记到内存`);
+            }
+            
             currentMapId = mapId;
             currentMapConfig = config;
-            
-            console.log(`🔄 切换地图：${mapId} -> ${config.name}`);
             
             // 清除旧地图
             if (mapOverlay) {
@@ -638,7 +645,7 @@
             // 边界
             const bounds = [[0, 0], [config.height, config.width]];
             
-            // 直接创建占位背景（简化逻辑）
+            // 直接创建占位背景
             const placeholderImage = createPlaceholder(mapId);
             mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
             map.fitBounds(bounds);
@@ -648,7 +655,7 @@
             document.getElementById('current-map-size').textContent = `${config.width}×${config.height}`;
             document.getElementById('map-select').value = mapId;
             
-            // 加载标记
+            // 加载标记（从内存或 localStorage）
             loadMarkersForMap(mapId);
             updateStats();
             
@@ -674,39 +681,46 @@
             markers.clearLayers();
             Object.keys(markerData).forEach(key => delete markerData[key]);
             
-            // 从 localStorage 加载
-            const storageKey = MAP_CONFIGS[mapId].storageKey;
-            try {
-                const saved = localStorage.getItem(storageKey);
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    markerIdCounter = data.counter || 0;
-                    allMarkersData[mapId] = data.markers || {};
-                    
-                    console.log(`  存储数据：${Object.keys(allMarkersData[mapId]).length} 个标记`);
-                    
-                    // 复制到当前 markerData
-                    Object.assign(markerData, allMarkersData[mapId]);
-                    
-                    // 添加到地图
-                    Object.values(markerData).forEach(marker => {
-                        const m = L.marker([marker.lat, marker.lng], {
-                            icon: createMarkerIcon(marker.type)
-                        });
-                        m.bindPopup(createPopupContent(marker));
-                        markers.addLayer(m);
-                    });
-                    
-                    console.log(`✅ 加载了 ${Object.keys(markerData).length} 个标记 (${mapId})`);
-                } else {
-                    console.log(`  无存储数据，初始化空数据 (${mapId})`);
-                    allMarkersData[mapId] = {};
+            // 优先从内存加载，如果没有再从 localStorage 加载
+            let markersToLoad = null;
+            
+            if (allMarkersData[mapId]) {
+                console.log(`  从内存加载：${Object.keys(allMarkersData[mapId]).length} 个标记`);
+                markersToLoad = allMarkersData[mapId];
+            } else {
+                // 从 localStorage 加载
+                const storageKey = MAP_CONFIGS[mapId].storageKey;
+                try {
+                    const saved = localStorage.getItem(storageKey);
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        markerIdCounter = data.counter || 0;
+                        markersToLoad = data.markers || {};
+                        console.log(`  从 localStorage 加载：${Object.keys(markersToLoad).length} 个标记`);
+                    } else {
+                        console.log(`  无存储数据，初始化空数据`);
+                        markersToLoad = {};
+                    }
+                } catch (e) {
+                    console.error(`❌ 加载标记失败 (${mapId}):`, e);
+                    markersToLoad = {};
                 }
-            } catch (e) {
-                console.error(`❌ 加载标记失败 (${mapId}):`, e);
-                allMarkersData[mapId] = {};
             }
             
+            // 复制到当前 markerData
+            allMarkersData[mapId] = markersToLoad;
+            Object.assign(markerData, markersToLoad);
+            
+            // 添加到地图
+            Object.values(markerData).forEach(marker => {
+                const m = L.marker([marker.lat, marker.lng], {
+                    icon: createMarkerIcon(marker.type)
+                });
+                m.bindPopup(createPopupContent(marker));
+                markers.addLayer(m);
+            });
+            
+            console.log(`✅ 加载了 ${Object.keys(markerData).length} 个标记 (${mapId})`);
             updateStats();
         }
         
