@@ -1,6 +1,12 @@
 # 普罗米利亚地图标记工具
 
-一个轻量级的本地游戏地图标记工具，无需联网即可使用。
+> 🗺️ 一个轻量级的本地游戏地图标记工具，无需联网即可使用。
+
+[![GitHub Release](https://img.shields.io/github/v/release/licy18/promilia-map-tool?style=flat-square)](https://github.com/licy18/promilia-map-tool/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Made with 🐸](https://img.shields.io/badge/made%20with-%F0%9F%90%B8-green.svg?style=flat-square)](https://github.com/licy18/promilia-map-tool)
+
+**📦 GitHub:** https://github.com/licy18/promilia-map-tool
 
 ---
 
