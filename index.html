@@ -632,16 +632,23 @@
             return canvas.toDataURL('image/png');
         }
         
+        // 保存当前视图状态（按地图）
+        const mapViews = {};
+        
         // 加载/切换地图
         function loadMap(mapId, keepZoom = false) {
             const config = MAP_CONFIGS[mapId];
             
-            console.log(`🔄 切换地图：${currentMapId} -> ${mapId}`);
+            console.log(`🔄 切换地图：${currentMapId} -> ${mapId}, keepZoom=${keepZoom}`);
             
-            // 【关键】切换前保存当前地图的标记数据
+            // 【关键】切换前保存当前地图的标记数据和视图
             if (currentMapId) {
                 allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markerData));
-                console.log(`💾 已保存 ${currentMapId} 的 ${Object.keys(markerData).length} 个标记到内存`);
+                mapViews[currentMapId] = {
+                    center: map.getCenter(),
+                    zoom: map.getZoom()
+                };
+                console.log(`💾 已保存 ${currentMapId} 的标记和视图 (zoom=${mapViews[currentMapId].zoom})`);
             }
             
             currentMapId = mapId;
@@ -662,8 +669,11 @@
             const placeholderImage = createPlaceholder(mapId);
             mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
             
-            // 保持缩放级别（不重置）
-            if (!keepZoom) {
+            // 恢复视图（如果有保存的视图）
+            if (keepZoom && mapViews[mapId]) {
+                console.log(`🔍 恢复 ${mapId} 的视图 (zoom=${mapViews[mapId].zoom})`);
+                map.setView(mapViews[mapId].center, mapViews[mapId].zoom);
+            } else if (!keepZoom) {
                 map.fitBounds(bounds);
             }
             
@@ -672,7 +682,7 @@
             document.getElementById('current-map-size').textContent = `${config.width}×${config.height}`;
             document.getElementById('map-select').value = mapId;
             
-            // 加载标记（从内存或 localStorage）
+            // 加载标记
             loadMarkersForMap(mapId);
             updateStats();
             
@@ -702,33 +712,25 @@
             markers.clearLayers();
             Object.keys(markerData).forEach(key => delete markerData[key]);
             
-            // 优先从内存加载，如果没有再从 localStorage 加载
-            let markersToLoad = null;
+            // 从 localStorage 加载（每次都从 localStorage 加载，确保数据最新）
+            const storageKey = MAP_CONFIGS[mapId].storageKey;
+            let markersToLoad = {};
             
-            if (allMarkersData[mapId]) {
-                console.log(`  从内存加载：${Object.keys(allMarkersData[mapId]).length} 个标记`);
-                markersToLoad = allMarkersData[mapId];
-            } else {
-                // 从 localStorage 加载
-                const storageKey = MAP_CONFIGS[mapId].storageKey;
-                try {
-                    const saved = localStorage.getItem(storageKey);
-                    if (saved) {
-                        const data = JSON.parse(saved);
-                        markerIdCounter = data.counter || 0;
-                        markersToLoad = data.markers || {};
-                        console.log(`  从 localStorage 加载：${Object.keys(markersToLoad).length} 个标记`);
-                    } else {
-                        console.log(`  无存储数据，初始化空数据`);
-                        markersToLoad = {};
-                    }
-                } catch (e) {
-                    console.error(`❌ 加载标记失败 (${mapId}):`, e);
-                    markersToLoad = {};
+            try {
+                const saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    markerIdCounter = data.counter || 0;
+                    markersToLoad = data.markers || {};
+                    console.log(`  ✅ 从 localStorage 加载：${Object.keys(markersToLoad).length} 个标记`);
+                } else {
+                    console.log(`  ℹ️ 无存储数据，初始化空数据`);
                 }
+            } catch (e) {
+                console.error(`❌ 加载标记失败 (${mapId}):`, e);
             }
             
-            // 复制到当前 markerData
+            // 保存到内存和当前 markerData
             allMarkersData[mapId] = markersToLoad;
             Object.assign(markerData, markersToLoad);
             
@@ -741,7 +743,7 @@
                 markers.addLayer(m);
             });
             
-            console.log(`✅ 加载了 ${Object.keys(markerData).length} 个标记 (${mapId})`);
+            console.log(`✅ 加载完成：${Object.keys(markerData).length} 个标记 (${mapId})`);
             updateStats();
         }
         
@@ -894,7 +896,7 @@
             addMarker(e.latlng, currentMarkerType);
         });
         
-        // 保存地图视图（缩放级别和中心点）
+        // 保存地图视图（缩放级别和中心点）- 按地图保存
         let saveViewTimeout;
         map.on('moveend zoomend', function() {
             clearTimeout(saveViewTimeout);
@@ -903,17 +905,23 @@
                     center: map.getCenter(),
                     zoom: map.getZoom()
                 };
+                // 保存到当前地图的视图
+                mapViews[currentMapId] = view;
+                // 同时保存到 localStorage（兼容旧版）
                 localStorage.setItem('promilia-map-view', JSON.stringify(view));
+                console.log(`💾 视图已保存：${currentMapId} (zoom=${view.zoom})`);
             }, 500);
         });
         
-        // 恢复地图视图
+        // 恢复地图视图（从 localStorage）
         function restoreView() {
             try {
                 const saved = localStorage.getItem('promilia-map-view');
                 if (saved) {
                     const view = JSON.parse(saved);
-                    map.setView([view.center.lat, view.center.lng], view.zoom);
+                    // 保存到 mapViews 供后续使用
+                    mapViews[currentMapId] = view;
+                    console.log(`🔍 恢复视图：zoom=${view.zoom}`);
                 }
             } catch (e) {
                 console.error('❌ 恢复视图失败:', e);
@@ -1203,6 +1211,9 @@
         
         // ==================== 启动 ====================
         console.log('🚀 启动应用...');
+        
+        // 恢复地图视图（缩放级别和中心点）
+        restoreView();
         
         // 初始化地图（使用保存的地图 ID，保持缩放）
         loadMap(currentMapId, true);
