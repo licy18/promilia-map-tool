@@ -545,9 +545,19 @@
         };
         
         // 当前地图
-        let currentMapId = 'shalulu';
-        let currentMapConfig = MAP_CONFIGS.shalulu;
+        let currentMapId = localStorage.getItem('promilia-current-map') || 'shalulu';
+        let currentMapConfig = MAP_CONFIGS[currentMapId];
         let mapOverlay = null;  // 地图图片覆盖层
+        
+        // 当前筛选状态（保存到 localStorage）
+        let savedFilterState = localStorage.getItem('promilia-filter-state');
+        if (savedFilterState) {
+            try {
+                Object.assign(filterState, JSON.parse(savedFilterState));
+            } catch (e) {
+                console.error('❌ 加载筛选状态失败:', e);
+            }
+        }
         
         // ==================== 地图初始化 ====================
         console.log('📍 初始化地图...');
@@ -623,7 +633,7 @@
         }
         
         // 加载/切换地图
-        function loadMap(mapId) {
+        function loadMap(mapId, keepZoom = false) {
             const config = MAP_CONFIGS[mapId];
             
             console.log(`🔄 切换地图：${currentMapId} -> ${mapId}`);
@@ -637,6 +647,9 @@
             currentMapId = mapId;
             currentMapConfig = config;
             
+            // 保存当前地图 ID 到 localStorage
+            localStorage.setItem('promilia-current-map', mapId);
+            
             // 清除旧地图
             if (mapOverlay) {
                 map.removeLayer(mapOverlay);
@@ -648,7 +661,11 @@
             // 直接创建占位背景
             const placeholderImage = createPlaceholder(mapId);
             mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
-            map.fitBounds(bounds);
+            
+            // 保持缩放级别（不重置）
+            if (!keepZoom) {
+                map.fitBounds(bounds);
+            }
             
             // 更新 UI
             document.getElementById('current-map-name').textContent = config.name;
@@ -658,6 +675,10 @@
             // 加载标记（从内存或 localStorage）
             loadMarkersForMap(mapId);
             updateStats();
+            
+            // 应用筛选状态
+            updateFilterUI();
+            updateMarkerVisibility();
             
             console.log(`✅ 地图加载完成：${config.name}`);
             showToast(`已切换至：${config.name}`, 'success');
@@ -945,9 +966,24 @@
                 }
                 
                 updateMarkerVisibility();
+                saveFilterState();
                 console.log(`🔍 筛选状态：`, filterState);
             });
         });
+        
+        // 保存筛选状态到 localStorage
+        function saveFilterState() {
+            localStorage.setItem('promilia-filter-state', JSON.stringify(filterState));
+        }
+        
+        // 更新筛选器 UI 显示
+        function updateFilterUI() {
+            document.querySelectorAll('#filter-types .marker-type').forEach(el => {
+                const type = el.dataset.type;
+                const isActive = filterState[type];
+                el.classList.toggle('active', isActive);
+            });
+        }
         
         // 更新标记可见性（修复：使用 markerData 而不是从 popup 解析）
         function updateMarkerVisibility() {
@@ -1168,8 +1204,8 @@
         // ==================== 启动 ====================
         console.log('🚀 启动应用...');
         
-        // 初始化第一张地图
-        loadMap('shalulu');
+        // 初始化地图（使用保存的地图 ID，保持缩放）
+        loadMap(currentMapId, true);
         
         console.log('✅ 应用启动完成');
         showToast('普罗米利亚地图工具已就绪', 'success');
