@@ -66,13 +66,13 @@ promilia-map-tool/
 
 ### 默认地图配置
 
-工具预置了 3 张地图：
+工具预置了 3 张地图（占位背景颜色不同）：
 
-| 地图 ID | 名称 | 图片文件 | 存储键 |
-|--------|------|----------|--------|
-| `shalulu` | 夏露露村 | `maps/shalulu.jpg` | `promilia-markers-shalulu` |
-| `xinaya` | 新芽山谷 | `maps/xinaya.jpg` | `promilia-markers-xinaya` |
-| `fulisi` | 弗利斯 | `maps/fulisi.jpg` | `promilia-markers-fulisi` |
+| 地图 ID | 名称 | 图标 | 占位色 | 图片文件 | 存储键 |
+|--------|------|------|--------|----------|--------|
+| `shalulu` | 夏露露村 | 🏡 | 蓝色 | `maps/shalulu.jpg` | `promilia-markers-shalulu` |
+| `xinaya` | 新芽山谷 | 🌱 | 绿色 | `maps/xinaya.jpg` | `promilia-markers-xinaya` |
+| `fulisi` | 弗利斯 (Fleece) | 🌾 | 金黄色 | `maps/fulisi.jpg` | `promilia-markers-fulisi` |
 
 ### 添加地图步骤
 

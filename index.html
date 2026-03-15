@@ -316,14 +316,14 @@
         <!-- 侧边栏 -->
         <div id="sidebar">
             <h1>🗺️ 普罗米利亚地图</h1>
-            <p class="subtitle">本地标记工具 v1.1</p>
+            <p class="subtitle">本地标记工具 v1.2</p>
             
             <!-- 地图切换器 -->
             <div class="map-switcher">
                 <select id="map-select" onchange="switchMap(this.value)">
                     <option value="shalulu">🏡 夏露露村</option>
                     <option value="xinaya">🌱 新芽山谷</option>
-                    <option value="fulisi">❄️ 弗利斯</option>
+                    <option value="fulisi">🌾 弗利斯 (Fleece)</option>
                 </select>
                 <div class="map-info">
                     当前地图：<strong id="current-map-name">夏露露村</strong><br>
@@ -523,21 +523,24 @@
                 width: 2048,
                 height: 2048,
                 image: 'maps/shalulu.jpg',
-                storageKey: 'promilia-markers-shalulu'
+                storageKey: 'promilia-markers-shalulu',
+                color: '#4a90d9'  // 蓝色
             },
             xinaya: {
                 name: '新芽山谷',
                 width: 2048,
                 height: 2048,
                 image: 'maps/xinaya.jpg',
-                storageKey: 'promilia-markers-xinaya'
+                storageKey: 'promilia-markers-xinaya',
+                color: '#5cb85c'  // 绿色
             },
             fulisi: {
-                name: '弗利斯',
+                name: '弗利斯 (Fleece)',
                 width: 2048,
                 height: 2048,
                 image: 'maps/fulisi.jpg',
-                storageKey: 'promilia-markers-fulisi'
+                storageKey: 'promilia-markers-fulisi',
+                color: '#f0ad4e'  // 金黄色
             }
         };
         
@@ -571,6 +574,8 @@
             currentMapId = mapId;
             currentMapConfig = config;
             
+            console.log(`🔄 切换地图：${mapId} -> ${config.name}`);
+            
             // 清除旧地图
             if (mapOverlay) {
                 map.removeLayer(mapOverlay);
@@ -579,18 +584,42 @@
             // 设置新边界
             const bounds = [[0, 0], [config.height, config.width]];
             
-            // 创建网格背景（如果图片不存在）
+            // 尝试加载真实图片，如果不存在则创建彩色网格背景
+            fetch(config.image)
+                .then(response => {
+                    if (response.ok) {
+                        console.log(`✅ 地图图片存在：${config.image}`);
+                        mapOverlay = L.imageOverlay(config.image, bounds).addTo(map);
+                        map.fitBounds(bounds);
+                    } else {
+                        console.warn(`⚠️ 地图图片不存在，创建占位背景：${config.image}`);
+                        createPlaceholderMap(config, bounds);
+                    }
+                    finishMapLoad();
+                })
+                .catch(() => {
+                    console.warn(`⚠️ 地图图片加载失败，创建占位背景：${config.image}`);
+                    createPlaceholderMap(config, bounds);
+                    finishMapLoad();
+                });
+        }
+        
+        // 创建彩色占位地图
+        function createPlaceholderMap(config, bounds) {
             const gridCanvas = document.createElement('canvas');
             gridCanvas.width = config.width;
             gridCanvas.height = config.height;
             const ctx = gridCanvas.getContext('2d');
             
-            // 填充深色背景
-            ctx.fillStyle = '#1a1a2e';
+            // 填充带颜色的背景（每张地图不同颜色）
+            const gradient = ctx.createLinearGradient(0, 0, config.width, config.height);
+            gradient.addColorStop(0, config.color);
+            gradient.addColorStop(1, '#1a1a2e');
+            ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, config.width, config.height);
             
             // 绘制网格线
-            ctx.strokeStyle = '#2a2a4e';
+            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
             ctx.lineWidth = 1;
             const gridSize = 128;
             for (let x = 0; x <= config.width; x += gridSize) {
@@ -606,32 +635,39 @@
                 ctx.stroke();
             }
             
-            // 绘制地图名称
-            ctx.fillStyle = '#e94560';
-            ctx.font = 'bold 32px Arial';
+            // 绘制大图标
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = 'bold 120px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(config.name, config.width / 2, config.height / 2 - 20);
-            ctx.font = '16px Arial';
-            ctx.fillStyle = '#888';
-            ctx.fillText('(等待地图图片)', config.width / 2, config.height / 2 + 20);
+            ctx.textBaseline = 'middle';
+            const icons = { shalulu: '🏡', xinaya: '🌱', fulisi: '🌾' };
+            ctx.fillText(icons[mapId] || '🗺️', config.width / 2, config.height / 2 - 60);
+            
+            // 绘制地图名称
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 36px Arial';
+            ctx.fillText(config.name, config.width / 2, config.height / 2 + 20);
+            ctx.font = '18px Arial';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fillText('(占位背景 - 等待地图图片)', config.width / 2, config.height / 2 + 60);
             
             // 转换为图片并添加到地图
             const gridImage = gridCanvas.toDataURL('image/png');
             mapOverlay = L.imageOverlay(gridImage, bounds).addTo(map);
-            
-            map.fitBounds(bounds);
-            
+        }
+        
+        // 完成地图加载
+        function finishMapLoad() {
             // 更新 UI
-            document.getElementById('current-map-name').textContent = config.name;
-            document.getElementById('current-map-size').textContent = `${config.width}×${config.height}`;
-            document.getElementById('map-select').value = mapId;
+            document.getElementById('current-map-name').textContent = currentMapConfig.name;
+            document.getElementById('current-map-size').textContent = `${currentMapConfig.width}×${currentMapConfig.height}`;
+            document.getElementById('map-select').value = currentMapId;
             
             // 加载该地图的标记
-            loadMarkersForMap(mapId);
+            loadMarkersForMap(currentMapId);
             updateStats();
             
-            console.log(`✅ 地图已切换：${config.name}`);
-            showToast(`已切换至：${config.name}`, 'success');
+            console.log(`✅ 地图加载完成：${currentMapConfig.name}`);
         }
         
         // 切换地图
@@ -646,6 +682,8 @@
         
         // 加载指定地图的标记
         function loadMarkersForMap(mapId) {
+            console.log(`📍 加载地图标记：${mapId}`);
+            
             // 清空当前标记
             markers.clearLayers();
             Object.keys(markerData).forEach(key => delete markerData[key]);
@@ -658,6 +696,8 @@
                     const data = JSON.parse(saved);
                     markerIdCounter = data.counter || 0;
                     allMarkersData[mapId] = data.markers || {};
+                    
+                    console.log(`  存储数据：${Object.keys(allMarkersData[mapId]).length} 个标记`);
                     
                     // 复制到当前 markerData
                     Object.assign(markerData, allMarkersData[mapId]);
@@ -673,10 +713,11 @@
                     
                     console.log(`✅ 加载了 ${Object.keys(markerData).length} 个标记 (${mapId})`);
                 } else {
+                    console.log(`  无存储数据，初始化空数据 (${mapId})`);
                     allMarkersData[mapId] = {};
                 }
             } catch (e) {
-                console.error('❌ 加载标记失败:', e);
+                console.error(`❌ 加载标记失败 (${mapId}):`, e);
                 allMarkersData[mapId] = {};
             }
             
