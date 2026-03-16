@@ -673,7 +673,8 @@
             if (keepZoom && mapViews[mapId]) {
                 console.log(`🔍 恢复 ${mapId} 的视图 (zoom=${mapViews[mapId].zoom})`);
                 map.setView(mapViews[mapId].center, mapViews[mapId].zoom);
-            } else if (!keepZoom) {
+            } else {
+                // 没有保存的视图时，总是 fitBounds（包括 keepZoom=true 但无缓存的情况）
                 map.fitBounds(bounds);
             }
             
