@@ -644,11 +644,16 @@
             // 【关键】切换前保存当前地图的标记数据和视图
             if (currentMapId) {
                 allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markerData));
-                mapViews[currentMapId] = {
-                    center: map.getCenter(),
-                    zoom: map.getZoom()
-                };
-                console.log(`💾 已保存 ${currentMapId} 的标记和视图 (zoom=${mapViews[currentMapId].zoom})`);
+                // 只有在地图已初始化视图后才保存（避免首次加载时报错）
+                try {
+                    mapViews[currentMapId] = {
+                        center: map.getCenter(),
+                        zoom: map.getZoom()
+                    };
+                    console.log(`💾 已保存 ${currentMapId} 的标记和视图 (zoom=${mapViews[currentMapId].zoom})`);
+                } catch (e) {
+                    console.log(`⚠️ ${currentMapId} 地图视图未初始化，跳过保存`);
+                }
             }
             
             currentMapId = mapId;
