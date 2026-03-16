@@ -316,7 +316,7 @@
         <!-- 侧边栏 -->
         <div id="sidebar">
             <h1>🗺️ 普罗米利亚地图</h1>
-            <p class="subtitle">本地标记工具 v1.6</p>
+            <p class="subtitle">本地标记工具 v1.7</p>
             
             <!-- 地图切换器 -->
             <div class="map-switcher">
@@ -350,8 +350,24 @@
                             <span id="count-chest">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #a55eea;">🧩 解谜:</span>
+                            <span id="count-puzzle">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
                             <span style="color: #3498db;">📜 任务:</span>
                             <span id="count-quest">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #2d3436;">🐱 乌咪:</span>
+                            <span id="count-umi">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #ffeaa7;">🥚 蛋:</span>
+                            <span id="count-egg">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #ff6b9d;">🐾 奇波:</span>
+                            <span id="count-chipo">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
                             <span style="color: #e91e63;">🌸 采集:</span>
@@ -362,20 +378,12 @@
                             <span id="count-enemy">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #ff6b9d;">🐾 奇波:</span>
-                            <span id="count-chipo">0</span>
+                            <span style="color: #9b59b6;">🚪 传送:</span>
+                            <span id="count-teleport">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #00d9ff;">🪶 乌咪:</span>
-                            <span id="count-umi">0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #ffeaa7;">🥚 蛋:</span>
-                            <span id="count-egg">0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #a55eea;">🧩 解谜:</span>
-                            <span id="count-puzzle">0</span>
+                            <span style="color: #2ecc71;">⭐ 自定义:</span>
+                            <span id="count-custom">0</span>
                         </div>
                     </div>
                 </div>
@@ -393,9 +401,25 @@
                         <i class="fas fa-gift" style="color: #f39c12;"></i>
                         <span>宝箱</span>
                     </div>
+                    <div class="marker-type" data-type="puzzle" data-color="#a55eea" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
+                        <span>解谜</span>
+                    </div>
                     <div class="marker-type" data-type="quest" data-color="#3498db" data-icon="fa-scroll">
                         <i class="fas fa-scroll" style="color: #3498db;"></i>
                         <span>任务</span>
+                    </div>
+                    <div class="marker-type" data-type="umi" data-color="#2d3436" data-icon="fa-cat">
+                        <i class="fas fa-cat" style="color: #2d3436;"></i>
+                        <span>乌咪</span>
+                    </div>
+                    <div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
+                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                        <span>蛋</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo" data-color="#ff6b9d" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span>奇波</span>
                     </div>
                     <div class="marker-type" data-type="flower" data-color="#e91e63" data-icon="fa-fan">
                         <i class="fas fa-fan" style="color: #e91e63;"></i>
@@ -412,22 +436,6 @@
                     <div class="marker-type" data-type="custom" data-color="#2ecc71" data-icon="fa-star">
                         <i class="fas fa-star" style="color: #2ecc71;"></i>
                         <span>自定义</span>
-                    </div>
-                    <div class="marker-type" data-type="chipo" data-color="#ff6b9d" data-icon="fa-paw">
-                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
-                        <span>奇波</span>
-                    </div>
-                    <div class="marker-type" data-type="umi" data-color="#00d9ff" data-icon="fa-feather">
-                        <i class="fas fa-feather" style="color: #00d9ff;"></i>
-                        <span>乌咪</span>
-                    </div>
-                    <div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
-                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                        <span>蛋</span>
-                    </div>
-                    <div class="marker-type" data-type="puzzle" data-color="#a55eea" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
-                        <span>解谜</span>
                     </div>
                 </div>
                 <div style="margin-top: 10px; padding: 10px; background: #0f3460; border-radius: 6px; font-size: 0.85em;">
@@ -448,9 +456,25 @@
                         <i class="fas fa-gift" style="color: #f39c12;"></i>
                         <span>宝箱</span>
                     </div>
+                    <div class="marker-type active" data-type="puzzle">
+                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
+                        <span>解谜</span>
+                    </div>
                     <div class="marker-type active" data-type="quest">
                         <i class="fas fa-scroll" style="color: #3498db;"></i>
                         <span>任务</span>
+                    </div>
+                    <div class="marker-type active" data-type="umi">
+                        <i class="fas fa-cat" style="color: #2d3436;"></i>
+                        <span>乌咪</span>
+                    </div>
+                    <div class="marker-type active" data-type="egg">
+                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                        <span>蛋</span>
+                    </div>
+                    <div class="marker-type active" data-type="chipo">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span>奇波</span>
                     </div>
                     <div class="marker-type active" data-type="flower">
                         <i class="fas fa-fan" style="color: #e91e63;"></i>
@@ -467,22 +491,6 @@
                     <div class="marker-type active" data-type="custom">
                         <i class="fas fa-star" style="color: #2ecc71;"></i>
                         <span>自定义</span>
-                    </div>
-                    <div class="marker-type active" data-type="chipo">
-                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
-                        <span>奇波</span>
-                    </div>
-                    <div class="marker-type active" data-type="umi">
-                        <i class="fas fa-feather" style="color: #00d9ff;"></i>
-                        <span>乌咪</span>
-                    </div>
-                    <div class="marker-type active" data-type="egg">
-                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                        <span>蛋</span>
-                    </div>
-                    <div class="marker-type active" data-type="puzzle">
-                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
-                        <span>解谜</span>
                     </div>
                 </div>
             </div>
@@ -537,36 +545,36 @@
         console.log('🗺️ 普罗米利亚地图标记工具 v1.0');
         console.log('🔄 初始化中...');
         
-        // 标记类型配置
+        // 标记类型配置（按用户指定顺序排列）
         const MARKER_CONFIGS = {
-            chest: { icon: 'fa-gift', color: '#f39c12', label: '宝箱' },
-            quest: { icon: 'fa-scroll', color: '#3498db', label: '任务' },
-            flower: { icon: 'fa-fan', color: '#e91e63', label: '采集' },
-            enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人' },
-            teleport: { icon: 'fa-door-open', color: '#9b59b6', label: '传送' },
-            custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义' },
-            chipo: { icon: 'fa-paw', color: '#ff6b9d', label: '奇波' },      // 奇波（小动物）
-            umi: { icon: 'fa-feather', color: '#00d9ff', label: '乌咪' },    // 乌咪（小鸟）
-            egg: { icon: 'fa-egg', color: '#ffeaa7', label: '蛋' },          // 蛋
-            puzzle: { icon: 'fa-puzzle-piece', color: '#a55eea', label: '解谜' } // 解谜
+            chest: { icon: 'fa-gift', color: '#f39c12', label: '宝箱' },     // 1. 宝箱
+            puzzle: { icon: 'fa-puzzle-piece', color: '#a55eea', label: '解谜' }, // 2. 解谜
+            quest: { icon: 'fa-scroll', color: '#3498db', label: '任务' },   // 3. 任务
+            umi: { icon: 'fa-cat', color: '#2d3436', label: '乌咪' },        // 4. 乌咪（黑猫）
+            egg: { icon: 'fa-egg', color: '#ffeaa7', label: '蛋' },          // 5. 蛋
+            chipo: { icon: 'fa-paw', color: '#ff6b9d', label: '奇波' },      // 6. 奇波（小动物）
+            flower: { icon: 'fa-fan', color: '#e91e63', label: '采集' },     // 7. 采集
+            enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人' },    // 8. 敌人
+            teleport: { icon: 'fa-door-open', color: '#9b59b6', label: '传送' }, // 9. 传送
+            custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义' }   // 10. 自定义
         };
         
         // 当前选中的标记类型（默认不选择，避免误触）
         let currentMarkerType = null;
         
-        // 筛选状态
+        // 筛选状态（按新顺序）
         const filterState = {
             all: true,
             chest: true,
+            puzzle: true,
             quest: true,
+            umi: true,
+            egg: true,
+            chipo: true,
             flower: true,
             enemy: true,
             teleport: true,
-            custom: true,
-            chipo: true,
-            umi: true,
-            egg: true,
-            puzzle: true
+            custom: true
         };
         
         // 隐藏的标记层（用于筛选）
@@ -1316,21 +1324,24 @@
             
             // 按类型统计（包含所有 10 种标记类型）
             const counts = { 
-                chest: 0, quest: 0, flower: 0, enemy: 0, teleport: 0, custom: 0,
-                chipo: 0, umi: 0, egg: 0, puzzle: 0
+                chest: 0, puzzle: 0, quest: 0, umi: 0, egg: 0, chipo: 0,
+                flower: 0, enemy: 0, teleport: 0, custom: 0
             };
             Object.values(markerData).forEach(m => {
                 if (counts[m.type] !== undefined) counts[m.type]++;
             });
             
+            // 按新顺序更新统计面板
             document.getElementById('count-chest').textContent = counts.chest;
+            document.getElementById('count-puzzle').textContent = counts.puzzle;
             document.getElementById('count-quest').textContent = counts.quest;
-            document.getElementById('count-flower').textContent = counts.flower;
-            document.getElementById('count-enemy').textContent = counts.enemy;
-            document.getElementById('count-chipo').textContent = counts.chipo;
             document.getElementById('count-umi').textContent = counts.umi;
             document.getElementById('count-egg').textContent = counts.egg;
-            document.getElementById('count-puzzle').textContent = counts.puzzle;
+            document.getElementById('count-chipo').textContent = counts.chipo;
+            document.getElementById('count-flower').textContent = counts.flower;
+            document.getElementById('count-enemy').textContent = counts.enemy;
+            document.getElementById('count-teleport').textContent = counts.teleport;
+            document.getElementById('count-custom').textContent = counts.custom;
         }
         
         function updateLastSaved() {
