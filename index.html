@@ -762,9 +762,10 @@
                     counter: markerIdCounter,
                     savedAt: new Date().toISOString()
                 };
-                localStorage.setItem(storageKey, data);
+                localStorage.setItem(storageKey, JSON.stringify(data));  // ✅ 修复：序列化对象
                 allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markerData));
                 updateLastSaved();
+                console.log(`💾 已保存 ${currentMapId} 的 ${Object.keys(markerData).length} 个标记`);
             } catch (e) {
                 console.error('❌ 保存失败:', e);
                 showToast('保存失败：存储空间不足', 'error');
