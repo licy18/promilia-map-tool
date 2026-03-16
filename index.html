@@ -1052,26 +1052,40 @@
         
         // ==================== 导入导出 ====================
         window.exportData = function() {
-            // 导出当前地图
-            const data = {
-                version: '1.1',
+            // 导出所有地图的完整数据
+            const exportData = {
+                version: '1.3',
                 exportedAt: new Date().toISOString(),
-                mapId: currentMapId,
-                mapName: currentMapConfig.name,
-                markers: Object.values(markerData)
+                toolName: '普罗米利亚地图标记工具',
+                maps: {}
             };
             
-            const json = JSON.stringify(data, null, 2);
+            // 收集所有地图的数据
+            Object.keys(MAP_CONFIGS).forEach(mapId => {
+                const config = MAP_CONFIGS[mapId];
+                const markers = allMarkersData[mapId] || {};
+                exportData.maps[mapId] = {
+                    mapName: config.name,
+                    markers: Object.values(markers),
+                    counter: markerIdCounter
+                };
+            });
+            
+            const json = JSON.stringify(exportData, null, 2);
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = `promilia-${currentMapId}-${Date.now()}.json`;
+            a.download = `promilia-all-maps-${Date.now()}.json`;
             a.click();
             
             URL.revokeObjectURL(url);
-            showToast('数据已导出', 'success');
+            
+            // 统计导出的标记数
+            let totalMarkers = 0;
+            Object.values(exportData.maps).forEach(m => totalMarkers += m.markers.length);
+            showToast(`已导出 ${totalMarkers} 个标记（${Object.keys(exportData.maps).length} 张地图）`, 'success');
         };
         
         window.importData = function(event) {
@@ -1083,18 +1097,80 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     
-                    if (!data.markers || !Array.isArray(data.markers)) {
-                        throw new Error('无效的数据格式');
-                    }
-                    
-                    // 询问导入到当前地图还是所有地图
-                    const importToCurrent = confirm(
-                        `检测到 ${data.markers.length} 个标记\n\n` +
-                        `点击"确定"导入到当前地图（${currentMapConfig.name}）\n` +
-                        `点击"取消"将覆盖所有地图数据`
-                    );
-                    
-                    if (importToCurrent) {
+                    // 检测数据格式：v1.3+ 多地图格式 vs 旧版单地图格式
+                    if (data.maps && typeof data.maps === 'object') {
+                        // === v1.3+ 多地图格式 ===
+                        const importInfo = [];
+                        let totalMarkers = 0;
+                        
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            const markerCount = mapData.markers ? mapData.markers.length : 0;
+                            importInfo.push(`  • ${mapData.mapName || mapId}: ${markerCount} 个标记`);
+                            totalMarkers += markerCount;
+                        });
+                        
+                        if (!confirm(`检测到 v1.3 多地图备份文件\n\n` +
+                            `共 ${totalMarkers} 个标记，${Object.keys(data.maps).length} 张地图：\n\n` +
+                            importInfo.join('\n') + '\n\n' +
+                            `点击"确定"导入所有数据\n点击"取消"取消导入`)) {
+                            return;
+                        }
+                        
+                        // 导入所有地图数据
+                        let importedCount = 0;
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            if (!mapData.markers || !Array.isArray(mapData.markers)) return;
+                            
+                            const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
+                            const markersObj = {};
+                            
+                            mapData.markers.forEach(marker => {
+                                markersObj[marker.id] = marker;
+                                importedCount++;
+                            });
+                            
+                            // 保存到 localStorage
+                            localStorage.setItem(storageKey, JSON.stringify({
+                                markers: markersObj,
+                                counter: mapData.counter || Date.now(),
+                                savedAt: new Date().toISOString()
+                            }));
+                            
+                            // 更新内存中的数据
+                            allMarkersData[mapId] = markersObj;
+                        });
+                        
+                        // 如果当前地图有数据，刷新显示
+                        if (allMarkersData[currentMapId]) {
+                            markers.clearLayers();
+                            Object.keys(markerData).forEach(key => delete markerData[key]);
+                            Object.assign(markerData, allMarkersData[currentMapId]);
+                            
+                            Object.values(markerData).forEach(marker => {
+                                const m = L.marker([marker.lat, marker.lng], {
+                                    icon: createMarkerIcon(marker.type)
+                                });
+                                m.bindPopup(createPopupContent(marker));
+                                markers.addLayer(m);
+                            });
+                            updateStats();
+                        }
+                        
+                        showToast(`已导入 ${importedCount} 个标记到 ${Object.keys(data.maps).length} 张地图`, 'success');
+                        
+                    } else if (data.markers && Array.isArray(data.markers)) {
+                        // === 旧版单地图格式（兼容） ===
+                        const importToCurrent = confirm(
+                            `检测到旧版单地图备份文件\n\n` +
+                            `共 ${data.markers.length} 个标记\n\n` +
+                            `点击"确定"导入到当前地图（${currentMapConfig.name}）\n` +
+                            `点击"取消"取消导入`
+                        );
+                        
+                        if (!importToCurrent) return;
+                        
                         // 导入到当前地图
                         markers.clearLayers();
                         Object.keys(markerData).forEach(key => delete markerData[key]);
@@ -1113,16 +1189,7 @@
                         updateStats();
                         showToast(`已导入 ${data.markers.length} 个标记到 ${currentMapConfig.name}`, 'success');
                     } else {
-                        // 覆盖所有地图
-                        if (confirm('确定要覆盖所有地图数据吗？此操作不可恢复！')) {
-                            Object.keys(MAP_CONFIGS).forEach(mapId => {
-                                localStorage.setItem(MAP_CONFIGS[mapId].storageKey, JSON.stringify({
-                                    markers: {},
-                                    counter: 0
-                                }));
-                            });
-                            showToast('已清空所有地图数据，请手动导入', 'success');
-                        }
+                        throw new Error('无法识别的数据格式');
                     }
                 } catch (err) {
                     console.error('❌ 导入失败:', err);
@@ -1134,17 +1201,31 @@
         };
         
         window.shareData = function() {
-            const data = {
-                markers: Object.values(markerData)
+            // 分享所有地图的数据
+            const shareData = {
+                version: '1.3',
+                maps: {}
             };
-            const json = JSON.stringify(data);
+            
+            Object.keys(MAP_CONFIGS).forEach(mapId => {
+                const markers = allMarkersData[mapId] || {};
+                shareData.maps[mapId] = {
+                    mapName: MAP_CONFIGS[mapId].name,
+                    markers: Object.values(markers)
+                };
+            });
+            
+            const json = JSON.stringify(shareData);
             const encoded = btoa(unescape(encodeURIComponent(json)));
             
             const shareUrl = `${window.location.origin}${window.location.pathname}#data=${encoded}`;
             
             // 复制到剪贴板
             navigator.clipboard.writeText(shareUrl).then(() => {
-                showToast('分享链接已复制到剪贴板', 'success');
+                // 统计标记数
+                let totalMarkers = 0;
+                Object.values(shareData.maps).forEach(m => totalMarkers += m.markers.length);
+                showToast(`已复制分享链接（${totalMarkers} 个标记）`, 'success');
             }).catch(() => {
                 prompt('复制以下分享链接:', shareUrl);
             });
@@ -1195,7 +1276,54 @@
                     const json = decodeURIComponent(escape(atob(encoded)));
                     const data = JSON.parse(json);
                     
-                    if (data.markers && Array.isArray(data.markers)) {
+                    // 检测数据格式：v1.3+ 多地图格式 vs 旧版单地图格式
+                    if (data.maps && typeof data.maps === 'object') {
+                        // === v1.3+ 多地图格式 ===
+                        let totalMarkers = 0;
+                        
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            if (!mapData.markers || !Array.isArray(mapData.markers)) return;
+                            
+                            const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
+                            const markersObj = {};
+                            
+                            mapData.markers.forEach(marker => {
+                                markersObj[marker.id] = marker;
+                                totalMarkers++;
+                            });
+                            
+                            // 保存到 localStorage
+                            localStorage.setItem(storageKey, JSON.stringify({
+                                markers: markersObj,
+                                counter: Date.now(),
+                                savedAt: new Date().toISOString()
+                            }));
+                            
+                            // 更新内存中的数据
+                            allMarkersData[mapId] = markersObj;
+                        });
+                        
+                        // 刷新当前地图显示
+                        if (allMarkersData[currentMapId]) {
+                            markers.clearLayers();
+                            Object.keys(markerData).forEach(key => delete markerData[key]);
+                            Object.assign(markerData, allMarkersData[currentMapId]);
+                            
+                            Object.values(markerData).forEach(marker => {
+                                const m = L.marker([marker.lat, marker.lng], {
+                                    icon: createMarkerIcon(marker.type)
+                                });
+                                m.bindPopup(createPopupContent(marker));
+                                markers.addLayer(m);
+                            });
+                            updateStats();
+                        }
+                        
+                        showToast(`已加载分享的 ${totalMarkers} 个标记（${Object.keys(data.maps).length} 张地图）`, 'success');
+                        
+                    } else if (data.markers && Array.isArray(data.markers)) {
+                        // === 旧版单地图格式（兼容） ===
                         data.markers.forEach(marker => {
                             markerData[marker.id] = marker;
                             const m = L.marker([marker.lat, marker.lng], {
@@ -1210,6 +1338,7 @@
                     }
                 } catch (e) {
                     console.error('❌ 加载分享数据失败:', e);
+                    showToast('分享链接无效', 'error');
                 }
                 // 清除 URL 中的 hash
                 history.replaceState(null, null, window.location.pathname);
