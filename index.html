@@ -670,9 +670,30 @@
             // 边界
             const bounds = [[0, 0], [config.height, config.width]];
             
-            // 直接创建占位背景
-            const placeholderImage = createPlaceholder(mapId);
-            mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
+            // 先尝试加载真实地图图片，失败则使用占位背景
+            const mapImageUrl = config.image;
+            const testImg = new Image();
+            testImg.onload = function() {
+                console.log(`✅ 地图图片加载成功：${mapImageUrl}`);
+                if (mapOverlay) map.removeLayer(mapOverlay);
+                mapOverlay = L.imageOverlay(mapImageUrl, bounds).addTo(map);
+            };
+            testImg.onerror = function() {
+                console.log(`⚠️ 地图图片加载失败 (${mapImageUrl})，使用占位背景`);
+                if (mapOverlay) map.removeLayer(mapOverlay);
+                const placeholderImage = createPlaceholder(mapId);
+                mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
+            };
+            testImg.src = mapImageUrl;
+            
+            // 如果图片加载失败（缓存或跨域问题），确保至少显示占位背景
+            setTimeout(() => {
+                if (!mapOverlay) {
+                    console.log(`⚠️ 地图图片超时，使用占位背景`);
+                    const placeholderImage = createPlaceholder(mapId);
+                    mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
+                }
+            }, 3000);
             
             // 恢复视图（如果有保存的视图）
             if (keepZoom && mapViews[mapId]) {
