@@ -322,7 +322,8 @@
             <div class="map-switcher">
                 <select id="map-select" onchange="switchMap(this.value)">
                     <option value="shalulu">🏡 夏露露村</option>
-                    <option value="xinaya">🌱 新芽山谷</option>
+                    <option value="xinaya">🌱 新芽山谷（单层）</option>
+                    <option value="xinaya_multi">🌱 新芽山谷（多层）</option>
                     <option value="fulisi">🌾 弗利斯 (Fleece)</option>
                 </select>
                 <div class="map-info">
@@ -742,9 +743,21 @@
                 tileRows: 4,  // 4 行
                 tileCols: 4,  // 4 列
                 tileSize: 1024,  // 每片 1024x1024
+                maxZoom: 2,  // 最大缩放级别
                 storageKey: 'promilia-markers-xinaya',
                 color: '#5cb85c',  // 绿色
-                type: 'tiles'  // 瓦片地图
+                type: 'tiles'  // 瓦片地图（单层）
+            },
+            xinaya_multi: {
+                name: '新芽山谷（多层）',
+                width: 4096,
+                height: 4096,
+                tileUrl: 'maps/xinaya-tiles-multi/{z}/{x}/{y}.png',  // 多层瓦片 URL 模板
+                minZoom: 0,
+                maxZoom: 4,  // 0-4 共 5 个层级
+                storageKey: 'promilia-markers-xinaya-multi',
+                color: '#5cb85c',
+                type: 'tileLayer'  // 多层瓦片地图（Leaflet TileLayer）
             },
             fulisi: {
                 name: '弗利斯 (Fleece)',
@@ -761,7 +774,8 @@
         let currentMapId = localStorage.getItem('promilia-current-map') || 'shalulu';
         let currentMapConfig = MAP_CONFIGS[currentMapId];
         let mapOverlay = null;  // 地图图片覆盖层（单张图片）
-        let tileOverlays = [];  // 瓦片覆盖层数组（瓦片地图）
+        let tileOverlays = [];  // 瓦片覆盖层数组（单层瓦片地图）
+        let tileLayer = null;   // TileLayer 对象（多层瓦片地图）
         
         // 当前筛选状态（保存到 localStorage）
         let savedFilterState = localStorage.getItem('promilia-filter-state');
@@ -885,14 +899,40 @@
                 tileOverlays.forEach(tile => map.removeLayer(tile));
                 tileOverlays = [];
             }
+            if (tileLayer) {
+                map.removeLayer(tileLayer);
+                tileLayer = null;
+            }
             
             // 边界
             const bounds = [[0, 0], [config.height, config.width]];
             
-            // 根据地图类型加载（单张图片 or 瓦片）
-            if (config.type === 'tiles' && config.tiles) {
-                // === 瓦片地图加载 ===
-                console.log(`🗺️ 加载瓦片地图：${config.name} (${config.tileCols}x${config.tileRows} 瓦片)`);
+            // 根据地图类型加载（单张图片 or 单层瓦片 or 多层瓦片）
+            if (config.type === 'tileLayer' && config.tileUrl) {
+                // === 多层瓦片地图加载（Leaflet TileLayer） ===
+                console.log(`🗺️ 加载多层瓦片地图：${config.name} (zoom ${config.minZoom}-${config.maxZoom})`);
+                
+                // 创建 TileLayer
+                tileLayer = L.tileLayer(config.tileUrl, {
+                    minZoom: config.minZoom || 0,
+                    maxZoom: config.maxZoom || 4,
+                    tileSize: config.tileSize || 256,
+                    bounds: bounds,
+                    noWrap: true,
+                    tms: false  // false = XYZ 格式（z/x/y），true = TMS 格式
+                });
+                
+                tileLayer.addTo(map);
+                
+                // 设置地图缩放范围
+                map.setMinZoom(config.minZoom || 0);
+                map.setMaxZoom(config.maxZoom || 4);
+                
+                console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
+                
+            } else if (config.type === 'tiles' && config.tiles) {
+                // === 单层瓦片地图加载 ===
+                console.log(`🗺️ 加载单层瓦片地图：${config.name} (${config.tileCols}x${config.tileRows} 瓦片)`);
                 
                 const tileSize = config.tileSize || 1024;
                 const tileDir = config.tiles;
