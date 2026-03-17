@@ -822,11 +822,14 @@
                 storageKey: 'promilia-markers-xinaya-multi',
                 color: '#5cb85c',
                 type: 'tileLayer',
-                // 自定义瓦片尺寸（非标准 256）
-                tileSizes: {
-                    0: 1024,  // zoom 0: 1024×1024
-                    1: 512,   // zoom 1: 512×512
-                    2: 256    // zoom 2: 256×256
+                // 每层瓦片数量（非标准）
+                // zoom 0: 1×1 = 1 块 (1024×1024)
+                // zoom 1: 2×2 = 4 块 (512×512)
+                // zoom 2: 4×4 = 16 块 (256×256)
+                gridSizes: {
+                    0: 1,  // 1×1 grid
+                    1: 2,  // 2×2 grid
+                    2: 4   // 4×4 grid
                 }
             },
             fulisi: {
@@ -1007,42 +1010,54 @@
                 // 创建 TileLayer（Simple CRS 下使用自定义瓦片网格）
                 // 注意：CRS 是 map 的属性，不是 TileLayer 的属性
                 
-                // 检查是否有自定义瓦片尺寸配置
-                if (config.tileSizes) {
-                    // === 自定义瓦片尺寸（非标准 256） ===
-                    console.log(`  📐 使用自定义瓦片尺寸:`, config.tileSizes);
+                // 检查是否有自定义网格配置
+                if (config.gridSizes) {
+                    // === 自定义网格尺寸（非标准瓦片系统） ===
+                    console.log(`  📐 使用自定义网格:`, config.gridSizes);
                     
                     // 使用 GridLayer 自定义瓦片加载
                     tileLayer = L.gridLayer({
                         minZoom: config.minZoom || 0,
-                        maxZoom: config.maxZoom || 2,
-                        tileSize: 256,
-                        noWrap: true,
-                        bounds: [[0, 0], [config.width, config.height]]
+                        maxZoom: config.maxZoom || 2
                     });
                     
                     // 自定义瓦片创建逻辑
                     tileLayer.createTile = function(coords, done) {
-                        const tile = document.createElement('img');
+                        const tile = document.createElement('div');
                         const zoom = coords.z;
-                        const actualTileSize = config.tileSizes[zoom] || 256;
+                        const x = coords.x;
+                        const y = coords.y;
                         
-                        // 计算实际瓦片坐标（考虑不同 zoom 级别的瓦片尺寸）
-                        const scale = actualTileSize / 256;
-                        const actualX = Math.floor(coords.x / scale);
-                        const actualY = Math.floor(coords.y / scale);
+                        // 检查坐标是否在有效范围内
+                        const gridSize = config.gridSizes[zoom];
+                        if (gridSize === undefined || x < 0 || y < 0 || x >= gridSize || y >= gridSize) {
+                            // 超出范围，返回空瓦片
+                            tile.style.width = '256px';
+                            tile.style.height = '256px';
+                            console.log(`  ⚠️ 跳过无效瓦片：z=${zoom}, (${x},${y})`);
+                            done(null, tile);
+                            return tile;
+                        }
                         
                         // 生成瓦片 URL
                         const url = config.tileUrl
                             .replace('{z}', zoom)
-                            .replace('{x}', actualX)
-                            .replace('{y}', actualY);
+                            .replace('{x}', x)
+                            .replace('{y}', y);
                         
-                        console.log(`  🔍 瓦片：z=${zoom}, L(${coords.x},${coords.y}) → 实际 (${actualX},${actualY})`);
+                        // 创建图片
+                        const img = document.createElement('img');
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.onload = () => done(null, tile);
+                        img.onerror = (e) => {
+                            console.error(`  ❌ 瓦片加载失败：${url}`, e);
+                            done(e, tile);
+                        };
+                        img.src = url;
+                        tile.appendChild(img);
                         
-                        tile.onload = () => done(null, tile);
-                        tile.onerror = (e) => done(e, tile);
-                        tile.src = url;
+                        console.log(`  ✅ 加载瓦片：z=${zoom}, (${x},${y}) → ${url}`);
                         return tile;
                     };
                     
@@ -1063,7 +1078,10 @@
                 // 设置地图缩放范围和视图
                 map.setMinZoom(config.minZoom || 0);
                 map.setMaxZoom(config.maxZoom || 2);
-                map.fitBounds([[0, 0], [config.width, config.height]]);
+                
+                // 设置视图到地图中心
+                const center = [config.height / 2, config.width / 2];
+                map.setView(center, config.minZoom || 0);
                 
                 console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
                 
