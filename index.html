@@ -309,6 +309,52 @@
             background: #0f3460;
             border-radius: 4px;
         }
+        
+        /* 开关控件 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #34495e;
+            transition: .3s;
+            border-radius: 26px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #00d9ff;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
     </style>
 </head>
 <body>
@@ -616,6 +662,25 @@
                 </div>
             </div>
             
+            <!-- 标记聚合开关 -->
+            <div class="section">
+                <h2><i class="fas fa-th-large"></i> 标记聚合</h2>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #0f3460; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-th-large" style="color: #00d9ff;"></i>
+                        <span style="color: #eee; font-size: 0.9em;">启用聚合</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="cluster-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.75em; color: #888; padding: 0 5px;">
+                    <i class="fas fa-info-circle"></i>
+                    聚合模式下，缩放时标记会自动聚类显示
+                </div>
+            </div>
+            
             <!-- 操作按钮 -->
             <div class="section">
                 <h2><i class="fas fa-tools"></i> 操作</h2>
@@ -786,6 +851,9 @@
             }
         }
         
+        // 标记聚合状态（Issue #1）
+        let clusterEnabled = localStorage.getItem('promilia-cluster-enabled') !== 'false';  // 默认启用
+        
         // ==================== 地图初始化 ====================
         console.log('📍 初始化地图...');
         
@@ -804,7 +872,14 @@
             zoomToBoundsOnClick: true,
             spiderfyOnMaxZoom: true
         });
-        map.addLayer(markers);
+        
+        // 根据聚合状态决定是否添加到地图
+        if (clusterEnabled) {
+            map.addLayer(markers);
+            console.log('✅ 标记聚合已启用');
+        } else {
+            console.log('⚠️ 标记聚合已禁用（标记将直接显示在地图上）');
+        }
         
         // 创建彩色占位背景
         function createPlaceholder(mapId) {
@@ -1079,16 +1154,21 @@
             allMarkersData[mapId] = markersToLoad;
             Object.assign(markerData, markersToLoad);
             
-            // 添加到地图
+            // 添加到地图（根据聚合状态决定添加到集群还是直接添加到地图）
             Object.values(markerData).forEach(marker => {
                 const m = L.marker([marker.lat, marker.lng], {
                     icon: createMarkerIcon(marker.type)
                 });
                 m.bindPopup(createPopupContent(marker));
-                markers.addLayer(m);
+                
+                if (clusterEnabled) {
+                    markers.addLayer(m);
+                } else {
+                    map.addLayer(m);
+                }
             });
             
-            console.log(`✅ 加载完成：${Object.keys(markerData).length} 个标记 (${mapId})`);
+            console.log(`✅ 加载完成：${Object.keys(markerData).length} 个标记 (${mapId})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
             updateStats();
         }
         
@@ -1190,13 +1270,18 @@
             // 绑定弹窗
             marker.bindPopup(createPopupContent(data));
             
-            markers.addLayer(marker);
+            // 根据聚合状态决定添加到集群还是直接添加到地图
+            if (clusterEnabled) {
+                markers.addLayer(marker);
+            } else {
+                map.addLayer(marker);
+            }
             
             // 自动保存
             saveToLocalStorage();
             updateStats();
             
-            console.log(`✅ 添加标记：${id} (${type})`);
+            console.log(`✅ 添加标记：${id} (${type})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
             return marker;
         }
         
@@ -1732,6 +1817,42 @@
                 // 清除 URL 中的 hash
                 history.replaceState(null, null, window.location.pathname);
             }
+        }
+        
+        // ==================== 标记聚合开关事件监听（Issue #1） ====================
+        const clusterToggle = document.getElementById('cluster-toggle');
+        if (clusterToggle) {
+            // 设置初始状态
+            clusterToggle.checked = clusterEnabled;
+            
+            // 监听开关变化
+            clusterToggle.addEventListener('change', function() {
+                clusterEnabled = this.checked;
+                localStorage.setItem('promilia-cluster-enabled', clusterEnabled);
+                
+                if (clusterEnabled) {
+                    // 启用聚合：将标记移到集群
+                    console.log('✅ 启用标记聚合');
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                            markers.addLayer(layer);
+                        }
+                    });
+                    map.addLayer(markers);
+                    showToast('已启用标记聚合', 'success');
+                } else {
+                    // 禁用聚合：将标记移到地图
+                    console.log('⚠️ 禁用标记聚合');
+                    markers.eachLayer(layer => {
+                        markers.removeLayer(layer);
+                        map.addLayer(layer);
+                    });
+                    map.removeLayer(markers);
+                    showToast('已禁用标记聚合', 'success');
+                }
+            });
+            console.log('✅ 聚合开关已初始化');
         }
         
         // ==================== 启动 ====================
