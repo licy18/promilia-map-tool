@@ -923,21 +923,21 @@
                     tileOverlays = [];
                 }
                 
-                // 创建 TileLayer
+                // 创建 TileLayer（使用 Simple CRS）
                 tileLayer = L.tileLayer(config.tileUrl, {
                     minZoom: config.minZoom || 0,
                     maxZoom: config.maxZoom || 2,
                     tileSize: 256,
-                    bounds: [[0, 0], [config.height, config.width]],
                     noWrap: true,
-                    tms: false
+                    bounds: [[0, 0], [config.height, config.width]],
+                    crs: L.CRS.Simple
                 });
                 
                 tileLayer.addTo(map);
+                
+                // 设置地图缩放范围和视图
                 map.setMinZoom(config.minZoom || 0);
                 map.setMaxZoom(config.maxZoom || 2);
-                
-                // 设置初始视图
                 map.fitBounds([[0, 0], [config.height, config.width]]);
                 
                 console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
