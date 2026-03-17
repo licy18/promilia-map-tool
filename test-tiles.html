@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试瓦片加载</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 600px; width: 600px; border: 2px solid #333; }
+        .info { margin: 10px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🗺️ 多层瓦片测试</h1>
+    <div class="info">
+        <p>瓦片目录：<code>maps/xinaya-tiles-multi/</code></p>
+        <p>格式：<code>{z}/{x}/{y}.png</code></p>
+        <p>CRS: <code>L.CRS.Simple</code></p>
+        <p>Bounds: <code>[[0, 0], [1024, 1024]]</code></p>
+    </div>
+    <div id="map"></div>
+    <div class="info">
+        <p id="status">加载中...</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 创建地图（Simple CRS）
+        const map = L.map('map', {
+            crs: L.CRS.Simple,
+            minZoom: 0,
+            maxZoom: 2
+        });
+
+        // 加载瓦片
+        const tileLayer = L.tileLayer('maps/xinaya-tiles-multi/{z}/{x}/{y}.png', {
+            minZoom: 0,
+            maxZoom: 2,
+            tileSize: 256,
+            noWrap: true,
+            tms: false,
+            crs: L.CRS.Simple,
+            bounds: [[0, 0], [1024, 1024]]
+        });
+
+        tileLayer.addTo(map);
+
+        // 设置视图
+        map.setView([512, 512], 0);
+
+        // 状态显示
+        tileLayer.on('load', function() {
+            document.getElementById('status').innerHTML = '✅ 瓦片加载成功！';
+            document.getElementById('status').style.color = 'green';
+        });
+
+        tileLayer.on('error', function(e) {
+            document.getElementById('status').innerHTML = '❌ 瓦片加载失败：' + e.message;
+            document.getElementById('status').style.color = 'red';
+        });
+
+        // 显示坐标
+        map.on('mousemove', function(e) {
+            document.getElementById('status').innerHTML = 
+                `📍 坐标：[${e.latlng.lat.toFixed(1)}, ${e.latlng.lng.toFixed(1)}] Zoom: ${map.getZoom()}`;
+        });
+    </script>
+</body>
+</html>
