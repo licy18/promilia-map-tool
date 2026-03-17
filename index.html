@@ -816,12 +816,18 @@
                 name: '新芽山谷（多层）',
                 width: 1024,
                 height: 1024,
-                tileUrl: 'maps/xinaya-tiles-multi/{z}/{x}/{y}.png',
+                tileUrl: 'maps/xinaya-tiles-multi/{z}/{x}_{y}.png',
                 minZoom: 0,
                 maxZoom: 2,
                 storageKey: 'promilia-markers-xinaya-multi',
                 color: '#5cb85c',
-                type: 'tileLayer'
+                type: 'tileLayer',
+                // 自定义瓦片尺寸（非标准 256）
+                tileSizes: {
+                    0: 1024,  // zoom 0: 1024×1024
+                    1: 512,   // zoom 1: 512×512
+                    2: 256    // zoom 2: 256×256
+                }
             },
             fulisi: {
                 name: '弗利斯 (Fleece)',
@@ -978,8 +984,8 @@
                 tileLayer = null;
             }
             
-            // 边界
-            const bounds = [[0, 0], [config.height, config.width]];
+            // 边界（Simple CRS: [[x1, y1], [x2, y2]]）
+            const bounds = [[0, 0], [config.width, config.height]];
             
             // 根据地图类型加载（单张图片 or 单层瓦片 or 多层瓦片）
             if (config.type === 'tileLayer' && config.tileUrl) {
@@ -998,22 +1004,66 @@
                     tileOverlays = [];
                 }
                 
-                // 创建 TileLayer（使用 Simple CRS）
-                tileLayer = L.tileLayer(config.tileUrl, {
-                    minZoom: config.minZoom || 0,
-                    maxZoom: config.maxZoom || 2,
-                    tileSize: 256,
-                    noWrap: true,
-                    bounds: [[0, 0], [config.height, config.width]],
-                    crs: L.CRS.Simple
-                });
+                // 创建 TileLayer（Simple CRS 下使用自定义瓦片网格）
+                // 注意：CRS 是 map 的属性，不是 TileLayer 的属性
                 
-                tileLayer.addTo(map);
+                // 检查是否有自定义瓦片尺寸配置
+                if (config.tileSizes) {
+                    // === 自定义瓦片尺寸（非标准 256） ===
+                    console.log(`  📐 使用自定义瓦片尺寸:`, config.tileSizes);
+                    
+                    // 使用 GridLayer 自定义瓦片加载
+                    tileLayer = L.gridLayer({
+                        minZoom: config.minZoom || 0,
+                        maxZoom: config.maxZoom || 2,
+                        tileSize: 256,
+                        noWrap: true,
+                        bounds: [[0, 0], [config.width, config.height]]
+                    });
+                    
+                    // 自定义瓦片创建逻辑
+                    tileLayer.createTile = function(coords, done) {
+                        const tile = document.createElement('img');
+                        const zoom = coords.z;
+                        const actualTileSize = config.tileSizes[zoom] || 256;
+                        
+                        // 计算实际瓦片坐标（考虑不同 zoom 级别的瓦片尺寸）
+                        const scale = actualTileSize / 256;
+                        const actualX = Math.floor(coords.x / scale);
+                        const actualY = Math.floor(coords.y / scale);
+                        
+                        // 生成瓦片 URL
+                        const url = config.tileUrl
+                            .replace('{z}', zoom)
+                            .replace('{x}', actualX)
+                            .replace('{y}', actualY);
+                        
+                        console.log(`  🔍 瓦片：z=${zoom}, L(${coords.x},${coords.y}) → 实际 (${actualX},${actualY})`);
+                        
+                        tile.onload = () => done(null, tile);
+                        tile.onerror = (e) => done(e, tile);
+                        tile.src = url;
+                        return tile;
+                    };
+                    
+                    tileLayer.addTo(map);
+                } else {
+                    // === 标准瓦片尺寸（256×256） ===
+                    tileLayer = L.tileLayer(config.tileUrl, {
+                        minZoom: config.minZoom || 0,
+                        maxZoom: config.maxZoom || 2,
+                        tileSize: 256,
+                        noWrap: true,
+                        tms: false,
+                        bounds: [[0, 0], [config.width, config.height]]
+                    });
+                    tileLayer.addTo(map);
+                }
                 
                 // 设置地图缩放范围和视图
                 map.setMinZoom(config.minZoom || 0);
                 map.setMaxZoom(config.maxZoom || 2);
-                map.fitBounds([[0, 0], [config.height, config.width]]);
+                map.fitBounds([[0, 0], [config.width, config.height]]);
                 
                 console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
                 
