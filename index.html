@@ -745,15 +745,7 @@
                 tileSize: 1024,
                 storageKey: 'promilia-markers-xinaya',
                 color: '#5cb85c',
-                type: 'tiles',
-                // 瓦片坐标映射（文件索引 → 实际坐标）
-                tileCoords: [
-                    [(0, 0), (0, 1), (0, -1), (0, -2)],
-                    [(1, 0), (-1, 0), (1, 1), (1, -1)],
-                    [(-1, 1), (-1, -1), (1, -2), (-1, -2)],
-                    [(-2, 0), (-2, 1), (-2, -1), (-2, -2)]
-                ],
-                minCoord: -2  // 最小坐标值
+                type: 'tiles'
             },
             xinaya_multi: {
                 name: '新芽山谷（多层）',
@@ -761,7 +753,7 @@
                 height: 4096,
                 tileUrl: 'maps/xinaya-tiles-multi/{z}/{x}/{y}.png',
                 minZoom: 0,
-                maxZoom: 2,  // 0-2 共 3 个层级
+                maxZoom: 2,
                 storageKey: 'promilia-markers-xinaya-multi',
                 color: '#5cb85c',
                 type: 'tileLayer'
@@ -942,7 +934,7 @@
                 console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
                 
             } else if (config.type === 'tiles' && config.tiles) {
-                // === 单层瓦片地图加载（带坐标映射） ===
+                // === 单层瓦片地图加载（简单行列） ===
                 console.log(`🗺️ 加载单层瓦片地图：${config.name} (${config.tileCols}x${config.tileRows} 瓦片)`);
                 
                 // 移除旧瓦片
@@ -953,22 +945,14 @@
                 
                 const tileSize = config.tileSize || 1024;
                 const tileDir = config.tiles;
-                const tileCoords = config.tileCoords;  // 坐标映射表
-                const minCoord = config.minCoord || -2;
                 
-                // 按坐标映射加载所有瓦片
+                // 按行列顺序加载瓦片
                 for (let row = 0; row < config.tileRows; row++) {
                     for (let col = 0; col < config.tileCols; col++) {
-                        const coord_x = tileCoords[row][col][0];
-                        const coord_y = tileCoords[row][col][1];
                         const tileUrl = `${tileDir}/tile_${row}_${col}.png`;
-                        
-                        // 计算瓦片在地图中的位置
-                        const mapX = (coord_x - minCoord) * tileSize;
-                        const mapY = (coord_y - minCoord) * tileSize;
                         const tileBounds = [
-                            [mapY, mapX],
-                            [mapY + tileSize, mapX + tileSize]
+                            [row * tileSize, col * tileSize],
+                            [(row + 1) * tileSize, (col + 1) * tileSize]
                         ];
                         
                         const testTile = new Image();
