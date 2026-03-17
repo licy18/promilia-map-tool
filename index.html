@@ -749,8 +749,8 @@
             },
             xinaya_multi: {
                 name: '新芽山谷（多层）',
-                width: 4096,
-                height: 4096,
+                width: 1024,
+                height: 1024,
                 tileUrl: 'maps/xinaya-tiles-multi/{z}/{x}/{y}.png',
                 minZoom: 0,
                 maxZoom: 2,
@@ -917,12 +917,18 @@
                     tileLayer = null;
                 }
                 
+                // 移除旧的单层瓦片
+                if (tileOverlays.length > 0) {
+                    tileOverlays.forEach(tile => map.removeLayer(tile));
+                    tileOverlays = [];
+                }
+                
                 // 创建 TileLayer
                 tileLayer = L.tileLayer(config.tileUrl, {
                     minZoom: config.minZoom || 0,
                     maxZoom: config.maxZoom || 2,
                     tileSize: 256,
-                    bounds: bounds,
+                    bounds: [[0, 0], [config.height, config.width]],
                     noWrap: true,
                     tms: false
                 });
@@ -930,6 +936,9 @@
                 tileLayer.addTo(map);
                 map.setMinZoom(config.minZoom || 0);
                 map.setMaxZoom(config.maxZoom || 2);
+                
+                // 设置初始视图
+                map.fitBounds([[0, 0], [config.height, config.width]]);
                 
                 console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
                 
