@@ -1173,16 +1173,16 @@
                     }
                 }
                 
-                // 超时保护
+                // 超时保护（增加超时时间到 15 秒）
                 setTimeout(() => {
                     if (tileOverlays.length === 0) {
-                        console.log(`⚠️ 瓦片加载超时，使用占位背景`);
+                        console.log(`⚠️ 瓦片加载超时（>15s），使用占位背景`);
                         const placeholderImage = createPlaceholder(mapId);
                         mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
                     } else {
                         console.log(`✅ 单层瓦片地图加载完成：${tileOverlays.length} 张瓦片`);
                     }
-                }, 5000);
+                }, 15000);  // 15 秒超时
                 
             } else {
                 // === 单张图片地图加载 ===
@@ -1203,11 +1203,11 @@
                 
                 setTimeout(() => {
                     if (!mapOverlay) {
-                        console.log(`⚠️ 地图图片超时，使用占位背景`);
+                        console.log(`⚠️ 地图图片超时（>15s），使用占位背景`);
                         const placeholderImage = createPlaceholder(mapId);
                         mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
                     }
-                }, 3000);
+                }, 15000);  // 15 秒超时
             }
             
             // 恢复视图（如果有保存的视图）
