@@ -1657,15 +1657,41 @@
                 maps: {}
             };
             
-            // 收集所有地图的数据
+            // 先保存当前地图（确保最新数据写入 localStorage）
+            saveCurrentMapMarkers();
+            
+            // 收集所有地图的数据（直接从 localStorage 读取）
+            let totalMarkers = 0;
             Object.keys(MAP_CONFIGS).forEach(mapId => {
                 const config = MAP_CONFIGS[mapId];
-                const markers = allMarkersData[mapId] || {};
-                exportData.maps[mapId] = {
-                    mapName: config.name,
-                    markers: Object.values(markers),
-                    counter: markerIdCounter
-                };
+                const storageKey = config.storageKey;
+                
+                try {
+                    const saved = localStorage.getItem(storageKey);
+                    let markers = [];
+                    
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        markers = Object.values(data.markers || {});
+                    }
+                    
+                    exportData.maps[mapId] = {
+                        mapName: config.name,
+                        markers: markers,
+                        markerCount: markers.length
+                    };
+                    
+                    totalMarkers += markers.length;
+                    console.log(`📊 ${config.name}: ${markers.length} 个标记`);
+                } catch (e) {
+                    console.error(`❌ 读取 ${config.name} 失败:`, e);
+                    exportData.maps[mapId] = {
+                        mapName: config.name,
+                        markers: [],
+                        markerCount: 0,
+                        error: e.message
+                    };
+                }
             });
             
             const json = JSON.stringify(exportData, null, 2);
@@ -1679,9 +1705,6 @@
             
             URL.revokeObjectURL(url);
             
-            // 统计导出的标记数
-            let totalMarkers = 0;
-            Object.values(exportData.maps).forEach(m => totalMarkers += m.markers.length);
             showToast(`已导出 ${totalMarkers} 个标记（${Object.keys(exportData.maps).length} 张地图）`, 'success');
         };
         
