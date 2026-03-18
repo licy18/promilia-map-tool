@@ -1171,7 +1171,7 @@
                 }
                 
                 // 超时保护（增加超时时间到 15 秒）
-                setTimeout(() => {
+                let tileLoadTimeout = setTimeout(() => {
                     if (tileOverlays.length === 0) {
                         console.log(`⚠️ 瓦片加载超时（>15s），使用占位背景`);
                         const placeholderImage = createPlaceholder(mapId);
@@ -1181,29 +1181,45 @@
                     }
                 }, 15000);  // 15 秒超时
                 
+                // 检查是否所有瓦片都已加载
+                const totalTiles = config.tileRows * config.tileCols;
+                const checkAllTilesLoaded = setInterval(() => {
+                    if (tileOverlays.length === totalTiles) {
+                        console.log(`✅ 所有瓦片加载完成，清除超时检查`);
+                        clearTimeout(tileLoadTimeout);
+                        clearInterval(checkAllTilesLoaded);
+                    }
+                }, 500);
+                
             } else {
                 // === 单张图片地图加载 ===
                 const mapImageUrl = config.image;
                 const testImg = new Image();
+                let imageLoaded = false;
+                
                 testImg.onload = function() {
                     console.log(`✅ 地图图片加载成功：${mapImageUrl}`);
+                    imageLoaded = true;
                     if (mapOverlay) map.removeLayer(mapOverlay);
                     mapOverlay = L.imageOverlay(mapImageUrl, bounds).addTo(map);
                 };
                 testImg.onerror = function() {
                     console.log(`⚠️ 地图图片加载失败 (${mapImageUrl})，使用占位背景`);
+                    imageLoaded = true;
                     if (mapOverlay) map.removeLayer(mapOverlay);
                     const placeholderImage = createPlaceholder(mapId);
                     mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
                 };
                 testImg.src = mapImageUrl;
                 
+                // 超时保护（增加超时时间到 15 秒）
                 setTimeout(() => {
-                    if (!mapOverlay) {
+                    if (!imageLoaded) {
                         console.log(`⚠️ 地图图片超时（>15s），使用占位背景`);
                         const placeholderImage = createPlaceholder(mapId);
                         mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
                     }
+                    // 如果已加载成功，不执行任何操作（避免覆盖）
                 }, 15000);  // 15 秒超时
             }
             
@@ -1476,8 +1492,21 @@
         // 清空所有标记
         window.clearAllMarkers = function() {
             if (confirm('确定要清空所有标记吗？此操作不可恢复！')) {
+                // 清空集群中的标记
                 markers.clearLayers();
+                
+                // 清空当前地图的标记数据
                 Object.keys(markerData).forEach(key => delete markerData[key]);
+                
+                // 清空内存中的所有地图数据
+                if (currentMapId) {
+                    allMarkersData[currentMapId] = {};
+                }
+                
+                // 重置标记计数器
+                markerIdCounter = 0;
+                
+                // 保存到 localStorage
                 saveToLocalStorage();
                 updateStats();
                 showToast('已清空所有标记', 'success');
