@@ -355,6 +355,32 @@
         input:checked + .slider:before {
             transform: translateX(24px);
         }
+        
+        /* 分类折叠 */
+        .category-header {
+            user-select: none;
+            transition: background 0.2s;
+        }
+        
+        .category-header:hover {
+            background: #1a4a7a !important;
+        }
+        
+        .category-header .fa-chevron-down {
+            transition: transform 0.3s;
+        }
+        
+        .category-header.collapsed .fa-chevron-down {
+            transform: rotate(-90deg);
+        }
+        
+        .category-content {
+            transition: all 0.3s;
+        }
+        
+        .category-content.collapsed {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -393,86 +419,85 @@
                         </div>
                     </div>
                     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #1a4a7a;">
+                        <div style="color: #00d9ff; font-size: 0.75em; font-weight: bold; margin-bottom: 8px;">📊 分类统计</div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
                             <span style="color: #f39c12;">📦 宝箱:</span>
                             <span id="count-chest">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #a55eea;">🧩 解谜:</span>
-                            <span id="count-puzzle">0</span>
+                            <span style="color: #3498db;">🧭 探索:</span>
+                            <span id="count-explore">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #3498db;">📜 任务:</span>
-                            <span id="count-quest">0</span>
+                            <span style="color: #ff6b9d;">🐾 生物:</span>
+                            <span id="count-creature">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #2d3436;">🐱 乌咪:</span>
-                            <span id="count-umi">0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #ffeaa7;">🥚 蛋:</span>
-                            <span id="count-egg">0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #ff6b9d;">🐾 奇波:</span>
-                            <span id="count-chipo">0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #e91e63;">🌸 采集:</span>
-                            <span id="count-flower">0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #e74c3c;">💀 敌人:</span>
-                            <span id="count-enemy">0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #9b59b6;">🚪 传送:</span>
-                            <span id="count-teleport">0</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                            <span style="color: #2ecc71;">⭐ 自定义:</span>
-                            <span id="count-custom">0</span>
-                        </div>
-                        <!-- AP 专用统计 -->
-                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #00bfff;">
-                            <div style="color: #00bfff; font-size: 0.75em; font-weight: bold; margin-bottom: 5px;">🌟 蓝色星原旅谣</div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                                <span style="color: #00bfff;">⭐ 星脉节点:</span>
-                                <span id="count-ap_star">0</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                                <span style="color: #1e90ff;">🐟 钓鱼点:</span>
-                                <span id="count-ap_fish">0</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                                <span style="color: #ff4500;">⚔️ 奇波对决:</span>
-                                <span id="count-ap_battle">0</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                                <span style="color: #ffd700;">🥚 奇波蛋:</span>
-                                <span id="count-ap_egg">0</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
-                                <span style="color: #ffd700;">📦 金宝箱:</span>
-                                <span id="count-ap_chest_gold">0</span>
-                            </div>
+                            <span style="color: #95a5a6;">🏷️ 其他:</span>
+                            <span id="count-other">0</span>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 标记类型 -->
+            <!-- 标记类型（分类折叠） -->
             <div class="section">
                 <h2><i class="fas fa-map-marker-alt"></i> 标记类型</h2>
-                <div class="marker-types" id="marker-types">
-                    <div class="marker-type" data-type="none" data-color="#888" data-icon="fa-mouse-pointer">
-                        <i class="fas fa-mouse-pointer" style="color: #888;"></i>
-                        <span>浏览</span>
+                
+                <!-- 浏览模式 -->
+                <div class="marker-type" data-type="none" data-color="#888" data-icon="fa-mouse-pointer" style="margin-bottom: 15px;">
+                    <i class="fas fa-mouse-pointer" style="color: #888;"></i>
+                    <span>浏览模式</span>
+                </div>
+                
+                <!-- 宝箱类 -->
+                <div class="category-header" data-category="chest" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-gift" style="color: #f39c12;"></i>
+                        <span style="color: #eee; font-weight: bold;">宝箱</span>
                     </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="chest" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
                     <div class="marker-type" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
                         <i class="fas fa-gift" style="color: #f39c12;"></i>
                         <span>宝箱</span>
                     </div>
+                    <div class="marker-type" data-type="chest_wood" data-color="#8b4513" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #8b4513;"></i>
+                        <span>木宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_iron" data-color="#708090" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #708090;"></i>
+                        <span>铁宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_silver" data-color="#c0c0c0" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #c0c0c0;"></i>
+                        <span>银宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_gold" data-color="#ffd700" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #ffd700;"></i>
+                        <span>金宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_holy" data-color="#e6e6fa" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #e6e6fa;"></i>
+                        <span>神圣箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_dark" data-color="#4b0082" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #4b0082;"></i>
+                        <span>暗黑箱</span>
+                    </div>
+                </div>
+                
+                <!-- 探索类 -->
+                <div class="category-header" data-category="explore" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-compass" style="color: #3498db;"></i>
+                        <span style="color: #eee; font-weight: bold;">探索</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="explore" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
                     <div class="marker-type" data-type="puzzle" data-color="#a55eea" data-icon="fa-puzzle-piece">
                         <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
                         <span>解谜</span>
@@ -481,6 +506,25 @@
                         <i class="fas fa-scroll" style="color: #3498db;"></i>
                         <span>任务</span>
                     </div>
+                    <div class="marker-type" data-type="flower" data-color="#e91e63" data-icon="fa-fan">
+                        <i class="fas fa-fan" style="color: #e91e63;"></i>
+                        <span>采集</span>
+                    </div>
+                    <div class="marker-type" data-type="teleport" data-color="#9b59b6" data-icon="fa-door-open">
+                        <i class="fas fa-door-open" style="color: #9b59b6;"></i>
+                        <span>传送</span>
+                    </div>
+                </div>
+                
+                <!-- 生物类 -->
+                <div class="category-header" data-category="creature" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span style="color: #eee; font-weight: bold;">生物</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="creature" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
                     <div class="marker-type" data-type="umi" data-color="#2d3436" data-icon="fa-cat">
                         <i class="fas fa-cat" style="color: #2d3436;"></i>
                         <span>乌咪</span>
@@ -493,172 +537,180 @@
                         <i class="fas fa-paw" style="color: #ff6b9d;"></i>
                         <span>奇波</span>
                     </div>
-                    <div class="marker-type" data-type="flower" data-color="#e91e63" data-icon="fa-fan">
-                        <i class="fas fa-fan" style="color: #e91e63;"></i>
-                        <span>采集</span>
+                    <div class="marker-type" data-type="chipo_battle" data-color="#ff4500" data-icon="fa-fist-raised">
+                        <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
+                        <span>奇波对决</span>
                     </div>
+                    <div class="marker-type" data-type="chipo_egg" data-color="#ffd700" data-icon="fa-egg">
+                        <i class="fas fa-egg" style="color: #ffd700;"></i>
+                        <span>奇波蛋</span>
+                    </div>
+                </div>
+                
+                <!-- 其他 -->
+                <div class="category-header" data-category="other" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-ellipsis-h" style="color: #95a5a6;"></i>
+                        <span style="color: #eee; font-weight: bold;">其他</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="other" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
                     <div class="marker-type" data-type="enemy" data-color="#e74c3c" data-icon="fa-skull">
                         <i class="fas fa-skull" style="color: #e74c3c;"></i>
                         <span>敌人</span>
                     </div>
-                    <div class="marker-type" data-type="teleport" data-color="#9b59b6" data-icon="fa-door-open">
-                        <i class="fas fa-door-open" style="color: #9b59b6;"></i>
-                        <span>传送</span>
+                    <div class="marker-type" data-type="star" data-color="#00bfff" data-icon="fa-map-marker-alt">
+                        <i class="fas fa-map-marker-alt" style="color: #00bfff;"></i>
+                        <span>星脉节点</span>
+                    </div>
+                    <div class="marker-type" data-type="fish" data-color="#1e90ff" data-icon="fa-fish">
+                        <i class="fas fa-fish" style="color: #1e90ff;"></i>
+                        <span>钓鱼点</span>
                     </div>
                     <div class="marker-type" data-type="custom" data-color="#2ecc71" data-icon="fa-star">
                         <i class="fas fa-star" style="color: #2ecc71;"></i>
                         <span>自定义</span>
                     </div>
-                    <!-- 蓝色星原旅谣（AP）专用标记 -->
-                    <div style="grid-column: 1/-1; margin-top: 15px; padding: 10px; background: linear-gradient(135deg, #1a3a5c, #0d2137); border-radius: 8px; border: 2px solid #00bfff;">
-                        <div style="color: #00bfff; font-weight: bold; margin-bottom: 10px; text-align: center;">
-                            🌟 蓝色星原旅谣（AP）专用
-                        </div>
-                        <div class="marker-types" style="grid-template-columns: repeat(5, 1fr); gap: 8px;">
-                            <div class="marker-type" data-type="ap_star" data-color="#00bfff" data-icon="fa-map-marker-alt">
-                                <i class="fas fa-map-marker-alt" style="color: #00bfff;"></i>
-                                <span>星脉节点</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_fish" data-color="#1e90ff" data-icon="fa-fish">
-                                <i class="fas fa-fish" style="color: #1e90ff;"></i>
-                                <span>钓鱼点</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_battle" data-color="#ff4500" data-icon="fa-fist-raised">
-                                <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
-                                <span>奇波对决</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_egg" data-color="#ffd700" data-icon="fa-egg">
-                                <i class="fas fa-egg" style="color: #ffd700;"></i>
-                                <span>奇波蛋</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_chest_wood" data-color="#8b4513" data-icon="fa-box">
-                                <i class="fas fa-box" style="color: #8b4513;"></i>
-                                <span>木宝箱</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_chest_iron" data-color="#708090" data-icon="fa-box">
-                                <i class="fas fa-box" style="color: #708090;"></i>
-                                <span>铁宝箱</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_chest_silver" data-color="#c0c0c0" data-icon="fa-box">
-                                <i class="fas fa-box" style="color: #c0c0c0;"></i>
-                                <span>银宝箱</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_chest_gold" data-color="#ffd700" data-icon="fa-box">
-                                <i class="fas fa-box" style="color: #ffd700;"></i>
-                                <span>金宝箱</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_chest_holy" data-color="#e6e6fa" data-icon="fa-box">
-                                <i class="fas fa-box" style="color: #e6e6fa;"></i>
-                                <span>神圣箱</span>
-                            </div>
-                            <div class="marker-type" data-type="ap_chest_dark" data-color="#4b0082" data-icon="fa-box">
-                                <i class="fas fa-box" style="color: #4b0082;"></i>
-                                <span>暗黑箱</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
+                
                 <div style="margin-top: 10px; padding: 10px; background: #0f3460; border-radius: 6px; font-size: 0.85em;">
                     <i class="fas fa-info-circle" style="color: #00d9ff;"></i>
                     <span id="marker-tip" style="color: #aaa;">请选择一个标记类型后点击地图</span>
                 </div>
             </div>
             
-            <!-- 筛选器 -->
+            <!-- 筛选器（分类折叠） -->
             <div class="section">
                 <h2><i class="fas fa-filter"></i> 筛选显示</h2>
-                <div class="marker-types" id="filter-types">
-                    <div class="marker-type active" data-type="all">
-                        <i class="fas fa-eye"></i>
-                        <span>全部</span>
+                
+                <!-- 全部显示 -->
+                <div class="marker-type active" data-type="all" data-category="all" style="margin-bottom: 15px;">
+                    <i class="fas fa-eye"></i>
+                    <span>全部显示</span>
+                </div>
+                
+                <!-- 宝箱类筛选 -->
+                <div class="category-header" data-category="chest-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-gift" style="color: #f39c12;"></i>
+                        <span style="color: #eee; font-weight: bold;">宝箱</span>
                     </div>
-                    <div class="marker-type active" data-type="chest">
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="chest-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type active" data-type="chest" data-category="chest">
                         <i class="fas fa-gift" style="color: #f39c12;"></i>
                         <span>宝箱</span>
                     </div>
-                    <div class="marker-type active" data-type="puzzle">
+                    <div class="marker-type active" data-type="chest_wood" data-category="chest">
+                        <i class="fas fa-box" style="color: #8b4513;"></i>
+                        <span>木</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_iron" data-category="chest">
+                        <i class="fas fa-box" style="color: #708090;"></i>
+                        <span>铁</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_silver" data-category="chest">
+                        <i class="fas fa-box" style="color: #c0c0c0;"></i>
+                        <span>银</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_gold" data-category="chest">
+                        <i class="fas fa-box" style="color: #ffd700;"></i>
+                        <span>金</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_holy" data-category="chest">
+                        <i class="fas fa-box" style="color: #e6e6fa;"></i>
+                        <span>神圣</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_dark" data-category="chest">
+                        <i class="fas fa-box" style="color: #4b0082;"></i>
+                        <span>暗黑</span>
+                    </div>
+                </div>
+                
+                <!-- 探索类筛选 -->
+                <div class="category-header" data-category="explore-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-compass" style="color: #3498db;"></i>
+                        <span style="color: #eee; font-weight: bold;">探索</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="explore-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type active" data-type="puzzle" data-category="explore">
                         <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
                         <span>解谜</span>
                     </div>
-                    <div class="marker-type active" data-type="quest">
+                    <div class="marker-type active" data-type="quest" data-category="explore">
                         <i class="fas fa-scroll" style="color: #3498db;"></i>
                         <span>任务</span>
                     </div>
-                    <div class="marker-type active" data-type="umi">
-                        <i class="fas fa-cat" style="color: #2d3436;"></i>
-                        <span>乌咪</span>
-                    </div>
-                    <div class="marker-type active" data-type="egg">
-                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                        <span>蛋</span>
-                    </div>
-                    <div class="marker-type active" data-type="chipo">
-                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
-                        <span>奇波</span>
-                    </div>
-                    <div class="marker-type active" data-type="flower">
+                    <div class="marker-type active" data-type="flower" data-category="explore">
                         <i class="fas fa-fan" style="color: #e91e63;"></i>
                         <span>采集</span>
                     </div>
-                    <div class="marker-type active" data-type="enemy">
-                        <i class="fas fa-skull" style="color: #e74c3c;"></i>
-                        <span>敌人</span>
-                    </div>
-                    <div class="marker-type active" data-type="teleport">
+                    <div class="marker-type active" data-type="teleport" data-category="explore">
                         <i class="fas fa-door-open" style="color: #9b59b6;"></i>
                         <span>传送</span>
                     </div>
-                    <div class="marker-type active" data-type="custom">
+                </div>
+                
+                <!-- 生物类筛选 -->
+                <div class="category-header" data-category="creature-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span style="color: #eee; font-weight: bold;">生物</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="creature-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type active" data-type="umi" data-category="creature">
+                        <i class="fas fa-cat" style="color: #2d3436;"></i>
+                        <span>乌咪</span>
+                    </div>
+                    <div class="marker-type active" data-type="egg" data-category="creature">
+                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                        <span>蛋</span>
+                    </div>
+                    <div class="marker-type active" data-type="chipo" data-category="creature">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span>奇波</span>
+                    </div>
+                    <div class="marker-type active" data-type="chipo_battle" data-category="creature">
+                        <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
+                        <span>对决</span>
+                    </div>
+                    <div class="marker-type active" data-type="chipo_egg" data-category="creature">
+                        <i class="fas fa-egg" style="color: #ffd700;"></i>
+                        <span>奇波蛋</span>
+                    </div>
+                </div>
+                
+                <!-- 其他筛选 -->
+                <div class="category-header" data-category="other-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-ellipsis-h" style="color: #95a5a6;"></i>
+                        <span style="color: #eee; font-weight: bold;">其他</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="other-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type active" data-type="enemy" data-category="other">
+                        <i class="fas fa-skull" style="color: #e74c3c;"></i>
+                        <span>敌人</span>
+                    </div>
+                    <div class="marker-type active" data-type="star" data-category="other">
+                        <i class="fas fa-map-marker-alt" style="color: #00bfff;"></i>
+                        <span>星脉</span>
+                    </div>
+                    <div class="marker-type active" data-type="fish" data-category="other">
+                        <i class="fas fa-fish" style="color: #1e90ff;"></i>
+                        <span>钓鱼</span>
+                    </div>
+                    <div class="marker-type active" data-type="custom" data-category="other">
                         <i class="fas fa-star" style="color: #2ecc71;"></i>
                         <span>自定义</span>
-                    </div>
-                    <!-- AP 专用筛选 -->
-                    <div style="grid-column: 1/-1; margin-top: 15px; padding: 10px; background: linear-gradient(135deg, #1a3a5c, #0d2137); border-radius: 8px; border: 2px solid #00bfff;">
-                        <div style="color: #00bfff; font-weight: bold; margin-bottom: 10px; text-align: center;">
-                            🌟 AP 专用筛选
-                        </div>
-                        <div class="marker-types" style="grid-template-columns: repeat(5, 1fr); gap: 8px;">
-                            <div class="marker-type active" data-type="ap_star">
-                                <i class="fas fa-map-marker-alt" style="color: #00bfff;"></i>
-                                <span>星脉节点</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_fish">
-                                <i class="fas fa-fish" style="color: #1e90ff;"></i>
-                                <span>钓鱼点</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_battle">
-                                <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
-                                <span>奇波对决</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_egg">
-                                <i class="fas fa-egg" style="color: #ffd700;"></i>
-                                <span>奇波蛋</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_chest_wood">
-                                <i class="fas fa-box" style="color: #8b4513;"></i>
-                                <span>木宝箱</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_chest_iron">
-                                <i class="fas fa-box" style="color: #708090;"></i>
-                                <span>铁宝箱</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_chest_silver">
-                                <i class="fas fa-box" style="color: #c0c0c0;"></i>
-                                <span>银宝箱</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_chest_gold">
-                                <i class="fas fa-box" style="color: #ffd700;"></i>
-                                <span>金宝箱</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_chest_holy">
-                                <i class="fas fa-box" style="color: #e6e6fa;"></i>
-                                <span>神圣箱</span>
-                            </div>
-                            <div class="marker-type active" data-type="ap_chest_dark">
-                                <i class="fas fa-box" style="color: #4b0082;"></i>
-                                <span>暗黑箱</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -732,59 +784,65 @@
         console.log('🗺️ 普罗米利亚地图标记工具 v1.0');
         console.log('🔄 初始化中...');
         
-        // 标记类型配置（按用户指定顺序排列）
+        // 标记类型配置（分类折叠）
         const MARKER_CONFIGS = {
-            // === 普罗米利亚通用标记 ===
-            chest: { icon: 'fa-gift', color: '#f39c12', label: '宝箱' },     // 1. 宝箱
-            puzzle: { icon: 'fa-puzzle-piece', color: '#a55eea', label: '解谜' }, // 2. 解谜
-            quest: { icon: 'fa-scroll', color: '#3498db', label: '任务' },   // 3. 任务
-            umi: { icon: 'fa-cat', color: '#2d3436', label: '乌咪' },        // 4. 乌咪（黑猫）
-            egg: { icon: 'fa-egg', color: '#ffeaa7', label: '蛋' },          // 5. 蛋
-            chipo: { icon: 'fa-paw', color: '#ff6b9d', label: '奇波' },      // 6. 奇波（小动物）
-            flower: { icon: 'fa-fan', color: '#e91e63', label: '采集' },     // 7. 采集
-            enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人' },    // 8. 敌人
-            teleport: { icon: 'fa-door-open', color: '#9b59b6', label: '传送' }, // 9. 传送
-            custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义' },  // 10. 自定义
-            // === 蓝色星原旅谣（AP）专用标记 ===
-            ap_star: { icon: 'fa-map-marker-alt', color: '#00bfff', label: '星脉节点', useImage: true, imagePath: 'icons/ap/star-node.png' },
-            ap_fish: { icon: 'fa-fish', color: '#1e90ff', label: '钓鱼点', useImage: true, imagePath: 'icons/ap/fishing.png' },
-            ap_battle: { icon: 'fa-fist-raised', color: '#ff4500', label: '奇波对决', useImage: true, imagePath: 'icons/ap/chipo-battle.png' },
-            ap_egg: { icon: 'fa-egg', color: '#ffd700', label: '奇波蛋', useImage: true, imagePath: 'icons/ap/chipo-egg.png' },
-            ap_chest_wood: { icon: 'fa-box', color: '#8b4513', label: '木质宝箱' },
-            ap_chest_iron: { icon: 'fa-box', color: '#708090', label: '铁质宝箱' },
-            ap_chest_silver: { icon: 'fa-box', color: '#c0c0c0', label: '银质宝箱' },
-            ap_chest_gold: { icon: 'fa-box', color: '#ffd700', label: '金质宝箱' },
-            ap_chest_holy: { icon: 'fa-box', color: '#e6e6fa', label: '神圣宝箱' },
-            ap_chest_dark: { icon: 'fa-box', color: '#4b0082', label: '暗黑宝箱' }
+            // === 宝箱类 ===
+            chest: { icon: 'fa-gift', color: '#f39c12', label: '宝箱', category: 'chest' },
+            chest_wood: { icon: 'fa-box', color: '#8b4513', label: '木宝箱', category: 'chest' },
+            chest_iron: { icon: 'fa-box', color: '#708090', label: '铁宝箱', category: 'chest' },
+            chest_silver: { icon: 'fa-box', color: '#c0c0c0', label: '银宝箱', category: 'chest' },
+            chest_gold: { icon: 'fa-box', color: '#ffd700', label: '金宝箱', category: 'chest' },
+            chest_holy: { icon: 'fa-box', color: '#e6e6fa', label: '神圣箱', category: 'chest' },
+            chest_dark: { icon: 'fa-box', color: '#4b0082', label: '暗黑箱', category: 'chest' },
+            
+            // === 探索类 ===
+            puzzle: { icon: 'fa-puzzle-piece', color: '#a55eea', label: '解谜', category: 'explore' },
+            quest: { icon: 'fa-scroll', color: '#3498db', label: '任务', category: 'explore' },
+            flower: { icon: 'fa-fan', color: '#e91e63', label: '采集', category: 'explore' },
+            teleport: { icon: 'fa-door-open', color: '#9b59b6', label: '传送', category: 'explore' },
+            
+            // === 生物类 ===
+            umi: { icon: 'fa-cat', color: '#2d3436', label: '乌咪', category: 'creature' },
+            egg: { icon: 'fa-egg', color: '#ffeaa7', label: '蛋', category: 'creature' },
+            chipo: { icon: 'fa-paw', color: '#ff6b9d', label: '奇波', category: 'creature' },
+            chipo_battle: { icon: 'fa-fist-raised', color: '#ff4500', label: '奇波对决', category: 'creature' },
+            chipo_egg: { icon: 'fa-egg', color: '#ffd700', label: '奇波蛋', category: 'creature' },
+            
+            // === 其他 ===
+            enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人', category: 'other' },
+            star: { icon: 'fa-map-marker-alt', color: '#00bfff', label: '星脉节点', category: 'other' },
+            fish: { icon: 'fa-fish', color: '#1e90ff', label: '钓鱼点', category: 'other' },
+            custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义', category: 'other' }
+        };
+        
+        // 分类配置（用于折叠显示）
+        const CATEGORY_CONFIGS = {
+            chest: { label: '宝箱', icon: 'fa-gift', color: '#f39c12' },
+            explore: { label: '探索', icon: 'fa-compass', color: '#3498db' },
+            creature: { label: '生物', icon: 'fa-paw', color: '#ff6b9d' },
+            other: { label: '其他', icon: 'fa-ellipsis-h', color: '#95a5a6' }
         };
         
         // 当前选中的标记类型（默认不选择，避免误触）
         let currentMarkerType = null;
         
-        // 筛选状态（按新顺序）
+        // 筛选状态（按分类）
         const filterState = {
-            all: true,
+            // 分类展开状态
             chest: true,
-            puzzle: true,
-            quest: true,
-            umi: true,
-            egg: true,
-            chipo: true,
-            flower: true,
-            enemy: true,
-            teleport: true,
-            custom: true,
-            // AP 专用
-            ap_star: true,
-            ap_fish: true,
-            ap_battle: true,
-            ap_egg: true,
-            ap_chest_wood: true,
-            ap_chest_iron: true,
-            ap_chest_silver: true,
-            ap_chest_gold: true,
-            ap_chest_holy: true,
-            ap_chest_dark: true
+            explore: true,
+            creature: true,
+            other: true,
+            // 具体类型
+            all: true
+        };
+        
+        // 分类展开状态（用于 UI）
+        const categoryExpanded = {
+            chest: true,
+            explore: true,
+            creature: true,
+            other: true
         };
         
         // 隐藏的标记层（用于筛选）
@@ -1473,15 +1531,20 @@
         });
         
         // ==================== 筛选器功能 ====================
-        document.querySelectorAll('#filter-types .marker-type').forEach(el => {
-            el.addEventListener('click', function() {
+        // 筛选器点击事件（支持分类折叠）
+        document.querySelectorAll('.marker-type[data-type]').forEach(el => {
+            el.addEventListener('click', function(e) {
+                e.stopPropagation();  // 防止触发分类折叠
                 const type = this.dataset.type;
                 
                 if (type === 'all') {
                     // 点击"全部"：切换所有筛选
                     const newState = !filterState.all;
-                    Object.keys(filterState).forEach(k => filterState[k] = newState);
-                    document.querySelectorAll('#filter-types .marker-type').forEach(e => {
+                    Object.keys(filterState).forEach(k => {
+                        if (k !== 'all') filterState[k] = newState;
+                    });
+                    filterState.all = newState;
+                    document.querySelectorAll('.marker-type[data-type]').forEach(e => {
                         e.classList.toggle('active', newState);
                     });
                 } else {
@@ -1490,14 +1553,29 @@
                     this.classList.toggle('active');
                     
                     // 更新"全部"状态
-                    const allActive = Object.values(filterState).slice(1).every(v => v);
+                    const allActive = Object.values(filterState).every(v => v);
                     filterState.all = allActive;
-                    document.querySelector('#filter-types .marker-type[data-type="all"]').classList.toggle('active', allActive);
+                    document.querySelector('.marker-type[data-type="all"]').classList.toggle('active', allActive);
                 }
                 
                 updateMarkerVisibility();
                 saveFilterState();
                 console.log(`🔍 筛选状态：`, filterState);
+            });
+        });
+        
+        // 分类折叠点击事件（筛选器）
+        document.querySelectorAll('.category-header[data-category*="filter"]').forEach(header => {
+            header.addEventListener('click', function() {
+                const category = this.dataset.category;
+                const content = document.querySelector(`.category-content[data-category="${category}"]`);
+                const icon = this.querySelector('.fa-chevron-down');
+                
+                // 切换展开/折叠状态
+                this.classList.toggle('collapsed');
+                content.classList.toggle('collapsed');
+                
+                console.log(`📂 筛选分类 ${category}: ${content.classList.contains('collapsed') ? '折叠' : '展开'}`);
             });
         });
         
@@ -1508,7 +1586,7 @@
         
         // 更新筛选器 UI 显示
         function updateFilterUI() {
-            document.querySelectorAll('#filter-types .marker-type').forEach(el => {
+            document.querySelectorAll('.marker-type[data-type]').forEach(el => {
                 const type = el.dataset.type;
                 const isActive = filterState[type];
                 el.classList.toggle('active', isActive);
@@ -1752,36 +1830,26 @@
             document.getElementById('total-markers').textContent = total;
             document.getElementById('current-map-count').textContent = total;
             
-            // 按类型统计（包含所有标记类型：10 种通用 + 10 种 AP 专用）
+            // 按分类统计
             const counts = { 
-                chest: 0, puzzle: 0, quest: 0, umi: 0, egg: 0, chipo: 0,
-                flower: 0, enemy: 0, teleport: 0, custom: 0,
-                ap_star: 0, ap_fish: 0, ap_battle: 0, ap_egg: 0,
-                ap_chest_wood: 0, ap_chest_iron: 0, ap_chest_silver: 0,
-                ap_chest_gold: 0, ap_chest_holy: 0, ap_chest_dark: 0
+                chest: 0,      // 宝箱类
+                explore: 0,    // 探索类 (puzzle, quest, flower, teleport)
+                creature: 0,   // 生物类 (umi, egg, chipo, chipo_battle, chipo_egg)
+                other: 0       // 其他 (enemy, star, fish, custom)
             };
+            
             Object.values(markerData).forEach(m => {
-                if (counts[m.type] !== undefined) counts[m.type]++;
+                const config = MARKER_CONFIGS[m.type];
+                if (config && config.category) {
+                    counts[config.category]++;
+                }
             });
             
-            // 通用标记统计
+            // 更新分类统计显示
             document.getElementById('count-chest').textContent = counts.chest;
-            document.getElementById('count-puzzle').textContent = counts.puzzle;
-            document.getElementById('count-quest').textContent = counts.quest;
-            document.getElementById('count-umi').textContent = counts.umi;
-            document.getElementById('count-egg').textContent = counts.egg;
-            document.getElementById('count-chipo').textContent = counts.chipo;
-            document.getElementById('count-flower').textContent = counts.flower;
-            document.getElementById('count-enemy').textContent = counts.enemy;
-            document.getElementById('count-teleport').textContent = counts.teleport;
-            document.getElementById('count-custom').textContent = counts.custom;
-            
-            // AP 专用标记统计
-            document.getElementById('count-ap_star').textContent = counts.ap_star;
-            document.getElementById('count-ap_fish').textContent = counts.ap_fish;
-            document.getElementById('count-ap_battle').textContent = counts.ap_battle;
-            document.getElementById('count-ap_egg').textContent = counts.ap_egg;
-            document.getElementById('count-ap_chest_gold').textContent = counts.ap_chest_gold;
+            document.getElementById('count-explore').textContent = counts.explore;
+            document.getElementById('count-creature').textContent = counts.creature;
+            document.getElementById('count-other').textContent = counts.other;
         }
         
         function updateLastSaved() {
@@ -1915,6 +1983,22 @@
             });
             console.log('✅ 聚合开关已初始化');
         }
+        
+        // ==================== 分类折叠事件监听 ====================
+        document.querySelectorAll('.category-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const category = this.dataset.category;
+                const content = document.querySelector(`.category-content[data-category="${category}"]`);
+                const icon = this.querySelector('.fa-chevron-down');
+                
+                // 切换展开/折叠状态
+                this.classList.toggle('collapsed');
+                content.classList.toggle('collapsed');
+                categoryExpanded[category] = !this.classList.contains('collapsed');
+                
+                console.log(`📂 分类 ${category}: ${categoryExpanded[category] ? '展开' : '折叠'}`);
+            });
+        });
         
         // ==================== 启动 ====================
         console.log('🚀 启动应用...');
