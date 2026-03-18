@@ -1661,37 +1661,6 @@
         // saveToLocalStorage 改为 saveCurrentMapMarkers（已在上面定义）
         const saveToLocalStorage = saveCurrentMapMarkers;
         
-        function loadFromLocalStorage() {
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    markerIdCounter = data.counter || 0;
-                    
-                    if (data.markers) {
-                        Object.values(data.markers).forEach(marker => {
-                            markerData[marker.id] = marker;
-                            const m = L.marker([marker.lat, marker.lng], {
-                                icon: createMarkerIcon(marker.type)
-                            });
-                            m.bindPopup(createPopupContent(marker));
-                            
-                            // 根据聚合状态决定添加到集群还是地图
-                            if (clusterEnabled) {
-                                markers.addLayer(m);
-                            } else {
-                                map.addLayer(m);
-                            }
-                        });
-                        updateStats();
-                        console.log(`✅ 加载了 ${Object.keys(data.markers).length} 个标记，聚合：${clusterEnabled ? '启用' : '禁用'}`);
-                    }
-                }
-            } catch (e) {
-                console.error('❌ 加载失败:', e);
-            }
-        }
-        
         // ==================== 导入导出 ====================
         window.exportData = function() {
             // 导出所有地图的完整数据
