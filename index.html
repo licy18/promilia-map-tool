@@ -1294,7 +1294,8 @@
                 const m = L.marker([marker.lat, marker.lng], {
                     icon: createMarkerIcon(marker.type)
                 });
-                m.bindPopup(createPopupContent(marker));
+                const popup = m.bindPopup(createPopupContent(marker));
+                marker.popup = popup.getPopup();  // 重新建立 popup 引用
                 
                 if (clusterEnabled) {
                     markers.addLayer(m);
@@ -1311,15 +1312,22 @@
         function saveCurrentMapMarkers() {
             const storageKey = currentMapConfig.storageKey;
             try {
+                // 创建不含 popup 引用的数据副本（popup 是 DOM 对象，不能被 JSON 序列化）
+                const markersToSave = {};
+                Object.keys(markerData).forEach(key => {
+                    const { popup, ...markerDataWithoutPopup } = markerData[key];
+                    markersToSave[key] = markerDataWithoutPopup;
+                });
+                
                 const data = {
-                    markers: markerData,
+                    markers: markersToSave,
                     counter: markerIdCounter,
                     savedAt: new Date().toISOString()
                 };
-                localStorage.setItem(storageKey, JSON.stringify(data));  // ✅ 修复：序列化对象
-                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markerData));
+                localStorage.setItem(storageKey, JSON.stringify(data));
+                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markersToSave));
                 updateLastSaved();
-                console.log(`💾 已保存 ${currentMapId} 的 ${Object.keys(markerData).length} 个标记`);
+                console.log(`💾 已保存 ${currentMapId} 的 ${Object.keys(markersToSave).length} 个标记`);
             } catch (e) {
                 console.error('❌ 保存失败:', e);
                 showToast('保存失败：存储空间不足', 'error');
