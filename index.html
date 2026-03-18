@@ -583,6 +583,7 @@
             <!-- 筛选器（分类折叠） -->
             <div class="section">
                 <h2><i class="fas fa-filter"></i> 筛选显示</h2>
+                <div id="filter-types">
                 
                 <!-- 全部显示 -->
                 <div class="marker-type active" data-type="all" data-category="all" style="margin-bottom: 15px;">
@@ -733,6 +734,8 @@
                     聚合模式下，缩放时标记会自动聚类显示
                 </div>
             </div>
+            
+            </div>  <!-- 关闭 filter-types -->
             
             <!-- 操作按钮 -->
             <div class="section">
@@ -1510,7 +1513,8 @@
         
         // ==================== 标记类型选择 ====================
         document.querySelectorAll('#marker-types .marker-type').forEach(el => {
-            el.addEventListener('click', function() {
+            el.addEventListener('click', function(e) {
+                e.stopPropagation();  // 防止触发分类折叠
                 document.querySelectorAll('#marker-types .marker-type').forEach(e => e.classList.remove('active'));
                 this.classList.add('active');
                 currentMarkerType = this.dataset.type;
@@ -1531,8 +1535,8 @@
         });
         
         // ==================== 筛选器功能 ====================
-        // 筛选器点击事件（支持分类折叠）
-        document.querySelectorAll('.marker-type[data-type]').forEach(el => {
+        // 筛选器点击事件（支持分类折叠）- 只匹配筛选器区域内的元素
+        document.querySelectorAll('#filter-types .marker-type').forEach(el => {
             el.addEventListener('click', function(e) {
                 e.stopPropagation();  // 防止触发分类折叠
                 const type = this.dataset.type;
@@ -1544,7 +1548,7 @@
                         if (k !== 'all') filterState[k] = newState;
                     });
                     filterState.all = newState;
-                    document.querySelectorAll('.marker-type[data-type]').forEach(e => {
+                    document.querySelectorAll('#filter-types .marker-type').forEach(e => {
                         e.classList.toggle('active', newState);
                     });
                 } else {
@@ -1555,7 +1559,7 @@
                     // 更新"全部"状态
                     const allActive = Object.values(filterState).every(v => v);
                     filterState.all = allActive;
-                    document.querySelector('.marker-type[data-type="all"]').classList.toggle('active', allActive);
+                    document.querySelector('#filter-types .marker-type[data-type="all"]').classList.toggle('active', allActive);
                 }
                 
                 updateMarkerVisibility();
