@@ -369,7 +369,8 @@
                 <select id="map-select" onchange="switchMap(this.value)">
                     <option value="shalulu">🏡 夏露露村</option>
                     <option value="xinaya">🌱 新芽山谷（单层）</option>
-                    <option value="xinaya_multi">🌱 新芽山谷（多层 3 级）</option>
+                    <!-- <option value="xinaya_multi">🌱 新芽山谷（多层 3 级）</option> -->
+                    <!-- 多层地图调试中，请使用 debug/multi-layer-tiles 分支 -->
                     <option value="fulisi">🌾 弗利斯 (Fleece)</option>
                 </select>
                 <div class="map-info">
@@ -812,26 +813,27 @@
                 color: '#5cb85c',
                 type: 'tiles'
             },
-            xinaya_multi: {
-                name: '新芽山谷（多层）',
-                width: 1024,
-                height: 1024,
-                tileUrl: 'maps/xinaya-tiles-multi/{z}/{x}_{y}.png',
-                minZoom: 0,
-                maxZoom: 2,
-                storageKey: 'promilia-markers-xinaya-multi',
-                color: '#5cb85c',
-                type: 'tileLayer',
-                // 每层瓦片数量（非标准）
-                // zoom 0: 1×1 = 1 块 (1024×1024)
-                // zoom 1: 2×2 = 4 块 (512×512)
-                // zoom 2: 4×4 = 16 块 (256×256)
-                gridSizes: {
-                    0: 1,  // 1×1 grid
-                    1: 2,  // 2×2 grid
-                    2: 4   // 4×4 grid
-                }
-            },
+            // xinaya_multi: {
+            //     name: '新芽山谷（多层）',
+            //     width: 1024,
+            //     height: 1024,
+            //     tileUrl: 'maps/xinaya-tiles-multi/{z}/{x}_{y}.png',
+            //     minZoom: 0,
+            //     maxZoom: 2,
+            //     storageKey: 'promilia-markers-xinaya-multi',
+            //     color: '#5cb85c',
+            //     type: 'tileLayer',
+            //     // 每层瓦片数量（非标准）
+            //     // zoom 0: 1×1 = 1 块 (1024×1024)
+            //     // zoom 1: 2×2 = 4 块 (512×512)
+            //     // zoom 2: 4×4 = 16 块 (256×256)
+            //     gridSizes: {
+            //         0: 1,  // 1×1 grid
+            //         1: 2,  // 2×2 grid
+            //         2: 4   // 4×4 grid
+            //     }
+            // },
+            // 注意：多层地图配置已移至 debug/multi-layer-tiles 分支继续调试
             fulisi: {
                 name: '弗利斯 (Fleece)',
                 width: 2048,
