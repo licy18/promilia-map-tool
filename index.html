@@ -1443,11 +1443,24 @@
         window.deleteMarker = function(id) {
             if (markerData[id]) {
                 delete markerData[id];
-                markers.eachLayer(layer => {
-                    if (layer.getPopup() && layer.getPopup().getContent().includes(id)) {
-                        markers.removeLayer(layer);
-                    }
-                });
+                
+                // 从集群或地图中移除标记（根据聚合状态）
+                if (clusterEnabled) {
+                    // 从集群中移除
+                    markers.eachLayer(layer => {
+                        if (layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                            markers.removeLayer(layer);
+                        }
+                    });
+                } else {
+                    // 从地图中直接移除
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                            map.removeLayer(layer);
+                        }
+                    });
+                }
+                
                 saveToLocalStorage();
                 updateStats();
                 showToast('标记已删除', 'success');
@@ -1597,25 +1610,45 @@
             });
         }
         
-        // 更新标记可见性（修复：使用 markerData 而不是从 popup 解析）
+        // 更新标记可见性（支持聚合/非聚合模式）
         function updateMarkerVisibility() {
-            // 先显示所有标记
-            markers.eachLayer(layer => {
-                if (layer instanceof L.Marker) {
-                    markers.removeLayer(layer);
-                }
-            });
-            
-            // 根据筛选状态重新添加
-            Object.values(markerData).forEach(data => {
-                if (filterState[data.type]) {
-                    const marker = L.marker([data.lat, data.lng], {
-                        icon: createMarkerIcon(data.type)
-                    });
-                    marker.bindPopup(createPopupContent(data));
-                    markers.addLayer(marker);
-                }
-            });
+            if (clusterEnabled) {
+                // === 聚合模式：从集群中移除再重新添加 ===
+                markers.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        markers.removeLayer(layer);
+                    }
+                });
+                
+                // 根据筛选状态重新添加到集群
+                Object.values(markerData).forEach(data => {
+                    if (filterState[data.type]) {
+                        const marker = L.marker([data.lat, data.lng], {
+                            icon: createMarkerIcon(data.type)
+                        });
+                        marker.bindPopup(createPopupContent(data));
+                        markers.addLayer(marker);
+                    }
+                });
+            } else {
+                // === 非聚合模式：从地图中移除再重新添加 ===
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        map.removeLayer(layer);
+                    }
+                });
+                
+                // 根据筛选状态重新添加到地图
+                Object.values(markerData).forEach(data => {
+                    if (filterState[data.type]) {
+                        const marker = L.marker([data.lat, data.lng], {
+                            icon: createMarkerIcon(data.type)
+                        });
+                        marker.bindPopup(createPopupContent(data));
+                        map.addLayer(marker);
+                    }
+                });
+            }
         }
         
         // ==================== 本地存储（多地图） ====================
@@ -1636,10 +1669,16 @@
                                 icon: createMarkerIcon(marker.type)
                             });
                             m.bindPopup(createPopupContent(marker));
-                            markers.addLayer(m);
+                            
+                            // 根据聚合状态决定添加到集群还是地图
+                            if (clusterEnabled) {
+                                markers.addLayer(m);
+                            } else {
+                                map.addLayer(m);
+                            }
                         });
                         updateStats();
-                        console.log(`✅ 加载了 ${Object.keys(data.markers).length} 个标记`);
+                        console.log(`✅ 加载了 ${Object.keys(data.markers).length} 个标记，聚合：${clusterEnabled ? '启用' : '禁用'}`);
                     }
                 }
             } catch (e) {
