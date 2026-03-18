@@ -1005,7 +1005,14 @@
             
             // 【关键】切换前保存当前地图的标记数据和视图
             if (currentMapId) {
-                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markerData));
+                // 创建不含 popup 引用的数据副本（popup 是 DOM 对象，不能被 JSON 序列化）
+                const markersToSave = {};
+                Object.keys(markerData).forEach(key => {
+                    const { popup, ...markerDataWithoutPopup } = markerData[key];
+                    markersToSave[key] = markerDataWithoutPopup;
+                });
+                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markersToSave));
+                
                 // 只有在地图已初始化视图后才保存（避免首次加载时报错）
                 try {
                     mapViews[currentMapId] = {
@@ -1568,12 +1575,36 @@
         }
         
         // ==================== 标记类型选择 ====================
+        // 恢复上次选择的标记类型
+        function restoreMarkerType() {
+            const savedType = localStorage.getItem('promilia-marker-type');
+            if (savedType && MARKER_CONFIGS[savedType]) {
+                currentMarkerType = savedType;
+                // 更新 UI
+                document.querySelectorAll('#marker-types .marker-type').forEach(el => {
+                    el.classList.remove('active');
+                    if (el.dataset.type === savedType) {
+                        el.classList.add('active');
+                    }
+                });
+                // 更新提示信息
+                const config = MARKER_CONFIGS[currentMarkerType];
+                const tipEl = document.getElementById('marker-tip');
+                tipEl.textContent = `当前类型：${config.label}，点击地图添加标记`;
+                tipEl.style.color = config.color;
+                console.log(`🔍 恢复标记类型：${currentMarkerType}`);
+            }
+        }
+        
         document.querySelectorAll('#marker-types .marker-type').forEach(el => {
             el.addEventListener('click', function(e) {
                 e.stopPropagation();  // 防止触发分类折叠
                 document.querySelectorAll('#marker-types .marker-type').forEach(e => e.classList.remove('active'));
                 this.classList.add('active');
                 currentMarkerType = this.dataset.type;
+                
+                // 保存到 localStorage
+                localStorage.setItem('promilia-marker-type', currentMarkerType);
                 
                 // 更新提示信息
                 const tipEl = document.getElementById('marker-tip');
@@ -1974,6 +2005,9 @@
         
         // 恢复地图视图（缩放级别和中心点）
         restoreView();
+        
+        // 恢复上次选择的标记类型
+        restoreMarkerType();
         
         // 初始化地图（使用保存的地图 ID，保持缩放）
         loadMap(currentMapId, true);
