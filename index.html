@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
+    <!-- Crypto JS for COS Signature -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -164,6 +167,24 @@
         
         .btn-secondary:hover {
             background: #1a4a7a;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #34ce57;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #138496;
         }
         
         .btn-group {
@@ -750,6 +771,32 @@
                 <button class="btn btn-secondary" onclick="clearAllMarkers()">
                     <i class="fas fa-trash"></i> 清空所有
                 </button>
+            </div>
+            
+            <!-- 云端存储 -->
+            <div class="section">
+                <h2><i class="fas fa-cloud"></i> 云端存储</h2>
+                <button class="btn btn-success" onclick="uploadToCOS()">
+                    <i class="fas fa-cloud-upload-alt"></i> 上传到云端
+                </button>
+                <button class="btn btn-info" onclick="listCOSFiles()">
+                    <i class="fas fa-list"></i> 查看云端文件
+                </button>
+                <button class="btn btn-secondary" onclick="loadFromCOS()" style="margin-top: 8px; width: 100%;">
+                    <i class="fas fa-folder-open"></i> 从文件加载
+                </button>
+                <button class="btn btn-secondary" onclick="loadFromCOSUrl()" style="margin-top: 8px; width: 100%;">
+                    <i class="fas fa-link"></i> 从链接加载
+                </button>
+                <div id="cos-status" style="margin-top: 10px; font-size: 12px; color: #888;"></div>
+                <!-- 云端文件列表 -->
+                <div id="cos-file-list" style="margin-top: 10px; display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="font-size: 12px; color: #4fc3f7;">📦 云端备份文件</strong>
+                        <button onclick="document.getElementById('cos-file-list').style.display='none'" style="background:none;border:none;color:#888;cursor:pointer;">✕</button>
+                    </div>
+                    <div id="cos-files" style="max-height: 300px; overflow-y: auto; font-size: 12px;"></div>
+                </div>
             </div>
             
             <!-- 帮助 -->
@@ -1935,6 +1982,481 @@
             const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             document.getElementById('last-saved').textContent = time;
         }
+        
+        // ==================== 腾讯云 COS 云端存储 ====================
+        // COS 配置
+        const COS_CONFIG = {
+            Bucket: 'kimicup-1412418695',
+            Region: 'ap-shanghai',
+            SecretId: 'YOUR_SECRET_ID',
+            SecretKey: 'YOUR_SECRET_KEY'
+        };
+        
+        // COS 签名生成（HMAC-SHA1）
+        function generateCOSAuth(key, method = 'GET', contentType = '', headers = '') {
+            const now = Math.floor(Date.now() / 1000);
+            const expired = now + 3600;
+            
+            const r = {
+                T: now,
+                E: expired,
+                K: COS_CONFIG.SecretId
+            };
+            
+            // 构造签名字符串
+            const signStr = [
+                method.toLowerCase(),
+                key,
+                '', // query
+                contentType,
+                headers,
+                now,
+                expired
+            ].join('\n');
+            
+            // HMAC-SHA1 签名
+            const hmac = CryptoJS.HmacSHA1(signStr, COS_CONFIG.SecretKey);
+            const sign = CryptoJS.enc.Base64.stringify(hmac);
+            
+            r.A = sign;
+            
+            // 返回授权头
+            return 'q-sign-algorithm=sha1&q-ak=' + COS_CONFIG.SecretId + 
+                   '&q-sign-time=' + now + ';' + expired + 
+                   '&q-key-time=' + now + ';' + expired + 
+                   '&q-header-list=&q-url-param-list=&q-signature=' + sign;
+        }
+        
+        // 生成预签名 URL（COS 签名 v5 规范）
+        function generatePresignedURL(key, method = 'PUT', expired = 3600, contentType = 'application/json; charset=UTF-8') {
+            const now = Math.floor(Date.now() / 1000);
+            const exp = now + expired;
+            const keyTime = `${now};${exp}`;
+            
+            // 1. 计算 SignKey = HMAC-SHA1(SecretKey, KeyTime)
+            const signKey = CryptoJS.HmacSHA1(keyTime, COS_CONFIG.SecretKey).toString(CryptoJS.enc.Hex);
+            
+            // 2. 构造 HttpString
+            const httpMethod = method.toLowerCase();
+            const uriPath = '/' + key;
+            const httpParams = '';
+            const host = `${COS_CONFIG.Bucket}.cos.${COS_CONFIG.Region}.myqcloud.com`;
+            const httpHeaders = `content-type=${encodeURIComponent(contentType)}&host=${host}`;
+            
+            const httpString = `${httpMethod}\n${uriPath}\n${httpParams}\n${httpHeaders}\n`;
+            
+            // 3. 计算 StringToSign
+            const sha1HttpString = CryptoJS.SHA1(httpString).toString(CryptoJS.enc.Hex);
+            const stringToSign = `sha1\n${keyTime}\n${sha1HttpString}\n`;
+            
+            // 4. 计算签名 Signature = HMAC-SHA1(SignKey, StringToSign)
+            const signature = CryptoJS.HmacSHA1(stringToSign, signKey).toString(CryptoJS.enc.Hex);
+            
+            // 5. 构建预签名 URL
+            const headerList = 'content-type;host';
+            
+            const queryString = [
+                'q-sign-algorithm=sha1',
+                'q-ak=' + COS_CONFIG.SecretId,
+                'q-sign-time=' + keyTime,
+                'q-key-time=' + keyTime,
+                'q-header-list=' + headerList,
+                'q-url-param-list=',
+                'q-signature=' + signature
+            ].join('&');
+            
+            const url = `https://${host}/${key}?${queryString}`;
+            
+            return url;
+        }
+        
+        // 上传到 COS
+        window.uploadToCOS = async function() {
+            const statusDiv = document.getElementById('cos-status');
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 准备上传...';
+            
+            try {
+                // 先保存当前地图
+                saveCurrentMapMarkers();
+                
+                // 收集所有地图数据
+                const uploadData = {
+                    version: '3.4.12',
+                    exportedAt: new Date().toISOString(),
+                    toolName: '普罗米利亚地图标记工具',
+                    maps: {}
+                };
+                
+                let totalMarkers = 0;
+                Object.keys(MAP_CONFIGS).forEach(mapId => {
+                    const config = MAP_CONFIGS[mapId];
+                    const storageKey = config.storageKey;
+                    
+                    try {
+                        const saved = localStorage.getItem(storageKey);
+                        let markers = [];
+                        
+                        if (saved) {
+                            const data = JSON.parse(saved);
+                            markers = Object.values(data.markers || {});
+                        }
+                        
+                        uploadData.maps[mapId] = {
+                            mapName: config.name,
+                            markers: markers,
+                            markerCount: markers.length
+                        };
+                        
+                        totalMarkers += markers.length;
+                    } catch (e) {
+                        console.error(`读取 ${config.name} 失败:`, e);
+                    }
+                });
+                
+                statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在上传到云端...';
+                
+                // 生成文件名和云端路径
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const filename = `promilia-backup-${timestamp}.json`;
+                const cloudPath = `promilia-markers/default/${filename}`;
+                
+                // 生成预签名 PUT URL（使用 generatePresignedURL 函数）
+                const uploadUrl = generatePresignedURL(cloudPath, 'PUT', 3600, 'application/json; charset=UTF-8');
+                
+                console.log('上传 URL:', uploadUrl);
+                
+                // 转换为 JSON
+                const json = JSON.stringify(uploadData, null, 2);
+                const contentType = 'application/json; charset=UTF-8';
+                
+                // 使用 XMLHttpRequest 上传（避免 fetch 的 CORS 预检问题）
+                await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('PUT', uploadUrl, true);
+                    xhr.setRequestHeader('Content-Type', contentType);
+                    
+                    xhr.onload = function() {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(xhr);
+                        } else {
+                            reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText}`));
+                        }
+                    };
+                    
+                    xhr.onerror = function() {
+                        reject(new Error('网络错误'));
+                    };
+                    
+                    xhr.send(json);
+                });
+                
+                // 生成下载链接
+                const downloadUrl = generatePresignedURL(cloudPath, 'GET', 3600);
+                
+                statusDiv.innerHTML = `✅ 上传成功！<br>📦 文件：${filename}<br>📊 共 ${totalMarkers} 个标记<br>🔗 <a href="${downloadUrl}" target="_blank" style="color:#4fc3f7;">点击下载链接（1 小时有效）</a>`;
+                showToast(`已上传 ${totalMarkers} 个标记到云端`, 'success');
+                
+            } catch (e) {
+                console.error('上传失败:', e);
+                statusDiv.innerHTML = `❌ 上传失败：${e.message}<br><small>提示：请使用 HTTP 服务器运行（python3 -m http.server 8000），不要直接打开文件</small>`;
+                showToast('上传到云端失败', 'error');
+            }
+        };
+        
+        // 从 COS 加载（通过文件选择）
+        window.loadFromCOS = async function() {
+            const statusDiv = document.getElementById('cos-status');
+            
+            // 提示用户选择文件
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在解析文件...';
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        // 验证数据格式
+                        if (!data.maps) {
+                            throw new Error('无效的备份文件格式');
+                        }
+                        
+                        // 显示导入确认
+                        let info = `版本：${data.version || '未知'}\n`;
+                        let totalMarkers = 0;
+                        Object.keys(data.maps).forEach(mapId => {
+                            const count = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
+                            info += `  • ${data.maps[mapId].mapName || mapId}: ${count} 个标记\n`;
+                            totalMarkers += count;
+                        });
+                        
+                        if (!confirm(`从备份文件加载\n\n${info}\n共 ${totalMarkers} 个标记\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
+                            statusDiv.innerHTML = '';
+                            return;
+                        }
+                        
+                        // 导入数据
+                        let importedCount = 0;
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            if (!mapData.markers || !Array.isArray(mapData.markers)) return;
+                            
+                            const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
+                            const markersObj = {};
+                            
+                            mapData.markers.forEach(marker => {
+                                markersObj[marker.id] = marker;
+                            });
+                            
+                            // 保存到 localStorage
+                            localStorage.setItem(storageKey, JSON.stringify({
+                                mapId: mapId,
+                                mapName: mapData.mapName || mapId,
+                                markers: markersObj,
+                                counter: Date.now(),
+                                savedAt: new Date().toISOString()
+                            }));
+                            
+                            // 更新内存
+                            allMarkersData[mapId] = markersObj;
+                            importedCount += mapData.markers.length;
+                        });
+                        
+                        // 刷新当前地图显示
+                        if (allMarkersData[currentMapId]) {
+                            markers.clearLayers();
+                            Object.keys(markerData).forEach(key => delete markerData[key]);
+                            Object.assign(markerData, allMarkersData[currentMapId]);
+                            
+                            Object.values(markerData).forEach(marker => {
+                                const m = L.marker([marker.lat, marker.lng], {
+                                    icon: createMarkerIcon(marker.type)
+                                });
+                                m.bindPopup(createPopupContent(marker));
+                                markers.addLayer(m);
+                            });
+                            updateStats();
+                        }
+                        
+                        statusDiv.innerHTML = `✅ 已加载 ${importedCount} 个标记`;
+                        showToast(`已从文件加载 ${importedCount} 个标记`, 'success');
+                        
+                    } catch (parseErr) {
+                        console.error('解析失败:', parseErr);
+                        statusDiv.innerHTML = `❌ 解析失败：${parseErr.message}`;
+                        showToast('解析备份文件失败', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        };
+        
+        // 从 COS URL 直接加载（高级功能）
+        window.loadFromCOSUrl = async function() {
+            const url = prompt('请输入 COS 下载链接：');
+            if (!url) return;
+            
+            const statusDiv = document.getElementById('cos-status');
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在从云端下载...';
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('下载失败');
+                
+                const data = await response.json();
+                
+                // 验证数据格式
+                if (!data.maps) {
+                    throw new Error('无效的备份文件格式');
+                }
+                
+                // 导入数据
+                importBackupData(data);
+                
+            } catch (e) {
+                console.error('下载失败:', e);
+                statusDiv.innerHTML = `❌ 下载失败：${e.message}`;
+                showToast('从云端下载失败', 'error');
+            }
+        };
+        
+        // 列出 COS 文件
+        window.listCOSFiles = async function() {
+            const statusDiv = document.getElementById('cos-status');
+            const fileListDiv = document.getElementById('cos-file-list');
+            const filesDiv = document.getElementById('cos-files');
+            
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在获取文件列表...';
+            fileListDiv.style.display = 'block';
+            filesDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加载中...';
+            
+            try {
+                // 使用 COS ListObjects API 生成预签名 URL
+                const now = Math.floor(Date.now() / 1000);
+                const exp = now + 3600;
+                const keyTime = `${now};${exp}`;
+                
+                // 签名 ListObjects 请求
+                const signKey = CryptoJS.HmacSHA1(keyTime, COS_CONFIG.SecretKey).toString(CryptoJS.enc.Hex);
+                const httpMethod = 'get';
+                const uriPath = '/';
+                const httpParams = 'prefix=promilia-markers%2Fdefault%2F&max-keys=20';
+                const host = `${COS_CONFIG.Bucket}.cos.${COS_CONFIG.Region}.myqcloud.com`;
+                const httpHeaders = `host=${host}`;
+                
+                const httpString = `${httpMethod}\n${uriPath}\n${httpParams}\n${httpHeaders}\n`;
+                const sha1HttpString = CryptoJS.SHA1(httpString).toString(CryptoJS.enc.Hex);
+                const stringToSign = `sha1\n${keyTime}\n${sha1HttpString}\n`;
+                const signature = CryptoJS.HmacSHA1(stringToSign, signKey).toString(CryptoJS.enc.Hex);
+                
+                const listUrl = `https://${host}/?q-sign-algorithm=sha1&q-ak=${COS_CONFIG.SecretId}&q-sign-time=${keyTime}&q-key-time=${keyTime}&q-header-list=host&q-url-param-list=max-keys%3Bprefix&q-signature=${signature}&prefix=promilia-markers%2Fdefault%2F&max-keys=20`;
+                
+                const response = await fetch(listUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+                
+                const contents = xmlDoc.querySelectorAll('Contents');
+                
+                if (contents.length === 0) {
+                    filesDiv.innerHTML = '<div style="color:#888;padding:10px;">暂无备份文件</div>';
+                    statusDiv.innerHTML = '';
+                    return;
+                }
+                
+                // 显示文件列表
+                let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                contents.forEach(item => {
+                    const key = item.querySelector('Key')?.textContent;
+                    const lastModified = item.querySelector('LastModified')?.textContent;
+                    const size = item.querySelector('Size')?.textContent;
+                    
+                    if (!key || key.endsWith('/')) return;
+                    
+                    const date = new Date(lastModified);
+                    const dateStr = date.toLocaleString('zh-CN');
+                    const sizeStr = (parseInt(size) / 1024).toFixed(1) + ' KB';
+                    
+                    html += `
+                        <div style="display:flex;justify-content:space-between;align-items:center;background:#1a1a2e;padding:8px;border-radius:4px;border:1px solid #0f3460;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="color:#4fc3f7;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📦 ${key.split('/').pop()}</div>
+                                <div style="color:#888;font-size:11px;">${dateStr} · ${sizeStr}</div>
+                            </div>
+                            <button onclick="downloadFromCOS('${key}')" style="background:#0f3460;color:#4fc3f7;border:1px solid #4fc3f7;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px;">⬇️ 下载</button>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                filesDiv.innerHTML = html;
+                statusDiv.innerHTML = `✅ 找到 ${contents.length} 个备份文件`;
+                
+            } catch (e) {
+                console.error('获取列表失败:', e);
+                filesDiv.innerHTML = `<div style="color:#f44336;padding:10px;">❌ 获取失败：${e.message}</div>`;
+                statusDiv.innerHTML = '';
+            }
+        };
+        
+        // 从 COS 下载指定文件
+        window.downloadFromCOS = async function(cloudPath) {
+            const statusDiv = document.getElementById('cos-status');
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在下载...';
+            
+            try {
+                const downloadUrl = generatePresignedURL(cloudPath, 'GET', 3600);
+                
+                const response = await fetch(downloadUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                
+                // 验证数据格式
+                if (!data.maps) {
+                    throw new Error('无效的备份文件格式');
+                }
+                
+                // 显示导入确认
+                let info = `版本：${data.version || '未知'}\n`;
+                let totalMarkers = 0;
+                Object.keys(data.maps).forEach(mapId => {
+                    const count = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
+                    info += `  • ${data.maps[mapId].mapName || mapId}: ${count} 个标记\n`;
+                    totalMarkers += count;
+                });
+                
+                if (!confirm(`从云端加载\n\n${info}\n共 ${totalMarkers} 个标记\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
+                    statusDiv.innerHTML = '';
+                    return;
+                }
+                
+                // 导入数据
+                importBackupData(data);
+                
+            } catch (e) {
+                console.error('下载失败:', e);
+                statusDiv.innerHTML = `❌ 下载失败：${e.message}`;
+                showToast('从云端下载失败', 'error');
+            }
+        };
+        
+        // 导入备份数据（通用函数）
+        function importBackupData(data) {
+            const statusDiv = document.getElementById('cos-status');
+            
+            // 导入数据
+            let importedCount = 0;
+            Object.keys(data.maps).forEach(mapId => {
+                const mapData = data.maps[mapId];
+                if (!mapData.markers || !Array.isArray(mapData.markers)) return;
+                
+                const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
+                const markersObj = {};
+                
+                mapData.markers.forEach(marker => {
+                    markersObj[marker.id] = marker;
+                });
+                
+                localStorage.setItem(storageKey, JSON.stringify({
+                    mapId: mapId,
+                    mapName: mapData.mapName || mapId,
+                    markers: markersObj,
+                    counter: Date.now(),
+                    savedAt: new Date().toISOString()
+                }));
+                
+                allMarkersData[mapId] = markersObj;
+                importedCount += mapData.markers.length;
+            });
+            
+            if (allMarkersData[currentMapId]) {
+                markers.clearLayers();
+                Object.keys(markerData).forEach(key => delete markerData[key]);
+                Object.assign(markerData, allMarkersData[currentMapId]);
+                
+                Object.values(markerData).forEach(marker => {
+                    const m = L.marker([marker.lat, marker.lng], {
+                        icon: createMarkerIcon(marker.type)
+                    });
+                    m.bindPopup(createPopupContent(marker));
+                    markers.addLayer(m);
+                });
+                updateStats();
+            }
+            
+            statusDiv.innerHTML = `✅ 已加载 ${importedCount} 个标记`;
+            showToast(`已加载 ${importedCount} 个标记`, 'success');
+        };
         
         // ==================== 提示框 ====================
         function showToast(message, type = 'info') {
