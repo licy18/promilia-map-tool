@@ -1,0 +1,28 @@
+# 敏感配置（含密钥）
+index.html
+!index.html.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# 日志
+*.log
+
+# 临时文件
+*.tmp
+*.bak
+
+# 地图资源（大文件）
+maps/*.png
+maps/*.jpg
+maps/**/*.png
+
+# Node
+node_modules/

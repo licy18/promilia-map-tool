@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>普罗米利亚地图标记工具</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Crypto JS for COS Signature -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #app {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* 侧边栏 */
+        #sidebar {
+            width: 320px;
+            background: #16213e;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #0f3460;
+        }
+        
+        #sidebar h1 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #e94560;
+        }
+        
+        #sidebar .subtitle {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 20px;
+        }
+        
+        /* 地图切换器 */
+        .map-switcher {
+            margin-bottom: 20px;
+            background: #0f3460;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .map-switcher select {
+            width: 100%;
+            padding: 12px;
+            background: #16213e;
+            border: none;
+            color: #eee;
+            font-size: 1em;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .map-switcher select:focus {
+            background: #1a2a4a;
+        }
+        
+        .map-info {
+            padding: 10px 12px;
+            background: #0a1a2a;
+            font-size: 0.8em;
+            color: #888;
+            border-top: 1px solid #1a4a7a;
+        }
+        
+        .map-info strong {
+            color: #00d9ff;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+        }
+        
+        .section h2 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #00d9ff;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 5px;
+        }
+        
+        /* 标记类型选择 */
+        .marker-types {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .marker-type {
+            padding: 12px 8px;
+            background: #0f3460;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .marker-type:hover {
+            background: #1a4a7a;
+        }
+        
+        .marker-type.active {
+            border-color: #e94560;
+            background: #1a4a7a;
+        }
+        
+        .marker-type i {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .marker-type span {
+            font-size: 0.75em;
+        }
+        
+        /* 按钮 */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #e94560;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #ff6b6b;
+        }
+        
+        .btn-secondary {
+            background: #0f3460;
+            color: #eee;
+        }
+        
+        .btn-secondary:hover {
+            background: #1a4a7a;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #34ce57;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #138496;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        /* 统计信息 */
+        .stats {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #00d9ff;
+        }
+        
+        .stat-label {
+            font-size: 0.75em;
+            color: #888;
+        }
+        
+        /* 地图区域 */
+        #map-container {
+            flex: 1;
+            position: relative;
+            background: #0a0a15;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 标记弹窗 */
+        .leaflet-popup-content-wrapper {
+            background: #16213e;
+            color: #eee;
+            border-radius: 8px;
+        }
+        
+        .leaflet-popup-tip {
+            background: #16213e;
+        }
+        
+        .popup-content h3 {
+            margin-bottom: 10px;
+            color: #e94560;
+        }
+        
+        .popup-content textarea {
+            width: 100%;
+            min-height: 80px;
+            background: #0f3460;
+            border: 1px solid #1a4a7a;
+            color: #eee;
+            padding: 8px;
+            border-radius: 4px;
+            resize: vertical;
+            margin: 10px 0;
+        }
+        
+        .popup-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .popup-actions button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .popup-actions .btn-save {
+            background: #00d9ff;
+            color: #000;
+        }
+        
+        .popup-actions .btn-delete {
+            background: #e94560;
+            color: white;
+        }
+        
+        /* 文件输入隐藏 */
+        #file-input {
+            display: none;
+        }
+        
+        /* 提示信息 */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: #16213e;
+            border-left: 4px solid #00d9ff;
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 10000;
+        }
+        
+        #toast.show {
+            transform: translateX(0);
+        }
+        
+        #toast.success {
+            border-color: #00ff88;
+        }
+        
+        #toast.error {
+            border-color: #e94560;
+        }
+        
+        /* 帮助提示 */
+        .help-tip {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #0f3460;
+            border-radius: 4px;
+        }
+        
+        /* 开关控件 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #34495e;
+            transition: .3s;
+            border-radius: 26px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #00d9ff;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* 分类折叠 */
+        .category-header {
+            user-select: none;
+            transition: background 0.2s;
+        }
+        
+        .category-header:hover {
+            background: #1a4a7a !important;
+        }
+        
+        .category-header .fa-chevron-down {
+            transition: transform 0.3s;
+        }
+        
+        .category-header.collapsed .fa-chevron-down {
+            transform: rotate(-90deg);
+        }
+        
+        .category-content {
+            transition: all 0.3s;
+        }
+        
+        .category-content.collapsed {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 侧边栏 -->
+        <div id="sidebar">
+            <h1>🗺️ 普罗米利亚地图</h1>
+            <p class="subtitle">本地标记工具 v1.9</p>
+            
+            <!-- 地图切换器 -->
+            <div class="map-switcher">
+                <select id="map-select" onchange="switchMap(this.value)">
+                    <option value="shalulu">🏡 夏露露村</option>
+                    <option value="xinaya">🌱 新芽山谷（单层）</option>
+                    <!-- <option value="xinaya_multi">🌱 新芽山谷（多层 3 级）</option> -->
+                    <!-- 多层地图调试中，请使用 debug/multi-layer-tiles 分支 -->
+                    <option value="fulisi">🌾 弗利斯 (Fleece)</option>
+                </select>
+                <div class="map-info">
+                    当前地图：<strong id="current-map-name">夏露露村</strong><br>
+                    标记数：<span id="current-map-count">0</span> | 尺寸：<span id="current-map-size">2048×2048</span>
+                </div>
+            </div>
+            
+            <!-- 统计 -->
+            <div class="section">
+                <div class="stats">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="total-markers">0</div>
+                            <div class="stat-label">总标记数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="last-saved">-</div>
+                            <div class="stat-label">最后保存</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #1a4a7a;">
+                        <div style="color: #00d9ff; font-size: 0.75em; font-weight: bold; margin-bottom: 8px;">📊 分类统计</div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #f39c12;">📦 宝箱:</span>
+                            <span id="count-chest">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #3498db;">🧭 探索:</span>
+                            <span id="count-explore">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #ff6b9d;">🐾 生物:</span>
+                            <span id="count-creature">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #95a5a6;">🏷️ 其他:</span>
+                            <span id="count-other">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 标记类型（分类折叠） -->
+            <div class="section" id="marker-types">
+                <h2><i class="fas fa-map-marker-alt"></i> 标记类型</h2>
+                
+                <!-- 浏览模式 -->
+                <div class="marker-type" data-type="none" data-color="#888" data-icon="fa-mouse-pointer" style="margin-bottom: 15px;">
+                    <i class="fas fa-mouse-pointer" style="color: #888;"></i>
+                    <span>浏览模式</span>
+                </div>
+                
+                <!-- 宝箱类 -->
+                <div class="category-header" data-category="chest" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-gift" style="color: #f39c12;"></i>
+                        <span style="color: #eee; font-weight: bold;">宝箱</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="chest" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
+                        <i class="fas fa-gift" style="color: #f39c12;"></i>
+                        <span>宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_wood" data-color="#8b4513" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #8b4513;"></i>
+                        <span>木宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_iron" data-color="#708090" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #708090;"></i>
+                        <span>铁宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_silver" data-color="#c0c0c0" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #c0c0c0;"></i>
+                        <span>银宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_gold" data-color="#ffd700" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #ffd700;"></i>
+                        <span>金宝箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_holy" data-color="#e6e6fa" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #e6e6fa;"></i>
+                        <span>神圣箱</span>
+                    </div>
+                    <div class="marker-type" data-type="chest_dark" data-color="#4b0082" data-icon="fa-box">
+                        <i class="fas fa-box" style="color: #4b0082;"></i>
+                        <span>暗黑箱</span>
+                    </div>
+                </div>
+                
+                <!-- 探索类 -->
+                <div class="category-header" data-category="explore" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-compass" style="color: #3498db;"></i>
+                        <span style="color: #eee; font-weight: bold;">探索</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="explore" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type" data-type="puzzle" data-color="#a55eea" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
+                        <span>解谜</span>
+                    </div>
+                    <div class="marker-type" data-type="quest" data-color="#3498db" data-icon="fa-scroll">
+                        <i class="fas fa-scroll" style="color: #3498db;"></i>
+                        <span>任务</span>
+                    </div>
+                    <div class="marker-type" data-type="flower" data-color="#e91e63" data-icon="fa-fan">
+                        <i class="fas fa-fan" style="color: #e91e63;"></i>
+                        <span>采集</span>
+                    </div>
+                    <div class="marker-type" data-type="teleport" data-color="#9b59b6" data-icon="fa-door-open">
+                        <i class="fas fa-door-open" style="color: #9b59b6;"></i>
+                        <span>传送</span>
+                    </div>
+                </div>
+                
+                <!-- 生物类 -->
+                <div class="category-header" data-category="creature" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span style="color: #eee; font-weight: bold;">生物</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="creature" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type" data-type="umi" data-color="#2d3436" data-icon="fa-cat">
+                        <i class="fas fa-cat" style="color: #2d3436;"></i>
+                        <span>乌咪</span>
+                    </div>
+                    <div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
+                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                        <span>蛋</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo" data-color="#ff6b9d" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span>奇波</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_battle" data-color="#ff4500" data-icon="fa-fist-raised">
+                        <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
+                        <span>奇波对决</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_egg" data-color="#ffd700" data-icon="fa-egg">
+                        <i class="fas fa-egg" style="color: #ffd700;"></i>
+                        <span>奇波蛋</span>
+                    </div>
+                </div>
+                
+                <!-- 其他 -->
+                <div class="category-header" data-category="other" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-ellipsis-h" style="color: #95a5a6;"></i>
+                        <span style="color: #eee; font-weight: bold;">其他</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="other" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type" data-type="enemy" data-color="#e74c3c" data-icon="fa-skull">
+                        <i class="fas fa-skull" style="color: #e74c3c;"></i>
+                        <span>敌人</span>
+                    </div>
+                    <div class="marker-type" data-type="star" data-color="#00bfff" data-icon="fa-map-marker-alt">
+                        <i class="fas fa-map-marker-alt" style="color: #00bfff;"></i>
+                        <span>星脉节点</span>
+                    </div>
+                    <div class="marker-type" data-type="fish" data-color="#1e90ff" data-icon="fa-fish">
+                        <i class="fas fa-fish" style="color: #1e90ff;"></i>
+                        <span>钓鱼点</span>
+                    </div>
+                    <div class="marker-type" data-type="custom" data-color="#2ecc71" data-icon="fa-star">
+                        <i class="fas fa-star" style="color: #2ecc71;"></i>
+                        <span>自定义</span>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 10px; padding: 10px; background: #0f3460; border-radius: 6px; font-size: 0.85em;">
+                    <i class="fas fa-info-circle" style="color: #00d9ff;"></i>
+                    <span id="marker-tip" style="color: #aaa;">请选择一个标记类型后点击地图</span>
+                </div>
+            </div>
+            
+            <!-- 筛选器（分类折叠） -->
+            <div class="section">
+                <h2><i class="fas fa-filter"></i> 筛选显示</h2>
+                <div id="filter-types">
+                
+                <!-- 全部显示 -->
+                <div class="marker-type active" data-type="all" data-category="all" style="margin-bottom: 15px;">
+                    <i class="fas fa-eye"></i>
+                    <span>全部显示</span>
+                </div>
+                
+                <!-- 宝箱类筛选 -->
+                <div class="category-header" data-category="chest-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-gift" style="color: #f39c12;"></i>
+                        <span style="color: #eee; font-weight: bold;">宝箱</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="chest-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type active" data-type="chest" data-category="chest">
+                        <i class="fas fa-gift" style="color: #f39c12;"></i>
+                        <span>宝箱</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_wood" data-category="chest">
+                        <i class="fas fa-box" style="color: #8b4513;"></i>
+                        <span>木</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_iron" data-category="chest">
+                        <i class="fas fa-box" style="color: #708090;"></i>
+                        <span>铁</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_silver" data-category="chest">
+                        <i class="fas fa-box" style="color: #c0c0c0;"></i>
+                        <span>银</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_gold" data-category="chest">
+                        <i class="fas fa-box" style="color: #ffd700;"></i>
+                        <span>金</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_holy" data-category="chest">
+                        <i class="fas fa-box" style="color: #e6e6fa;"></i>
+                        <span>神圣</span>
+                    </div>
+                    <div class="marker-type active" data-type="chest_dark" data-category="chest">
+                        <i class="fas fa-box" style="color: #4b0082;"></i>
+                        <span>暗黑</span>
+                    </div>
+                </div>
+                
+                <!-- 探索类筛选 -->
+                <div class="category-header" data-category="explore-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-compass" style="color: #3498db;"></i>
+                        <span style="color: #eee; font-weight: bold;">探索</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="explore-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type active" data-type="puzzle" data-category="explore">
+                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
+                        <span>解谜</span>
+                    </div>
+                    <div class="marker-type active" data-type="quest" data-category="explore">
+                        <i class="fas fa-scroll" style="color: #3498db;"></i>
+                        <span>任务</span>
+                    </div>
+                    <div class="marker-type active" data-type="flower" data-category="explore">
+                        <i class="fas fa-fan" style="color: #e91e63;"></i>
+                        <span>采集</span>
+                    </div>
+                    <div class="marker-type active" data-type="teleport" data-category="explore">
+                        <i class="fas fa-door-open" style="color: #9b59b6;"></i>
+                        <span>传送</span>
+                    </div>
+                </div>
+                
+                <!-- 生物类筛选 -->
+                <div class="category-header" data-category="creature-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span style="color: #eee; font-weight: bold;">生物</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="creature-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type active" data-type="umi" data-category="creature">
+                        <i class="fas fa-cat" style="color: #2d3436;"></i>
+                        <span>乌咪</span>
+                    </div>
+                    <div class="marker-type active" data-type="egg" data-category="creature">
+                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                        <span>蛋</span>
+                    </div>
+                    <div class="marker-type active" data-type="chipo" data-category="creature">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span>奇波</span>
+                    </div>
+                    <div class="marker-type active" data-type="chipo_battle" data-category="creature">
+                        <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
+                        <span>对决</span>
+                    </div>
+                    <div class="marker-type active" data-type="chipo_egg" data-category="creature">
+                        <i class="fas fa-egg" style="color: #ffd700;"></i>
+                        <span>奇波蛋</span>
+                    </div>
+                </div>
+                
+                <!-- 其他筛选 -->
+                <div class="category-header" data-category="other-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-ellipsis-h" style="color: #95a5a6;"></i>
+                        <span style="color: #eee; font-weight: bold;">其他</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="other-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type active" data-type="enemy" data-category="other">
+                        <i class="fas fa-skull" style="color: #e74c3c;"></i>
+                        <span>敌人</span>
+                    </div>
+                    <div class="marker-type active" data-type="star" data-category="other">
+                        <i class="fas fa-map-marker-alt" style="color: #00bfff;"></i>
+                        <span>星脉</span>
+                    </div>
+                    <div class="marker-type active" data-type="fish" data-category="other">
+                        <i class="fas fa-fish" style="color: #1e90ff;"></i>
+                        <span>钓鱼</span>
+                    </div>
+                    <div class="marker-type active" data-type="custom" data-category="other">
+                        <i class="fas fa-star" style="color: #2ecc71;"></i>
+                        <span>自定义</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 标记聚合开关 -->
+            <div class="section">
+                <h2><i class="fas fa-th-large"></i> 标记聚合</h2>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #0f3460; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-th-large" style="color: #00d9ff;"></i>
+                        <span style="color: #eee; font-size: 0.9em;">启用聚合</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="cluster-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div style="margin-top: 8px; font-size: 0.75em; color: #888; padding: 0 5px;">
+                    <i class="fas fa-info-circle"></i>
+                    聚合模式下，缩放时标记会自动聚类显示
+                </div>
+            </div>
+            
+            </div>  <!-- 关闭 filter-types -->
+            
+            <!-- 操作按钮 -->
+            <div class="section">
+                <h2><i class="fas fa-tools"></i> 操作</h2>
+                <button class="btn btn-primary" onclick="exportData()">
+                    <i class="fas fa-download"></i> 导出数据
+                </button>
+                <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">
+                    <i class="fas fa-upload"></i> 导入数据
+                </button>
+                <input type="file" id="file-input" accept=".json,.geojson" onchange="importData(event)">
+                <button class="btn btn-secondary" onclick="clearAllMarkers()">
+                    <i class="fas fa-trash"></i> 清空所有
+                </button>
+            </div>
+            
+            <!-- 云端存储 -->
+            <div class="section">
+                <h2><i class="fas fa-cloud"></i> 云端存储</h2>
+                <button class="btn btn-success" onclick="uploadToCOS()">
+                    <i class="fas fa-cloud-upload-alt"></i> 上传到云端
+                </button>
+                <button class="btn btn-info" onclick="loadFromCOS()">
+                    <i class="fas fa-folder-open"></i> 从文件加载
+                </button>
+                <button class="btn btn-secondary" onclick="loadFromCOSUrl()" style="margin-top: 8px; width: 100%;">
+                    <i class="fas fa-link"></i> 从链接加载
+                </button>
+                <div id="cos-status" style="margin-top: 10px; font-size: 12px; color: #888;"></div>
+            </div>
+            
+            <!-- 帮助 -->
+            <div class="section">
+                <div class="help-tip">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>使用说明：</strong><br>
+                    • 选择标记类型后点击地图添加<br>
+                    • 点击标记查看详情/编辑<br>
+                    • 数据自动保存<br>
+                    • 可导出分享给好友<br>
+                    • 地图视图自动保存
+                </div>
+            </div>
+        </div>
+        
+        <!-- 地图容器 -->
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+    
+    <!-- 提示框 -->
+    <div id="toast"></div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    
+    <script>
+        // ==================== 初始化 ====================
+        console.log('🗺️ 普罗米利亚地图标记工具 v1.0');
+        console.log('🔄 初始化中...');
+        
+        // 标记类型配置（分类折叠）
+        const MARKER_CONFIGS = {
+            // === 宝箱类 ===
+            chest: { icon: 'fa-gift', color: '#f39c12', label: '宝箱', category: 'chest' },
+            chest_wood: { icon: 'fa-box', color: '#8b4513', label: '木宝箱', category: 'chest' },
+            chest_iron: { icon: 'fa-box', color: '#708090', label: '铁宝箱', category: 'chest' },
+            chest_silver: { icon: 'fa-box', color: '#c0c0c0', label: '银宝箱', category: 'chest' },
+            chest_gold: { icon: 'fa-box', color: '#ffd700', label: '金宝箱', category: 'chest' },
+            chest_holy: { icon: 'fa-box', color: '#e6e6fa', label: '神圣箱', category: 'chest' },
+            chest_dark: { icon: 'fa-box', color: '#4b0082', label: '暗黑箱', category: 'chest' },
+            
+            // === 探索类 ===
+            puzzle: { icon: 'fa-puzzle-piece', color: '#a55eea', label: '解谜', category: 'explore' },
+            quest: { icon: 'fa-scroll', color: '#3498db', label: '任务', category: 'explore' },
+            flower: { icon: 'fa-fan', color: '#e91e63', label: '采集', category: 'explore' },
+            teleport: { icon: 'fa-door-open', color: '#9b59b6', label: '传送', category: 'explore' },
+            
+            // === 生物类 ===
+            umi: { icon: 'fa-cat', color: '#2d3436', label: '乌咪', category: 'creature' },
+            egg: { icon: 'fa-egg', color: '#ffeaa7', label: '蛋', category: 'creature' },
+            chipo: { icon: 'fa-paw', color: '#ff6b9d', label: '奇波', category: 'creature' },
+            chipo_battle: { icon: 'fa-fist-raised', color: '#ff4500', label: '奇波对决', category: 'creature' },
+            chipo_egg: { icon: 'fa-egg', color: '#ffd700', label: '奇波蛋', category: 'creature' },
+            
+            // === 其他 ===
+            enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人', category: 'other' },
+            star: { icon: 'fa-map-marker-alt', color: '#00bfff', label: '星脉节点', category: 'other' },
+            fish: { icon: 'fa-fish', color: '#1e90ff', label: '钓鱼点', category: 'other' },
+            custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义', category: 'other' }
+        };
+        
+        // 分类配置（用于折叠显示）
+        const CATEGORY_CONFIGS = {
+            chest: { label: '宝箱', icon: 'fa-gift', color: '#f39c12' },
+            explore: { label: '探索', icon: 'fa-compass', color: '#3498db' },
+            creature: { label: '生物', icon: 'fa-paw', color: '#ff6b9d' },
+            other: { label: '其他', icon: 'fa-ellipsis-h', color: '#95a5a6' }
+        };
+        
+        // 当前选中的标记类型（默认不选择，避免误触）
+        let currentMarkerType = null;
+        
+        // 筛选状态（按分类）
+        const filterState = {
+            // 分类展开状态
+            chest: true,
+            explore: true,
+            creature: true,
+            other: true,
+            // 具体类型
+            all: true
+        };
+        
+        // 分类展开状态（用于 UI）
+        const categoryExpanded = {
+            chest: true,
+            explore: true,
+            creature: true,
+            other: true
+        };
+        
+        // 隐藏的标记层（用于筛选）
+        const hiddenMarkers = new Map();
+        
+        // ==================== 多地图配置 ====================
+        const MAP_CONFIGS = {
+            shalulu: {
+                name: '夏露露村',
+                width: 2048,
+                height: 2048,
+                image: 'maps/shalulu.png',
+                storageKey: 'promilia-markers-shalulu',
+                color: '#4a90d9',
+                type: 'image'
+            },
+            xinaya: {
+                name: '新芽山谷',
+                width: 4096,
+                height: 4096,
+                tiles: 'maps/xinaya-tiles',
+                tileRows: 4,
+                tileCols: 4,
+                tileSize: 1024,
+                storageKey: 'promilia-markers-xinaya',
+                color: '#5cb85c',
+                type: 'tiles'
+            },
+            // xinaya_multi: {
+            //     name: '新芽山谷（多层）',
+            //     width: 1024,
+            //     height: 1024,
+            //     tileUrl: 'maps/xinaya-tiles-multi/{z}/{x}_{y}.png',
+            //     minZoom: 0,
+            //     maxZoom: 2,
+            //     storageKey: 'promilia-markers-xinaya-multi',
+            //     color: '#5cb85c',
+            //     type: 'tileLayer'
+            // },
+            // 注意：多层地图功能开发中，请使用 debug/multi-layer-tiles 分支
+            fulisi: {
+                name: '弗利斯 (Fleece)',
+                width: 2048,
+                height: 2048,
+                image: 'maps/fulisi.png',
+                storageKey: 'promilia-markers-fulisi',
+                color: '#f0ad4e',
+                type: 'image'
+            }
+        };
+        
+        // 当前地图
+        let currentMapId = localStorage.getItem('promilia-current-map') || 'shalulu';
+        let currentMapConfig = MAP_CONFIGS[currentMapId];
+        let mapOverlay = null;
+        let tileOverlays = [];
+        let tileLayer = null;
+        
+        // 当前筛选状态（保存到 localStorage）
+        let savedFilterState = localStorage.getItem('promilia-filter-state');
+        if (savedFilterState) {
+            try {
+                Object.assign(filterState, JSON.parse(savedFilterState));
+            } catch (e) {
+                console.error('❌ 加载筛选状态失败:', e);
+            }
+        }
+        
+        // 标记聚合状态（Issue #1）
+        let clusterEnabled = localStorage.getItem('promilia-cluster-enabled') !== 'false';  // 默认启用
+        
+        // ==================== 地图初始化 ====================
+        console.log('📍 初始化地图...');
+        
+        // 创建地图（使用简单坐标系）
+        const map = L.map('map', {
+            crs: L.CRS.Simple,
+            minZoom: -3,
+            maxZoom: 2,
+            zoomControl: true
+        });
+        
+        // 标记集群
+        console.log('📌 初始化标记集群...');
+        const markers = L.markerClusterGroup({
+            showCoverageOnHover: true,
+            zoomToBoundsOnClick: true,
+            spiderfyOnMaxZoom: true
+        });
+        
+        // 根据聚合状态决定是否添加到地图
+        if (clusterEnabled) {
+            map.addLayer(markers);
+            console.log('✅ 标记聚合已启用');
+        } else {
+            console.log('⚠️ 标记聚合已禁用（标记将直接显示在地图上）');
+        }
+        
+        // 创建彩色占位背景
+        function createPlaceholder(mapId) {
+            const config = MAP_CONFIGS[mapId];
+            console.log(`🎨 创建占位背景：${config.name}, 颜色：${config.color}`);
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = config.width;
+            canvas.height = config.height;
+            const ctx = canvas.getContext('2d');
+            
+            // 渐变背景
+            const gradient = ctx.createLinearGradient(0, 0, config.width, config.height);
+            gradient.addColorStop(0, config.color);
+            gradient.addColorStop(1, '#1a1a2e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, config.width, config.height);
+            
+            // 网格线
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 2;
+            const gridSize = 128;
+            for (let x = 0; x <= config.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, config.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= config.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(config.width, y);
+                ctx.stroke();
+            }
+            
+            // 图标
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = 'bold 120px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const icons = { shalulu: '🏡', xinaya: '🌱', fulisi: '🌾' };
+            ctx.fillText(icons[mapId] || '🗺️', config.width / 2, config.height / 2 - 60);
+            
+            // 名称
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 36px Arial';
+            ctx.fillText(config.name, config.width / 2, config.height / 2 + 20);
+            ctx.font = '16px Arial';
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.fillText('(占位背景)', config.width / 2, config.height / 2 + 50);
+            
+            return canvas.toDataURL('image/png');
+        }
+        
+        // 保存当前视图状态（按地图）
+        const mapViews = {};
+        
+        // 加载/切换地图
+        function loadMap(mapId, keepZoom = false) {
+            const config = MAP_CONFIGS[mapId];
+            
+            console.log(`🔄 切换地图：${currentMapId} -> ${mapId}, keepZoom=${keepZoom}`);
+            
+            // 【关键】切换前保存当前地图的标记数据和视图
+            if (currentMapId) {
+                // 创建不含 popup 引用的数据副本（popup 是 DOM 对象，不能被 JSON 序列化）
+                const markersToSave = {};
+                Object.keys(markerData).forEach(key => {
+                    const { popup, ...markerDataWithoutPopup } = markerData[key];
+                    markersToSave[key] = markerDataWithoutPopup;
+                });
+                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markersToSave));
+                
+                // 只有在地图已初始化视图后才保存（避免首次加载时报错）
+                try {
+                    mapViews[currentMapId] = {
+                        center: map.getCenter(),
+                        zoom: map.getZoom()
+                    };
+                    console.log(`💾 已保存 ${currentMapId} 的标记和视图 (zoom=${mapViews[currentMapId].zoom})`);
+                } catch (e) {
+                    console.log(`⚠️ ${currentMapId} 地图视图未初始化，跳过保存`);
+                }
+            }
+            
+            currentMapId = mapId;
+            currentMapConfig = config;
+            
+            // 保存当前地图 ID 到 localStorage
+            localStorage.setItem('promilia-current-map', mapId);
+            
+            // 清除旧地图
+            if (mapOverlay) {
+                map.removeLayer(mapOverlay);
+                mapOverlay = null;
+            }
+            if (tileOverlays.length > 0) {
+                tileOverlays.forEach(tile => map.removeLayer(tile));
+                tileOverlays = [];
+            }
+            if (tileLayer) {
+                map.removeLayer(tileLayer);
+                tileLayer = null;
+            }
+            
+            // 边界（Simple CRS: [[x1, y1], [x2, y2]]）
+            const bounds = [[0, 0], [config.width, config.height]];
+            
+            // 根据地图类型加载（单张图片 or 单层瓦片 or 多层瓦片）
+            if (config.type === 'tileLayer' && config.tileUrl) {
+                // === 多层瓦片地图加载（Leaflet TileLayer） ===
+                console.log(`🗺️ 加载多层瓦片地图：${config.name} (zoom ${config.minZoom}-${config.maxZoom})`);
+                
+                // 移除旧的 TileLayer
+                if (tileLayer) {
+                    map.removeLayer(tileLayer);
+                    tileLayer = null;
+                }
+                
+                // 移除旧的单层瓦片
+                if (tileOverlays.length > 0) {
+                    tileOverlays.forEach(tile => map.removeLayer(tile));
+                    tileOverlays = [];
+                }
+                
+                // 创建 TileLayer（Simple CRS 下使用自定义瓦片网格）
+                // 注意：CRS 是 map 的属性，不是 TileLayer 的属性
+                
+                // 检查是否有自定义网格配置
+                if (config.gridSizes) {
+                    // === 自定义网格尺寸（非标准瓦片系统） ===
+                    console.log(`  📐 使用自定义网格:`, config.gridSizes);
+                    
+                    // 使用 GridLayer 自定义瓦片加载
+                    tileLayer = L.gridLayer({
+                        minZoom: config.minZoom || 0,
+                        maxZoom: config.maxZoom || 2
+                    });
+                    
+                    // 自定义瓦片创建逻辑
+                    tileLayer.createTile = function(coords, done) {
+                        const tile = document.createElement('div');
+                        const zoom = coords.z;
+                        const x = coords.x;
+                        const y = coords.y;
+                        
+                        // 检查坐标是否在有效范围内
+                        const gridSize = config.gridSizes[zoom];
+                        if (gridSize === undefined || x < 0 || y < 0 || x >= gridSize || y >= gridSize) {
+                            // 超出范围，返回空瓦片
+                            tile.style.width = '256px';
+                            tile.style.height = '256px';
+                            console.log(`  ⚠️ 跳过无效瓦片：z=${zoom}, (${x},${y})`);
+                            done(null, tile);
+                            return tile;
+                        }
+                        
+                        // 生成瓦片 URL
+                        const url = config.tileUrl
+                            .replace('{z}', zoom)
+                            .replace('{x}', x)
+                            .replace('{y}', y);
+                        
+                        // 创建图片
+                        const img = document.createElement('img');
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.onload = () => done(null, tile);
+                        img.onerror = (e) => {
+                            console.error(`  ❌ 瓦片加载失败：${url}`, e);
+                            done(e, tile);
+                        };
+                        img.src = url;
+                        tile.appendChild(img);
+                        
+                        console.log(`  ✅ 加载瓦片：z=${zoom}, (${x},${y}) → ${url}`);
+                        return tile;
+                    };
+                    
+                    tileLayer.addTo(map);
+                } else {
+                    // === 标准瓦片尺寸（256×256） ===
+                    tileLayer = L.tileLayer(config.tileUrl, {
+                        minZoom: config.minZoom || 0,
+                        maxZoom: config.maxZoom || 2,
+                        tileSize: 256,
+                        noWrap: true,
+                        tms: false,
+                        bounds: [[0, 0], [config.width, config.height]]
+                    });
+                    tileLayer.addTo(map);
+                }
+                
+                // 设置地图缩放范围和视图
+                map.setMinZoom(config.minZoom || 0);
+                map.setMaxZoom(config.maxZoom || 2);
+                
+                // 设置视图到地图中心
+                const center = [config.height / 2, config.width / 2];
+                map.setView(center, config.minZoom || 0);
+                
+                console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
+                
+            } else if (config.type === 'tiles' && config.tiles) {
+                // === 单层瓦片地图加载（简单行列） ===
+                console.log(`🗺️ 加载单层瓦片地图：${config.name} (${config.tileCols}x${config.tileRows} 瓦片)`);
+                
+                // 移除旧瓦片
+                if (tileOverlays.length > 0) {
+                    tileOverlays.forEach(tile => map.removeLayer(tile));
+                    tileOverlays = [];
+                }
+                
+                const tileSize = config.tileSize || 1024;
+                const tileDir = config.tiles;
+                
+                // 按行列顺序加载瓦片
+                for (let row = 0; row < config.tileRows; row++) {
+                    for (let col = 0; col < config.tileCols; col++) {
+                        const tileUrl = `${tileDir}/tile_${row}_${col}.png`;
+                        const tileBounds = [
+                            [row * tileSize, col * tileSize],
+                            [(row + 1) * tileSize, (col + 1) * tileSize]
+                        ];
+                        
+                        const testTile = new Image();
+                        testTile.onload = function() {
+                            const tileOverlay = L.imageOverlay(tileUrl, tileBounds).addTo(map);
+                            tileOverlays.push(tileOverlay);
+                        };
+                        testTile.onerror = function() {
+                            console.log(`⚠️ 瓦片加载失败：${tileUrl}`);
+                        };
+                        testTile.src = tileUrl;
+                    }
+                }
+                
+                // 超时保护（增加超时时间到 15 秒）
+                let tileLoadTimeout = setTimeout(() => {
+                    if (tileOverlays.length === 0) {
+                        console.log(`⚠️ 瓦片加载超时（>15s），使用占位背景`);
+                        const placeholderImage = createPlaceholder(mapId);
+                        mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
+                    } else {
+                        console.log(`✅ 单层瓦片地图加载完成：${tileOverlays.length} 张瓦片`);
+                    }
+                }, 15000);  // 15 秒超时
+                
+                // 检查是否所有瓦片都已加载
+                const totalTiles = config.tileRows * config.tileCols;
+                const checkAllTilesLoaded = setInterval(() => {
+                    if (tileOverlays.length === totalTiles) {
+                        console.log(`✅ 所有瓦片加载完成，清除超时检查`);
+                        clearTimeout(tileLoadTimeout);
+                        clearInterval(checkAllTilesLoaded);
+                    }
+                }, 500);
+                
+            } else {
+                // === 单张图片地图加载 ===
+                const mapImageUrl = config.image;
+                const testImg = new Image();
+                let imageLoaded = false;
+                
+                testImg.onload = function() {
+                    console.log(`✅ 地图图片加载成功：${mapImageUrl}`);
+                    imageLoaded = true;
+                    if (mapOverlay) map.removeLayer(mapOverlay);
+                    mapOverlay = L.imageOverlay(mapImageUrl, bounds).addTo(map);
+                };
+                testImg.onerror = function() {
+                    console.log(`⚠️ 地图图片加载失败 (${mapImageUrl})，使用占位背景`);
+                    imageLoaded = true;
+                    if (mapOverlay) map.removeLayer(mapOverlay);
+                    const placeholderImage = createPlaceholder(mapId);
+                    mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
+                };
+                testImg.src = mapImageUrl;
+                
+                // 超时保护（增加超时时间到 15 秒）
+                setTimeout(() => {
+                    if (!imageLoaded) {
+                        console.log(`⚠️ 地图图片超时（>15s），使用占位背景`);
+                        const placeholderImage = createPlaceholder(mapId);
+                        mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
+                    }
+                    // 如果已加载成功，不执行任何操作（避免覆盖）
+                }, 15000);  // 15 秒超时
+            }
+            
+            // 恢复视图（如果有保存的视图）
+            if (keepZoom && mapViews[mapId]) {
+                console.log(`🔍 恢复 ${mapId} 的视图 (zoom=${mapViews[mapId].zoom})`);
+                map.setView(mapViews[mapId].center, mapViews[mapId].zoom);
+            } else {
+                // 没有保存的视图时，总是 fitBounds（包括 keepZoom=true 但无缓存的情况）
+                map.fitBounds(bounds);
+            }
+            
+            // 更新 UI
+            document.getElementById('current-map-name').textContent = config.name;
+            document.getElementById('current-map-size').textContent = `${config.width}×${config.height}`;
+            document.getElementById('map-select').value = mapId;
+            
+            // 加载标记
+            loadMarkersForMap(mapId);
+            updateStats();
+            
+            // 应用筛选状态
+            updateFilterUI();
+            updateMarkerVisibility();
+            
+            console.log(`✅ 地图加载完成：${config.name}`);
+            showToast(`已切换至：${config.name}`, 'success');
+        }
+        
+        // 切换地图
+        window.switchMap = function(mapId) {
+            loadMap(mapId);
+        };
+        
+        // 标记数据（按地图分离）
+        let markerIdCounter = 0;
+        const markerData = {}; // 当前地图的标记数据
+        const allMarkersData = {}; // 所有地图的标记数据 { mapId: { markerId: data } }
+        
+        // 加载指定地图的标记
+        function loadMarkersForMap(mapId) {
+            console.log(`📍 加载地图标记：${mapId}`);
+            
+            // 清空当前标记
+            markers.clearLayers();
+            Object.keys(markerData).forEach(key => delete markerData[key]);
+            
+            // 从 localStorage 加载（每次都从 localStorage 加载，确保数据最新）
+            const storageKey = MAP_CONFIGS[mapId].storageKey;
+            let markersToLoad = {};
+            
+            try {
+                const saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    markerIdCounter = data.counter || 0;
+                    markersToLoad = data.markers || {};
+                    console.log(`  ✅ 从 localStorage 加载：${Object.keys(markersToLoad).length} 个标记`);
+                } else {
+                    console.log(`  ℹ️ 无存储数据，初始化空数据`);
+                }
+            } catch (e) {
+                console.error(`❌ 加载标记失败 (${mapId}):`, e);
+            }
+            
+            // 保存到内存和当前 markerData
+            allMarkersData[mapId] = markersToLoad;
+            Object.assign(markerData, markersToLoad);
+            
+            // 添加到地图（根据聚合状态决定添加到集群还是直接添加到地图）
+            Object.values(markerData).forEach(marker => {
+                const m = L.marker([marker.lat, marker.lng], {
+                    icon: createMarkerIcon(marker.type)
+                });
+                const popup = m.bindPopup(createPopupContent(marker));
+                marker.popup = popup.getPopup();  // 重新建立 popup 引用
+                
+                if (clusterEnabled) {
+                    markers.addLayer(m);
+                } else {
+                    map.addLayer(m);
+                }
+            });
+            
+            console.log(`✅ 加载完成：${Object.keys(markerData).length} 个标记 (${mapId})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
+            updateStats();
+        }
+        
+        // 保存当前地图的标记
+        function saveCurrentMapMarkers() {
+            const storageKey = currentMapConfig.storageKey;
+            try {
+                // 创建不含 popup 引用的数据副本（popup 是 DOM 对象，不能被 JSON 序列化）
+                const markersToSave = {};
+                Object.keys(markerData).forEach(key => {
+                    const { popup, ...markerDataWithoutPopup } = markerData[key];
+                    markersToSave[key] = markerDataWithoutPopup;
+                });
+                
+                const data = {
+                    markers: markersToSave,
+                    counter: markerIdCounter,
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem(storageKey, JSON.stringify(data));
+                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markersToSave));
+                updateLastSaved();
+                console.log(`💾 已保存 ${currentMapId} 的 ${Object.keys(markersToSave).length} 个标记`);
+            } catch (e) {
+                console.error('❌ 保存失败:', e);
+                showToast('保存失败：存储空间不足', 'error');
+            }
+        }
+        
+        // 创建自定义标记图标
+        function createMarkerIcon(type) {
+            const config = MARKER_CONFIGS[type];
+            
+            // 如果配置了图片图标（AP 专用标记）
+            if (config.useImage && config.imagePath) {
+                const html = `
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        background: white;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border: 3px solid ${config.color};
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                        overflow: hidden;
+                    ">
+                        <img src="${config.imagePath}" style="width: 28px; height: 28px; object-fit: contain;" alt="${config.label}" />
+                    </div>
+                `;
+                
+                return L.divIcon({
+                    html: html,
+                    className: 'custom-marker-image',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                    popupAnchor: [0, -20]
+                });
+            }
+            
+            // 默认使用 FontAwesome 图标
+            const html = `
+                <div style="
+                    width: 40px;
+                    height: 40px;
+                    background: ${config.color};
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                ">
+                    <i class="fas ${config.icon}" style="color: white; font-size: 18px;"></i>
+                </div>
+            `;
+            
+            return L.divIcon({
+                html: html,
+                className: 'custom-marker',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],
+                popupAnchor: [0, -20]
+            });
+        }
+        
+        // 添加标记
+        function addMarker(latlng, type = currentMarkerType) {
+            const id = 'marker_' + Date.now() + '_' + markerIdCounter++;
+            const marker = L.marker(latlng, {
+                icon: createMarkerIcon(type)
+            });
+            
+            const data = {
+                id: id,
+                type: type,
+                lat: latlng.lat,
+                lng: latlng.lng,
+                note: '',
+                createdAt: new Date().toISOString(),
+                popup: null  // 保存弹窗引用
+            };
+            
+            markerData[id] = data;
+            
+            // 绑定弹窗并保存引用
+            const popup = marker.bindPopup(createPopupContent(data));
+            data.popup = popup.getPopup();
+            
+            // 根据聚合状态决定添加到集群还是直接添加到地图
+            if (clusterEnabled) {
+                markers.addLayer(marker);
+            } else {
+                map.addLayer(marker);
+            }
+            
+            // 自动保存
+            saveToLocalStorage();
+            updateStats();
+            
+            console.log(`✅ 添加标记：${id} (${type})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
+            return marker;
+        }
+        
+        // 创建弹窗内容
+        function createPopupContent(data) {
+            const config = MARKER_CONFIGS[data.type];
+            return `
+                <div class="popup-content">
+                    <h3><i class="fas ${config.icon}" style="color: ${config.color};"></i> ${config.label}</h3>
+                    <p style="font-size: 0.85em; color: #888;">
+                        坐标：${data.lat.toFixed(1)}, ${data.lng.toFixed(1)}
+                    </p>
+                    <textarea placeholder="添加备注..." id="note-${data.id}">${data.note || ''}</textarea>
+                    <div class="popup-actions">
+                        <button class="btn-save" onclick="saveMarkerNote('${data.id}')">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                        <button class="btn-delete" onclick="deleteMarker('${data.id}')">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 保存标记备注
+        window.saveMarkerNote = function(id) {
+            const note = document.getElementById(`note-${id}`).value;
+            if (markerData[id]) {
+                markerData[id].note = note;
+                saveToLocalStorage();
+                
+                // 更新弹窗中的备注显示
+                const popup = markerData[id].popup;
+                if (popup) {
+                    popup.setContent(createPopupContent(markerData[id]));
+                }
+                
+                showToast('备注已保存', 'success');
+            }
+        };
+        
+        // 删除标记
+        window.deleteMarker = function(id) {
+            if (markerData[id]) {
+                delete markerData[id];
+                
+                // 从集群或地图中移除标记（根据聚合状态）
+                if (clusterEnabled) {
+                    // 从集群中移除
+                    markers.eachLayer(layer => {
+                        if (layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                            markers.removeLayer(layer);
+                        }
+                    });
+                } else {
+                    // 从地图中直接移除
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                            map.removeLayer(layer);
+                        }
+                    });
+                }
+                
+                saveToLocalStorage();
+                updateStats();
+                showToast('标记已删除', 'success');
+            }
+        };
+        
+        // 清空所有标记
+        window.clearAllMarkers = function() {
+            if (confirm('确定要清空所有标记吗？此操作不可恢复！')) {
+                // 清空集群中的标记
+                markers.clearLayers();
+                
+                // 清空当前地图的标记数据
+                Object.keys(markerData).forEach(key => delete markerData[key]);
+                
+                // 清空内存中的所有地图数据
+                if (currentMapId) {
+                    allMarkersData[currentMapId] = {};
+                }
+                
+                // 重置标记计数器
+                markerIdCounter = 0;
+                
+                // 保存到 localStorage
+                saveToLocalStorage();
+                updateStats();
+                showToast('已清空所有标记', 'success');
+            }
+        };
+        
+        // ==================== 地图点击事件 ====================
+        map.on('click', function(e) {
+            if (!currentMarkerType || currentMarkerType === 'none') {
+                showToast('请先选择一个标记类型', 'info');
+                // 闪烁提示
+                const markerSection = document.getElementById('marker-types');
+                markerSection.style.transition = 'opacity 0.3s';
+                markerSection.style.opacity = '0.5';
+                setTimeout(() => { markerSection.style.opacity = '1'; }, 300);
+                return;
+            }
+            addMarker(e.latlng, currentMarkerType);
+        });
+        
+        // 保存地图视图（缩放级别和中心点）- 按地图保存
+        let saveViewTimeout;
+        map.on('moveend zoomend', function() {
+            clearTimeout(saveViewTimeout);
+            saveViewTimeout = setTimeout(() => {
+                const view = {
+                    center: map.getCenter(),
+                    zoom: map.getZoom()
+                };
+                // 保存到当前地图的视图
+                mapViews[currentMapId] = view;
+                // 同时保存到 localStorage（兼容旧版）
+                localStorage.setItem('promilia-map-view', JSON.stringify(view));
+                console.log(`💾 视图已保存：${currentMapId} (zoom=${view.zoom})`);
+            }, 500);
+        });
+        
+        // 恢复地图视图（从 localStorage）
+        function restoreView() {
+            try {
+                const saved = localStorage.getItem('promilia-map-view');
+                if (saved) {
+                    const view = JSON.parse(saved);
+                    // 保存到 mapViews 供后续使用
+                    mapViews[currentMapId] = view;
+                    console.log(`🔍 恢复视图：zoom=${view.zoom}`);
+                }
+            } catch (e) {
+                console.error('❌ 恢复视图失败:', e);
+            }
+        }
+        
+        // ==================== 标记类型选择 ====================
+        // 恢复上次选择的标记类型
+        function restoreMarkerType() {
+            const savedType = localStorage.getItem('promilia-marker-type');
+            if (savedType && MARKER_CONFIGS[savedType]) {
+                currentMarkerType = savedType;
+                // 更新 UI
+                document.querySelectorAll('#marker-types .marker-type').forEach(el => {
+                    el.classList.remove('active');
+                    if (el.dataset.type === savedType) {
+                        el.classList.add('active');
+                    }
+                });
+                // 更新提示信息
+                const config = MARKER_CONFIGS[currentMarkerType];
+                const tipEl = document.getElementById('marker-tip');
+                tipEl.textContent = `当前类型：${config.label}，点击地图添加标记`;
+                tipEl.style.color = config.color;
+                console.log(`🔍 恢复标记类型：${currentMarkerType}`);
+            }
+        }
+        
+        document.querySelectorAll('#marker-types .marker-type').forEach(el => {
+            el.addEventListener('click', function(e) {
+                e.stopPropagation();  // 防止触发分类折叠
+                document.querySelectorAll('#marker-types .marker-type').forEach(e => e.classList.remove('active'));
+                this.classList.add('active');
+                currentMarkerType = this.dataset.type;
+                
+                // 保存到 localStorage
+                localStorage.setItem('promilia-marker-type', currentMarkerType);
+                
+                // 更新提示信息
+                const tipEl = document.getElementById('marker-tip');
+                if (currentMarkerType === 'none') {
+                    tipEl.textContent = '浏览模式：点击地图不会添加标记';
+                    tipEl.style.color = '#888';
+                } else {
+                    const config = MARKER_CONFIGS[currentMarkerType];
+                    tipEl.textContent = `当前类型：${config.label}，点击地图添加标记`;
+                    tipEl.style.color = config.color;
+                }
+                
+                console.log(`📍 切换标记类型：${currentMarkerType}`);
+            });
+        });
+        
+        // ==================== 筛选器功能 ====================
+        // 筛选器点击事件（支持分类折叠）- 只匹配筛选器区域内的元素
+        document.querySelectorAll('#filter-types .marker-type').forEach(el => {
+            el.addEventListener('click', function(e) {
+                e.stopPropagation();  // 防止触发分类折叠
+                const type = this.dataset.type;
+                
+                if (type === 'all') {
+                    // 点击"全部"：切换所有筛选
+                    const newState = !filterState.all;
+                    Object.keys(filterState).forEach(k => {
+                        if (k !== 'all') filterState[k] = newState;
+                    });
+                    filterState.all = newState;
+                    document.querySelectorAll('#filter-types .marker-type').forEach(e => {
+                        e.classList.toggle('active', newState);
+                    });
+                } else {
+                    // 点击具体类型：切换该类型
+                    filterState[type] = !filterState[type];
+                    this.classList.toggle('active');
+                    
+                    // 更新"全部"状态
+                    const allActive = Object.values(filterState).every(v => v);
+                    filterState.all = allActive;
+                    document.querySelector('#filter-types .marker-type[data-type="all"]').classList.toggle('active', allActive);
+                }
+                
+                updateMarkerVisibility();
+                saveFilterState();
+                console.log(`🔍 筛选状态：`, filterState);
+            });
+        });
+        
+        // 分类折叠点击事件（筛选器）
+        document.querySelectorAll('.category-header[data-category*="filter"]').forEach(header => {
+            header.addEventListener('click', function() {
+                const category = this.dataset.category;
+                const content = document.querySelector(`.category-content[data-category="${category}"]`);
+                const icon = this.querySelector('.fa-chevron-down');
+                
+                // 切换展开/折叠状态
+                this.classList.toggle('collapsed');
+                content.classList.toggle('collapsed');
+                
+                console.log(`📂 筛选分类 ${category}: ${content.classList.contains('collapsed') ? '折叠' : '展开'}`);
+            });
+        });
+        
+        // 保存筛选状态到 localStorage
+        function saveFilterState() {
+            localStorage.setItem('promilia-filter-state', JSON.stringify(filterState));
+        }
+        
+        // 更新筛选器 UI 显示
+        function updateFilterUI() {
+            document.querySelectorAll('.marker-type[data-type]').forEach(el => {
+                const type = el.dataset.type;
+                const isActive = filterState[type];
+                el.classList.toggle('active', isActive);
+            });
+        }
+        
+        // 更新标记可见性（支持聚合/非聚合模式）
+        function updateMarkerVisibility() {
+            if (clusterEnabled) {
+                // === 聚合模式：从集群中移除再重新添加 ===
+                markers.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        markers.removeLayer(layer);
+                    }
+                });
+                
+                // 根据筛选状态重新添加到集群
+                Object.values(markerData).forEach(data => {
+                    if (filterState[data.type]) {
+                        const marker = L.marker([data.lat, data.lng], {
+                            icon: createMarkerIcon(data.type)
+                        });
+                        marker.bindPopup(createPopupContent(data));
+                        markers.addLayer(marker);
+                    }
+                });
+            } else {
+                // === 非聚合模式：从地图中移除再重新添加 ===
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        map.removeLayer(layer);
+                    }
+                });
+                
+                // 根据筛选状态重新添加到地图
+                Object.values(markerData).forEach(data => {
+                    if (filterState[data.type]) {
+                        const marker = L.marker([data.lat, data.lng], {
+                            icon: createMarkerIcon(data.type)
+                        });
+                        marker.bindPopup(createPopupContent(data));
+                        map.addLayer(marker);
+                    }
+                });
+            }
+        }
+        
+        // ==================== 本地存储（多地图） ====================
+        // saveToLocalStorage 改为 saveCurrentMapMarkers（已在上面定义）
+        const saveToLocalStorage = saveCurrentMapMarkers;
+        
+        // ==================== 导入导出 ====================
+        window.exportData = function() {
+            // 导出所有地图的完整数据
+            const exportData = {
+                version: '1.3',
+                exportedAt: new Date().toISOString(),
+                toolName: '普罗米利亚地图标记工具',
+                maps: {}
+            };
+            
+            // 先保存当前地图（确保最新数据写入 localStorage）
+            saveCurrentMapMarkers();
+            
+            // 收集所有地图的数据（直接从 localStorage 读取）
+            let totalMarkers = 0;
+            Object.keys(MAP_CONFIGS).forEach(mapId => {
+                const config = MAP_CONFIGS[mapId];
+                const storageKey = config.storageKey;
+                
+                try {
+                    const saved = localStorage.getItem(storageKey);
+                    let markers = [];
+                    
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        markers = Object.values(data.markers || {});
+                    }
+                    
+                    exportData.maps[mapId] = {
+                        mapName: config.name,
+                        markers: markers,
+                        markerCount: markers.length
+                    };
+                    
+                    totalMarkers += markers.length;
+                    console.log(`📊 ${config.name}: ${markers.length} 个标记`);
+                } catch (e) {
+                    console.error(`❌ 读取 ${config.name} 失败:`, e);
+                    exportData.maps[mapId] = {
+                        mapName: config.name,
+                        markers: [],
+                        markerCount: 0,
+                        error: e.message
+                    };
+                }
+            });
+            
+            const json = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `promilia-all-maps-${Date.now()}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            
+            showToast(`已导出 ${totalMarkers} 个标记（${Object.keys(exportData.maps).length} 张地图）`, 'success');
+        };
+        
+        window.importData = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // 检测数据格式：v1.3+ 多地图格式 vs 旧版单地图格式
+                    if (data.maps && typeof data.maps === 'object') {
+                        // === v1.3+ 多地图格式 ===
+                        const importInfo = [];
+                        let totalMarkers = 0;
+                        
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            const markerCount = mapData.markers ? mapData.markers.length : 0;
+                            importInfo.push(`  • ${mapData.mapName || mapId}: ${markerCount} 个标记`);
+                            totalMarkers += markerCount;
+                        });
+                        
+                        if (!confirm(`检测到 v1.3 多地图备份文件\n\n` +
+                            `共 ${totalMarkers} 个标记，${Object.keys(data.maps).length} 张地图：\n\n` +
+                            importInfo.join('\n') + '\n\n' +
+                            `点击"确定"导入所有数据\n点击"取消"取消导入`)) {
+                            return;
+                        }
+                        
+                        // 导入所有地图数据
+                        let importedCount = 0;
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            if (!mapData.markers || !Array.isArray(mapData.markers)) return;
+                            
+                            const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
+                            const markersObj = {};
+                            
+                            mapData.markers.forEach(marker => {
+                                markersObj[marker.id] = marker;
+                                importedCount++;
+                            });
+                            
+                            // 保存到 localStorage
+                            localStorage.setItem(storageKey, JSON.stringify({
+                                markers: markersObj,
+                                counter: mapData.counter || Date.now(),
+                                savedAt: new Date().toISOString()
+                            }));
+                            
+                            // 更新内存中的数据
+                            allMarkersData[mapId] = markersObj;
+                        });
+                        
+                        // 如果当前地图有数据，刷新显示
+                        if (allMarkersData[currentMapId]) {
+                            markers.clearLayers();
+                            Object.keys(markerData).forEach(key => delete markerData[key]);
+                            Object.assign(markerData, allMarkersData[currentMapId]);
+                            
+                            Object.values(markerData).forEach(marker => {
+                                const m = L.marker([marker.lat, marker.lng], {
+                                    icon: createMarkerIcon(marker.type)
+                                });
+                                m.bindPopup(createPopupContent(marker));
+                                markers.addLayer(m);
+                            });
+                            updateStats();
+                        }
+                        
+                        showToast(`已导入 ${importedCount} 个标记到 ${Object.keys(data.maps).length} 张地图`, 'success');
+                        
+                    } else if (data.markers && Array.isArray(data.markers)) {
+                        // === 旧版单地图格式（兼容） ===
+                        const importToCurrent = confirm(
+                            `检测到旧版单地图备份文件\n\n` +
+                            `共 ${data.markers.length} 个标记\n\n` +
+                            `点击"确定"导入到当前地图（${currentMapConfig.name}）\n` +
+                            `点击"取消"取消导入`
+                        );
+                        
+                        if (!importToCurrent) return;
+                        
+                        // 导入到当前地图
+                        markers.clearLayers();
+                        Object.keys(markerData).forEach(key => delete markerData[key]);
+                        
+                        data.markers.forEach(marker => {
+                            markerData[marker.id] = marker;
+                            const m = L.marker([marker.lat, marker.lng], {
+                                icon: createMarkerIcon(marker.type)
+                            });
+                            m.bindPopup(createPopupContent(marker));
+                            markers.addLayer(m);
+                        });
+                        
+                        markerIdCounter = Date.now();
+                        saveToLocalStorage();
+                        updateStats();
+                        showToast(`已导入 ${data.markers.length} 个标记到 ${currentMapConfig.name}`, 'success');
+                    } else {
+                        throw new Error('无法识别的数据格式');
+                    }
+                } catch (err) {
+                    console.error('❌ 导入失败:', err);
+                    showToast('导入失败：文件格式错误', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        };
+        
+        // ==================== 统计更新 ====================
+        function updateStats() {
+            const total = Object.keys(markerData).length;
+            document.getElementById('total-markers').textContent = total;
+            document.getElementById('current-map-count').textContent = total;
+            
+            // 按分类统计
+            const counts = { 
+                chest: 0,      // 宝箱类
+                explore: 0,    // 探索类 (puzzle, quest, flower, teleport)
+                creature: 0,   // 生物类 (umi, egg, chipo, chipo_battle, chipo_egg)
+                other: 0       // 其他 (enemy, star, fish, custom)
+            };
+            
+            Object.values(markerData).forEach(m => {
+                const config = MARKER_CONFIGS[m.type];
+                if (config && config.category) {
+                    counts[config.category]++;
+                }
+            });
+            
+            // 更新分类统计显示
+            document.getElementById('count-chest').textContent = counts.chest;
+            document.getElementById('count-explore').textContent = counts.explore;
+            document.getElementById('count-creature').textContent = counts.creature;
+            document.getElementById('count-other').textContent = counts.other;
+        }
+        
+        function updateLastSaved() {
+            const now = new Date();
+            const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            document.getElementById('last-saved').textContent = time;
+        }
+        
+        // ==================== 腾讯云 COS 云端存储 ====================
+        // COS 配置
+        const COS_CONFIG = {
+            Bucket: 'kimicup-1412418695',
+            Region: 'ap-shanghai',
+            SecretId: 'YOUR_SECRET_ID',
+            SecretKey: 'YOUR_SECRET_KEY'
+        };
+        
+        // COS 签名生成（HMAC-SHA1）
+        function generateCOSAuth(key, method = 'GET', contentType = '', headers = '') {
+            const now = Math.floor(Date.now() / 1000);
+            const expired = now + 3600;
+            
+            const r = {
+                T: now,
+                E: expired,
+                K: COS_CONFIG.SecretId
+            };
+            
+            // 构造签名字符串
+            const signStr = [
+                method.toLowerCase(),
+                key,
+                '', // query
+                contentType,
+                headers,
+                now,
+                expired
+            ].join('\n');
+            
+            // HMAC-SHA1 签名
+            const hmac = CryptoJS.HmacSHA1(signStr, COS_CONFIG.SecretKey);
+            const sign = CryptoJS.enc.Base64.stringify(hmac);
+            
+            r.A = sign;
+            
+            // 返回授权头
+            return 'q-sign-algorithm=sha1&q-ak=' + COS_CONFIG.SecretId + 
+                   '&q-sign-time=' + now + ';' + expired + 
+                   '&q-key-time=' + now + ';' + expired + 
+                   '&q-header-list=&q-url-param-list=&q-signature=' + sign;
+        }
+        
+        // 生成预签名 URL（COS 签名 v5 规范）
+        function generatePresignedURL(key, method = 'PUT', expired = 3600, contentType = 'application/json; charset=UTF-8') {
+            const now = Math.floor(Date.now() / 1000);
+            const exp = now + expired;
+            const keyTime = `${now};${exp}`;
+            
+            // 1. 计算 SignKey = HMAC-SHA1(SecretKey, KeyTime)
+            const signKey = CryptoJS.HmacSHA1(keyTime, COS_CONFIG.SecretKey).toString(CryptoJS.enc.Hex);
+            
+            // 2. 构造 HttpString
+            const httpMethod = method.toLowerCase();
+            const uriPath = '/' + key;
+            const httpParams = '';
+            const host = `${COS_CONFIG.Bucket}.cos.${COS_CONFIG.Region}.myqcloud.com`;
+            const httpHeaders = `content-type=${encodeURIComponent(contentType)}&host=${host}`;
+            
+            const httpString = `${httpMethod}\n${uriPath}\n${httpParams}\n${httpHeaders}\n`;
+            
+            // 3. 计算 StringToSign
+            const sha1HttpString = CryptoJS.SHA1(httpString).toString(CryptoJS.enc.Hex);
+            const stringToSign = `sha1\n${keyTime}\n${sha1HttpString}\n`;
+            
+            // 4. 计算签名 Signature = HMAC-SHA1(SignKey, StringToSign)
+            const signature = CryptoJS.HmacSHA1(stringToSign, signKey).toString(CryptoJS.enc.Hex);
+            
+            // 5. 构建预签名 URL
+            const headerList = 'content-type;host';
+            
+            const queryString = [
+                'q-sign-algorithm=sha1',
+                'q-ak=' + COS_CONFIG.SecretId,
+                'q-sign-time=' + keyTime,
+                'q-key-time=' + keyTime,
+                'q-header-list=' + headerList,
+                'q-url-param-list=',
+                'q-signature=' + signature
+            ].join('&');
+            
+            const url = `https://${host}/${key}?${queryString}`;
+            
+            return url;
+        }
+        
+        // 上传到 COS
+        window.uploadToCOS = async function() {
+            const statusDiv = document.getElementById('cos-status');
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 准备上传...';
+            
+            try {
+                // 先保存当前地图
+                saveCurrentMapMarkers();
+                
+                // 收集所有地图数据
+                const uploadData = {
+                    version: '3.4.12',
+                    exportedAt: new Date().toISOString(),
+                    toolName: '普罗米利亚地图标记工具',
+                    maps: {}
+                };
+                
+                let totalMarkers = 0;
+                Object.keys(MAP_CONFIGS).forEach(mapId => {
+                    const config = MAP_CONFIGS[mapId];
+                    const storageKey = config.storageKey;
+                    
+                    try {
+                        const saved = localStorage.getItem(storageKey);
+                        let markers = [];
+                        
+                        if (saved) {
+                            const data = JSON.parse(saved);
+                            markers = Object.values(data.markers || {});
+                        }
+                        
+                        uploadData.maps[mapId] = {
+                            mapName: config.name,
+                            markers: markers,
+                            markerCount: markers.length
+                        };
+                        
+                        totalMarkers += markers.length;
+                    } catch (e) {
+                        console.error(`读取 ${config.name} 失败:`, e);
+                    }
+                });
+                
+                statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在上传到云端...';
+                
+                // 生成文件名和云端路径
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+                const filename = `promilia-backup-${timestamp}.json`;
+                const cloudPath = `promilia-markers/default/${filename}`;
+                
+                // 生成预签名 PUT URL（使用 generatePresignedURL 函数）
+                const uploadUrl = generatePresignedURL(cloudPath, 'PUT', 3600, 'application/json; charset=UTF-8');
+                
+                console.log('上传 URL:', uploadUrl);
+                
+                // 转换为 JSON
+                const json = JSON.stringify(uploadData, null, 2);
+                const contentType = 'application/json; charset=UTF-8';
+                
+                // 使用 XMLHttpRequest 上传（避免 fetch 的 CORS 预检问题）
+                await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('PUT', uploadUrl, true);
+                    xhr.setRequestHeader('Content-Type', contentType);
+                    
+                    xhr.onload = function() {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            resolve(xhr);
+                        } else {
+                            reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText}`));
+                        }
+                    };
+                    
+                    xhr.onerror = function() {
+                        reject(new Error('网络错误'));
+                    };
+                    
+                    xhr.send(json);
+                });
+                
+                // 生成下载链接
+                const downloadUrl = generatePresignedURL(cloudPath, 'GET', 3600);
+                
+                statusDiv.innerHTML = `✅ 上传成功！<br>📦 文件：${filename}<br>📊 共 ${totalMarkers} 个标记<br>🔗 <a href="${downloadUrl}" target="_blank" style="color:#4fc3f7;">点击下载链接（1 小时有效）</a>`;
+                showToast(`已上传 ${totalMarkers} 个标记到云端`, 'success');
+                
+            } catch (e) {
+                console.error('上传失败:', e);
+                statusDiv.innerHTML = `❌ 上传失败：${e.message}<br><small>提示：请使用 HTTP 服务器运行（python3 -m http.server 8000），不要直接打开文件</small>`;
+                showToast('上传到云端失败', 'error');
+            }
+        };
+        
+        // 从 COS 加载（通过文件选择）
+        window.loadFromCOS = async function() {
+            const statusDiv = document.getElementById('cos-status');
+            
+            // 提示用户选择文件
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在解析文件...';
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        // 验证数据格式
+                        if (!data.maps) {
+                            throw new Error('无效的备份文件格式');
+                        }
+                        
+                        // 显示导入确认
+                        let info = `版本：${data.version || '未知'}\n`;
+                        let totalMarkers = 0;
+                        Object.keys(data.maps).forEach(mapId => {
+                            const count = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
+                            info += `  • ${data.maps[mapId].mapName || mapId}: ${count} 个标记\n`;
+                            totalMarkers += count;
+                        });
+                        
+                        if (!confirm(`从备份文件加载\n\n${info}\n共 ${totalMarkers} 个标记\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
+                            statusDiv.innerHTML = '';
+                            return;
+                        }
+                        
+                        // 导入数据
+                        let importedCount = 0;
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            if (!mapData.markers || !Array.isArray(mapData.markers)) return;
+                            
+                            const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
+                            const markersObj = {};
+                            
+                            mapData.markers.forEach(marker => {
+                                markersObj[marker.id] = marker;
+                            });
+                            
+                            // 保存到 localStorage
+                            localStorage.setItem(storageKey, JSON.stringify({
+                                mapId: mapId,
+                                mapName: mapData.mapName || mapId,
+                                markers: markersObj,
+                                counter: Date.now(),
+                                savedAt: new Date().toISOString()
+                            }));
+                            
+                            // 更新内存
+                            allMarkersData[mapId] = markersObj;
+                            importedCount += mapData.markers.length;
+                        });
+                        
+                        // 刷新当前地图显示
+                        if (allMarkersData[currentMapId]) {
+                            markers.clearLayers();
+                            Object.keys(markerData).forEach(key => delete markerData[key]);
+                            Object.assign(markerData, allMarkersData[currentMapId]);
+                            
+                            Object.values(markerData).forEach(marker => {
+                                const m = L.marker([marker.lat, marker.lng], {
+                                    icon: createMarkerIcon(marker.type)
+                                });
+                                m.bindPopup(createPopupContent(marker));
+                                markers.addLayer(m);
+                            });
+                            updateStats();
+                        }
+                        
+                        statusDiv.innerHTML = `✅ 已加载 ${importedCount} 个标记`;
+                        showToast(`已从文件加载 ${importedCount} 个标记`, 'success');
+                        
+                    } catch (parseErr) {
+                        console.error('解析失败:', parseErr);
+                        statusDiv.innerHTML = `❌ 解析失败：${parseErr.message}`;
+                        showToast('解析备份文件失败', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        };
+        
+        // 从 COS URL 直接加载（高级功能）
+        window.loadFromCOSUrl = async function() {
+            const url = prompt('请输入 COS 下载链接：');
+            if (!url) return;
+            
+            const statusDiv = document.getElementById('cos-status');
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在从云端下载...';
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('下载失败');
+                
+                const data = await response.json();
+                
+                // 验证数据格式
+                if (!data.maps) {
+                    throw new Error('无效的备份文件格式');
+                }
+                
+                // 显示导入确认
+                let info = `版本：${data.version || '未知'}\n`;
+                let totalMarkers = 0;
+                Object.keys(data.maps).forEach(mapId => {
+                    const count = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
+                    info += `  • ${data.maps[mapId].mapName || mapId}: ${count} 个标记\n`;
+                    totalMarkers += count;
+                });
+                
+                if (!confirm(`从云端加载\n\n${info}\n共 ${totalMarkers} 个标记\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
+                    statusDiv.innerHTML = '';
+                    return;
+                }
+                
+                // 导入数据（同上）
+                let importedCount = 0;
+                Object.keys(data.maps).forEach(mapId => {
+                    const mapData = data.maps[mapId];
+                    if (!mapData.markers || !Array.isArray(mapData.markers)) return;
+                    
+                    const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
+                    const markersObj = {};
+                    
+                    mapData.markers.forEach(marker => {
+                        markersObj[marker.id] = marker;
+                    });
+                    
+                    localStorage.setItem(storageKey, JSON.stringify({
+                        mapId: mapId,
+                        mapName: mapData.mapName || mapId,
+                        markers: markersObj,
+                        counter: Date.now(),
+                        savedAt: new Date().toISOString()
+                    }));
+                    
+                    allMarkersData[mapId] = markersObj;
+                    importedCount += mapData.markers.length;
+                });
+                
+                if (allMarkersData[currentMapId]) {
+                    markers.clearLayers();
+                    Object.keys(markerData).forEach(key => delete markerData[key]);
+                    Object.assign(markerData, allMarkersData[currentMapId]);
+                    
+                    Object.values(markerData).forEach(marker => {
+                        const m = L.marker([marker.lat, marker.lng], {
+                            icon: createMarkerIcon(marker.type)
+                        });
+                        m.bindPopup(createPopupContent(marker));
+                        markers.addLayer(m);
+                    });
+                    updateStats();
+                }
+                
+                statusDiv.innerHTML = `✅ 已从云端加载 ${importedCount} 个标记`;
+                showToast(`已从云端加载 ${importedCount} 个标记`, 'success');
+                
+            } catch (e) {
+                console.error('下载失败:', e);
+                statusDiv.innerHTML = `❌ 下载失败：${e.message}`;
+                showToast('从云端下载失败', 'error');
+            }
+        };
+        
+        // ==================== 提示框 ====================
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = type;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // ==================== 标记聚合开关事件监听（Issue #1） ====================
+        const clusterToggle = document.getElementById('cluster-toggle');
+        if (clusterToggle) {
+            // 设置初始状态
+            clusterToggle.checked = clusterEnabled;
+            
+            // 监听开关变化
+            clusterToggle.addEventListener('change', function() {
+                clusterEnabled = this.checked;
+                localStorage.setItem('promilia-cluster-enabled', clusterEnabled);
+                
+                if (clusterEnabled) {
+                    // 启用聚合：将标记移到集群
+                    console.log('✅ 启用标记聚合');
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                            markers.addLayer(layer);
+                        }
+                    });
+                    map.addLayer(markers);
+                    showToast('已启用标记聚合', 'success');
+                } else {
+                    // 禁用聚合：将标记移到地图
+                    console.log('⚠️ 禁用标记聚合');
+                    markers.eachLayer(layer => {
+                        markers.removeLayer(layer);
+                        map.addLayer(layer);
+                    });
+                    map.removeLayer(markers);
+                    showToast('已禁用标记聚合', 'success');
+                }
+            });
+            console.log('✅ 聚合开关已初始化');
+        }
+        
+        // ==================== 分类折叠事件监听 ====================
+        document.querySelectorAll('.category-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const category = this.dataset.category;
+                const content = document.querySelector(`.category-content[data-category="${category}"]`);
+                const icon = this.querySelector('.fa-chevron-down');
+                
+                // 切换展开/折叠状态
+                this.classList.toggle('collapsed');
+                content.classList.toggle('collapsed');
+                categoryExpanded[category] = !this.classList.contains('collapsed');
+                
+                console.log(`📂 分类 ${category}: ${categoryExpanded[category] ? '展开' : '折叠'}`);
+            });
+        });
+        
+        // ==================== 启动 ====================
+        console.log('🚀 启动应用...');
+        
+        // 恢复地图视图（缩放级别和中心点）
+        restoreView();
+        
+        // 恢复上次选择的标记类型
+        restoreMarkerType();
+        
+        // 初始化地图（使用保存的地图 ID，保持缩放）
+        loadMap(currentMapId, true);
+        
+        console.log('✅ 应用启动完成');
+        showToast('普罗米利亚地图工具已就绪', 'success');
+    </script>
+</body>
+</html>
