@@ -409,7 +409,7 @@
         <!-- 侧边栏 -->
         <div id="sidebar">
             <h1>🗺️ 普罗米利亚地图</h1>
-            <p class="subtitle">本地标记工具 v1.9</p>
+            <p class="subtitle">本地标记工具 v3.4.14</p>
             
             <!-- 地图切换器 -->
             <div class="map-switcher">
@@ -761,6 +761,22 @@
             <!-- 操作按钮 -->
             <div class="section">
                 <h2><i class="fas fa-tools"></i> 操作</h2>
+                <div style="margin-bottom: 15px; padding: 12px; background: #0f3460; border-radius: 8px;">
+                    <div style="font-size: 0.9em; color: #00d9ff; margin-bottom: 8px;">导入模式</div>
+                    <div style="display: flex; gap: 15px;">
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="radio" name="import-mode" value="override" checked style="accent-color: #00d9ff;">
+                            <span>覆盖导入</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <input type="radio" name="import-mode" value="incremental" style="accent-color: #00d9ff;">
+                            <span>增量导入</span>
+                        </label>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 0.75em; color: #888;">
+                        <i class="fas fa-info-circle"></i> 覆盖导入会清除现有标记，增量导入会保留现有标记
+                    </div>
+                </div>
                 <button class="btn btn-primary" onclick="exportData()">
                     <i class="fas fa-download"></i> 导出数据
                 </button>
@@ -828,7 +844,7 @@
     
     <script>
         // ==================== 初始化 ====================
-        console.log('🗺️ 普罗米利亚地图标记工具 v1.0');
+        console.log('🗺️ 普罗米利亚地图标记工具 v3.4.14');
         console.log('🔄 初始化中...');
         
         // 标记类型配置（分类折叠）
@@ -1887,6 +1903,9 @@
             const file = event.target.files[0];
             if (!file) return;
             
+            // 获取导入模式
+            const importMode = document.querySelector('input[name="import-mode"]:checked').value;
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -1905,7 +1924,9 @@
                             totalMarkers += markerCount;
                         });
                         
+                        const modeText = importMode === 'override' ? '覆盖' : '增量';
                         if (!confirm(`检测到 v1.3 多地图备份文件\n\n` +
+                            `导入模式：${modeText}导入\n` +
                             `共 ${totalMarkers} 个标记，${Object.keys(data.maps).length} 张地图：\n\n` +
                             importInfo.join('\n') + '\n\n' +
                             `点击"确定"导入所有数据\n点击"取消"取消导入`)) {
@@ -1919,8 +1940,22 @@
                             if (!mapData.markers || !Array.isArray(mapData.markers)) return;
                             
                             const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
-                            const markersObj = {};
+                            let markersObj = {};
                             
+                            if (importMode === 'incremental') {
+                                // 增量导入：保留现有标记
+                                try {
+                                    const saved = localStorage.getItem(storageKey);
+                                    if (saved) {
+                                        const existingData = JSON.parse(saved);
+                                        markersObj = existingData.markers || {};
+                                    }
+                                } catch (e) {
+                                    console.error(`❌ 读取现有数据失败 (${mapId}):`, e);
+                                }
+                            }
+                            
+                            // 添加新标记
                             mapData.markers.forEach(marker => {
                                 markersObj[marker.id] = marker;
                                 importedCount++;
@@ -1953,12 +1988,14 @@
                             updateStats();
                         }
                         
-                        showToast(`已导入 ${importedCount} 个标记到 ${Object.keys(data.maps).length} 张地图`, 'success');
+                        showToast(`已${importMode === 'override' ? '覆盖' : '增量'}导入 ${importedCount} 个标记到 ${Object.keys(data.maps).length} 张地图`, 'success');
                         
                     } else if (data.markers && Array.isArray(data.markers)) {
                         // === 旧版单地图格式（兼容） ===
+                        const modeText = importMode === 'override' ? '覆盖' : '增量';
                         const importToCurrent = confirm(
                             `检测到旧版单地图备份文件\n\n` +
+                            `导入模式：${modeText}导入\n` +
                             `共 ${data.markers.length} 个标记\n\n` +
                             `点击"确定"导入到当前地图（${currentMapConfig.name}）\n` +
                             `点击"取消"取消导入`
@@ -1967,9 +2004,13 @@
                         if (!importToCurrent) return;
                         
                         // 导入到当前地图
-                        markers.clearLayers();
-                        Object.keys(markerData).forEach(key => delete markerData[key]);
+                        if (importMode === 'override') {
+                            // 覆盖导入：清除现有标记
+                            markers.clearLayers();
+                            Object.keys(markerData).forEach(key => delete markerData[key]);
+                        }
                         
+                        // 添加新标记
                         data.markers.forEach(marker => {
                             markerData[marker.id] = marker;
                             const m = L.marker([marker.lat, marker.lng], {
@@ -1982,7 +2023,7 @@
                         markerIdCounter = Date.now();
                         saveToLocalStorage();
                         updateStats();
-                        showToast(`已导入 ${data.markers.length} 个标记到 ${currentMapConfig.name}`, 'success');
+                        showToast(`已${importMode === 'override' ? '覆盖' : '增量'}导入 ${data.markers.length} 个标记到 ${currentMapConfig.name}`, 'success');
                     } else {
                         throw new Error('无法识别的数据格式');
                     }
@@ -2139,7 +2180,7 @@
                 
                 // 收集所有地图数据
                 const uploadData = {
-                    version: '3.4.12',
+                    version: '3.4.14',
                     exportedAt: new Date().toISOString(),
                     toolName: '普罗米利亚地图标记工具',
                     maps: {}
@@ -2465,6 +2506,10 @@
         function importBackupData(data) {
             const statusDiv = document.getElementById('cos-status');
             
+            // 获取导入模式
+            const importMode = document.querySelector('input[name="import-mode"]:checked').value;
+            const modeText = importMode === 'override' ? '覆盖' : '增量';
+            
             // 导入数据
             let importedCount = 0;
             Object.keys(data.maps).forEach(mapId => {
@@ -2472,8 +2517,22 @@
                 if (!mapData.markers || !Array.isArray(mapData.markers)) return;
                 
                 const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
-                const markersObj = {};
+                let markersObj = {};
                 
+                if (importMode === 'incremental') {
+                    // 增量导入：保留现有标记
+                    try {
+                        const saved = localStorage.getItem(storageKey);
+                        if (saved) {
+                            const existingData = JSON.parse(saved);
+                            markersObj = existingData.markers || {};
+                        }
+                    } catch (e) {
+                        console.error(`❌ 读取现有数据失败 (${mapId}):`, e);
+                    }
+                }
+                
+                // 添加新标记
                 mapData.markers.forEach(marker => {
                     markersObj[marker.id] = marker;
                 });
@@ -2493,8 +2552,8 @@
             // 重新加载当前地图的标记（使用 loadMarkersForMap 确保逻辑一致）
             loadMarkersForMap(currentMapId);
             
-            statusDiv.innerHTML = `✅ 已加载 ${importedCount} 个标记`;
-            showToast(`已加载 ${importedCount} 个标记`, 'success');
+            statusDiv.innerHTML = `✅ 已${modeText}加载 ${importedCount} 个标记`;
+            showToast(`已${modeText}加载 ${importedCount} 个标记`, 'success');
         };
         
         // ==================== 提示框 ====================
