@@ -480,10 +480,10 @@
                     <i class="fas fa-chevron-down" style="color: #888;"></i>
                 </div>
                 <div class="category-content" data-category="chest" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
-                    <div class="marker-type" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
+                    <!--<div class="marker-type" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
                         <i class="fas fa-gift" style="color: #f39c12;"></i>
                         <span>宝箱</span>
-                    </div>
+                    </div>-->
                     <div class="marker-type" data-type="chest_wood" data-color="#8b4513" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #8b4513;"></i>
                         <span>木宝箱</span>
@@ -550,10 +550,10 @@
                         <i class="fas fa-cat" style="color: #2d3436;"></i>
                         <span>乌咪</span>
                     </div>
-                    <div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
+                    <!--<div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
                         <i class="fas fa-egg" style="color: #ffeaa7;"></i>
                         <span>蛋</span>
-                    </div>
+                    </div> -->
                     <div class="marker-type" data-type="chipo" data-color="#ff6b9d" data-icon="fa-paw">
                         <i class="fas fa-paw" style="color: #ff6b9d;"></i>
                         <span>奇波</span>
@@ -614,10 +614,10 @@
                 
                 <!-- 宝箱类筛选 -->
                 <div class="category-header" data-category="chest-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <!--<div style="display: flex; align-items: center; gap: 10px;">
                         <i class="fas fa-gift" style="color: #f39c12;"></i>
                         <span style="color: #eee; font-weight: bold;">宝箱</span>
-                    </div>
+                    </div>-->
                     <i class="fas fa-chevron-down" style="color: #888;"></i>
                 </div>
                 <div class="category-content" data-category="chest-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
@@ -691,10 +691,10 @@
                         <i class="fas fa-cat" style="color: #2d3436;"></i>
                         <span>乌咪</span>
                     </div>
-                    <div class="marker-type active" data-type="egg" data-category="creature">
+                    <!--<div class="marker-type active" data-type="egg" data-category="creature">
                         <i class="fas fa-egg" style="color: #ffeaa7;"></i>
                         <span>蛋</span>
-                    </div>
+                    </div>-->
                     <div class="marker-type active" data-type="chipo" data-category="creature">
                         <i class="fas fa-paw" style="color: #ff6b9d;"></i>
                         <span>奇波</span>
@@ -883,6 +883,11 @@
             // 具体类型
             all: true
         };
+        
+        // 为所有标记类型初始化筛选状态（默认全部启用）
+        Object.keys(MARKER_CONFIGS).forEach(type => {
+            filterState[type] = true;
+        });
         
         // 分类展开状态（用于 UI）
         const categoryExpanded = {
@@ -1091,6 +1096,10 @@
                 map.removeLayer(tileLayer);
                 tileLayer = null;
             }
+            
+            // 清除旧标记（在加载新地图前清空集群）
+            markers.clearLayers();
+            Object.keys(markerData).forEach(key => delete markerData[key]);
             
             // 边界（Simple CRS: [[x1, y1], [x2, y2]]）
             const bounds = [[0, 0], [config.width, config.height]];
@@ -1345,6 +1354,11 @@
             
             // 添加到地图（根据聚合状态决定添加到集群还是直接添加到地图）
             Object.values(markerData).forEach(marker => {
+                // 检查筛选状态
+                if (!filterState[marker.type]) {
+                    return;
+                }
+                
                 const m = L.marker([marker.lat, marker.lng], {
                     icon: createMarkerIcon(marker.type)
                 });
@@ -1357,6 +1371,11 @@
                     map.addLayer(m);
                 }
             });
+            
+            // 确保集群已添加到地图
+            if (clusterEnabled && !map.hasLayer(markers)) {
+                map.addLayer(markers);
+            }
             
             console.log(`✅ 加载完成：${Object.keys(markerData).length} 个标记 (${mapId})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
             updateStats();
@@ -1391,6 +1410,33 @@
         // 创建自定义标记图标
         function createMarkerIcon(type) {
             const config = MARKER_CONFIGS[type];
+            
+            // 处理未知标记类型
+            if (!config) {
+                const html = `
+                    <div style="
+                        width: 40px;
+                        height: 40px;
+                        background: #999;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border: 3px solid white;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                    ">
+                        <i class="fas fa-question" style="color: white; font-size: 18px;"></i>
+                    </div>
+                `;
+                
+                return L.divIcon({
+                    html: html,
+                    className: 'custom-marker',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                    popupAnchor: [0, -20]
+                });
+            }
             
             // 如果配置了图片图标（AP 专用标记）
             if (config.useImage && config.imagePath) {
@@ -1986,10 +2032,10 @@
         // ==================== 腾讯云 COS 云端存储 ====================
         // COS 配置
         const COS_CONFIG = {
-            Bucket: 'kimicup-1412418695',
-            Region: 'ap-shanghai',
-            SecretId: 'YOUR_SECRET_ID',
-            SecretKey: 'YOUR_SECRET_KEY'
+            Bucket: '请输入文本',
+            Region: '请输入文本',
+            SecretId: '请输入文本',
+            SecretKey: '请输入文本'
         };
         
         // COS 签名生成（HMAC-SHA1）
@@ -2041,9 +2087,10 @@
             const uriPath = '/' + key;
             const host = `${COS_CONFIG.Bucket}.cos.${COS_CONFIG.Region}.myqcloud.com`;
             
-            // 查询参数（按字母顺序排序）
-            const httpParams = Object.keys(params).sort()
-                .map(k => `${k}=${params[k]}`)
+            // 查询参数（按字母顺序排序，值需要 URL 编码）
+            const sortedParamKeys = Object.keys(params).sort();
+            const httpParams = sortedParamKeys
+                .map(k => `${k.toLowerCase()}=${encodeURIComponent(params[k])}`)
                 .join('&');
             
             // Headers（只有 content-type 非空时才包含）
@@ -2060,7 +2107,7 @@
             
             // 5. 构建预签名 URL
             const headerList = contentType ? 'content-type;host' : 'host';
-            const urlParamList = Object.keys(params).sort().join(';');
+            const urlParamList = sortedParamKeys.map(k => k.toLowerCase()).join(';');
             
             const queryString = [
                 'q-sign-algorithm=sha1',
@@ -2072,8 +2119,8 @@
                 'q-signature=' + signature
             ].join('&');
             
-            const paramsQuery = Object.keys(params).length > 0
-                ? '&' + Object.keys(params).sort().map(k => `${k}=${encodeURIComponent(params[k])}`).join('&')
+            const paramsQuery = sortedParamKeys.length > 0
+                ? '&' + sortedParamKeys.map(k => `${k.toLowerCase()}=${encodeURIComponent(params[k])}`).join('&')
                 : '';
             
             const url = `https://${host}/${key}?${queryString}${paramsQuery}`;
@@ -2127,9 +2174,11 @@
                 statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在上传到云端...';
                 
                 // 生成文件名和云端路径
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-                const filename = `promilia-backup-${timestamp}.json`;
-                const cloudPath = `promilia-markers/default/${filename}`;
+                // 只保留 日-时-分（如：21-15-30）
+                const date = new Date();
+                const timestamp = `${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}-${String(date.getMinutes()).padStart(2, '0')}`;
+                const filename = `yveshao-${timestamp}.json`;
+                const cloudPath = `promilia-markers/yveshao/${filename}`;
                 
                 // 生成预签名 PUT URL（使用 generatePresignedURL 函数）
                 const uploadUrl = generatePresignedURL(cloudPath, 'PUT', 3600, 'application/json; charset=UTF-8');
@@ -2310,17 +2359,13 @@
             
             try {
                 // 使用 COS ListObjects API 生成预签名 URL
-                const now = Math.floor(Date.now() / 1000);
-                const exp = now + 3600;
-                const keyTime = `${now};${exp}`;
-                
-                // 签名 ListObjects 请求（使用 generatePresignedURL 函数）
+                // ListObjects 操作 key 为空，通过 prefix 参数指定前缀
                 const listUrl = generatePresignedURL(
-                    'promilia-markers/default/',
+                    '',
                     'GET',
                     3600,
                     '',
-                    { 'prefix': 'promilia-markers/default/', 'max-keys': '20' }
+                    { 'prefix': 'promilia-markers/yveshao/', 'max-keys': '20' }
                 );
                 
                 const response = await fetch(listUrl);
@@ -2379,7 +2424,8 @@
             statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在下载...';
             
             try {
-                const downloadUrl = generatePresignedURL(cloudPath, 'GET', 3600);
+                // GET 请求不需要 Content-Type，传空字符串
+                const downloadUrl = generatePresignedURL(cloudPath, 'GET', 3600, '');
                 
                 const response = await fetch(downloadUrl);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -2444,20 +2490,8 @@
                 importedCount += mapData.markers.length;
             });
             
-            if (allMarkersData[currentMapId]) {
-                markers.clearLayers();
-                Object.keys(markerData).forEach(key => delete markerData[key]);
-                Object.assign(markerData, allMarkersData[currentMapId]);
-                
-                Object.values(markerData).forEach(marker => {
-                    const m = L.marker([marker.lat, marker.lng], {
-                        icon: createMarkerIcon(marker.type)
-                    });
-                    m.bindPopup(createPopupContent(marker));
-                    markers.addLayer(m);
-                });
-                updateStats();
-            }
+            // 重新加载当前地图的标记（使用 loadMarkersForMap 确保逻辑一致）
+            loadMarkersForMap(currentMapId);
             
             statusDiv.innerHTML = `✅ 已加载 ${importedCount} 个标记`;
             showToast(`已加载 ${importedCount} 个标记`, 'success');
