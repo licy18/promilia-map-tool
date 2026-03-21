@@ -2028,7 +2028,7 @@
         }
         
         // 生成预签名 URL（COS 签名 v5 规范）
-        function generatePresignedURL(key, method = 'PUT', expired = 3600, contentType = 'application/json; charset=UTF-8') {
+        function generatePresignedURL(key, method = 'PUT', expired = 3600, contentType = 'application/json; charset=UTF-8', params = {}) {
             const now = Math.floor(Date.now() / 1000);
             const exp = now + expired;
             const keyTime = `${now};${exp}`;
@@ -2039,9 +2039,15 @@
             // 2. 构造 HttpString
             const httpMethod = method.toLowerCase();
             const uriPath = '/' + key;
-            const httpParams = '';
             const host = `${COS_CONFIG.Bucket}.cos.${COS_CONFIG.Region}.myqcloud.com`;
-            const httpHeaders = `content-type=${encodeURIComponent(contentType)}&host=${host}`;
+            
+            // 查询参数（按字母顺序排序）
+            const httpParams = Object.keys(params).sort()
+                .map(k => `${k}=${params[k]}`)
+                .join('&');
+            
+            // Headers（只有 content-type 非空时才包含）
+            const httpHeaders = contentType ? `content-type=${encodeURIComponent(contentType)}&host=${host}` : `host=${host}`;
             
             const httpString = `${httpMethod}\n${uriPath}\n${httpParams}\n${httpHeaders}\n`;
             
@@ -2053,7 +2059,8 @@
             const signature = CryptoJS.HmacSHA1(stringToSign, signKey).toString(CryptoJS.enc.Hex);
             
             // 5. 构建预签名 URL
-            const headerList = 'content-type;host';
+            const headerList = contentType ? 'content-type;host' : 'host';
+            const urlParamList = Object.keys(params).sort().join(';');
             
             const queryString = [
                 'q-sign-algorithm=sha1',
@@ -2061,11 +2068,15 @@
                 'q-sign-time=' + keyTime,
                 'q-key-time=' + keyTime,
                 'q-header-list=' + headerList,
-                'q-url-param-list=',
+                'q-url-param-list=' + urlParamList,
                 'q-signature=' + signature
             ].join('&');
             
-            const url = `https://${host}/${key}?${queryString}`;
+            const paramsQuery = Object.keys(params).length > 0
+                ? '&' + Object.keys(params).sort().map(k => `${k}=${encodeURIComponent(params[k])}`).join('&')
+                : '';
+            
+            const url = `https://${host}/${key}?${queryString}${paramsQuery}`;
             
             return url;
         }
@@ -2303,20 +2314,14 @@
                 const exp = now + 3600;
                 const keyTime = `${now};${exp}`;
                 
-                // 签名 ListObjects 请求
-                const signKey = CryptoJS.HmacSHA1(keyTime, COS_CONFIG.SecretKey).toString(CryptoJS.enc.Hex);
-                const httpMethod = 'get';
-                const uriPath = '/';
-                const httpParams = 'prefix=promilia-markers%2Fdefault%2F&max-keys=20';
-                const host = `${COS_CONFIG.Bucket}.cos.${COS_CONFIG.Region}.myqcloud.com`;
-                const httpHeaders = `host=${host}`;
-                
-                const httpString = `${httpMethod}\n${uriPath}\n${httpParams}\n${httpHeaders}\n`;
-                const sha1HttpString = CryptoJS.SHA1(httpString).toString(CryptoJS.enc.Hex);
-                const stringToSign = `sha1\n${keyTime}\n${sha1HttpString}\n`;
-                const signature = CryptoJS.HmacSHA1(stringToSign, signKey).toString(CryptoJS.enc.Hex);
-                
-                const listUrl = `https://${host}/?q-sign-algorithm=sha1&q-ak=${COS_CONFIG.SecretId}&q-sign-time=${keyTime}&q-key-time=${keyTime}&q-header-list=host&q-url-param-list=max-keys%3Bprefix&q-signature=${signature}&prefix=promilia-markers%2Fdefault%2F&max-keys=20`;
+                // 签名 ListObjects 请求（使用 generatePresignedURL 函数）
+                const listUrl = generatePresignedURL(
+                    'promilia-markers/default/',
+                    'GET',
+                    3600,
+                    '',
+                    { 'prefix': 'promilia-markers/default/', 'max-keys': '20' }
+                );
                 
                 const response = await fetch(listUrl);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
