@@ -402,6 +402,52 @@
         .category-content.collapsed {
             display: none !important;
         }
+        /* === 新增：悬浮刷新按钮 === */
+        #refresh-btn {
+            position: fixed;
+            bottom: 80px; /* 放在提示框上方，避免重叠 */
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: #0f3460;
+            color: #00d9ff;
+            border: 2px solid #00d9ff;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.4s ease;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            /* 鼠标放上去时的效果 */
+            #refresh-btn:hover {
+                background: #00d9ff;
+                color: #1a1a2e;
+                transform: rotate(180deg); /* 悬停时旋转180度 */
+            }
+
+        /* === 新增：路线颜色选择按钮 === */
+        .route-color-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+            .route-color-btn:hover {
+                transform: scale(1.15); /* 鼠标悬停微微放大 */
+            }
+
+            .route-color-btn.active {
+                border-color: white; /* 选中的颜色会有白边 */
+                box-shadow: 0 0 10px rgba(255,255,255,0.6);
+            }
     </style>
 </head>
 <body>
@@ -410,7 +456,7 @@
         <div id="sidebar">
             <h1>🗺️ 普罗米利亚地图</h1>
             <p class="subtitle">本地标记工具 v3.4.14</p>
-            
+
             <!-- 地图切换器 -->
             <div class="map-switcher">
                 <select id="map-select" onchange="switchMap(this.value)">
@@ -425,7 +471,7 @@
                     标记数：<span id="current-map-count">0</span> | 尺寸：<span id="current-map-size">2048×2048</span>
                 </div>
             </div>
-            
+
             <!-- 统计 -->
             <div class="section">
                 <div class="stats">
@@ -460,17 +506,23 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- 标记类型（分类折叠） -->
             <div class="section" id="marker-types">
                 <h2><i class="fas fa-map-marker-alt"></i> 标记类型</h2>
-                
+
                 <!-- 浏览模式 -->
-                <div class="marker-type" data-type="none" data-color="#888" data-icon="fa-mouse-pointer" style="margin-bottom: 15px;">
-                    <i class="fas fa-mouse-pointer" style="color: #888;"></i>
-                    <span>浏览模式</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #0f3460; border-radius: 8px; margin-bottom: 15px; border: 1px solid #1a4a7a;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-mouse-pointer" style="color: #00d9ff;"></i>
+                        <span style="color: #eee; font-weight: bold;">浏览模式 (防误触)</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="browse-mode-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
                 </div>
-                
+
                 <!-- 宝箱类 -->
                 <div class="category-header" data-category="chest" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -481,9 +533,9 @@
                 </div>
                 <div class="category-content" data-category="chest" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
                     <!--<div class="marker-type" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
-                        <i class="fas fa-gift" style="color: #f39c12;"></i>
-                        <span>宝箱</span>
-                    </div>-->
+                <i class="fas fa-gift" style="color: #f39c12;"></i>
+                <span>宝箱</span>
+            </div>-->
                     <div class="marker-type" data-type="chest_wood" data-color="#8b4513" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #8b4513;"></i>
                         <span>木宝箱</span>
@@ -509,7 +561,7 @@
                         <span>暗黑箱</span>
                     </div>
                 </div>
-                
+
                 <!-- 探索类 -->
                 <div class="category-header" data-category="explore" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -536,7 +588,7 @@
                         <span>传送</span>
                     </div>
                 </div>
-                
+
                 <!-- 生物类 -->
                 <div class="category-header" data-category="creature" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -551,9 +603,9 @@
                         <span>乌咪</span>
                     </div>
                     <!--<div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
-                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                        <span>蛋</span>
-                    </div> -->
+                <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                <span>蛋</span>
+            </div> -->
                     <div class="marker-type" data-type="chipo" data-color="#ff6b9d" data-icon="fa-paw">
                         <i class="fas fa-paw" style="color: #ff6b9d;"></i>
                         <span>奇波</span>
@@ -567,7 +619,7 @@
                         <span>奇波蛋</span>
                     </div>
                 </div>
-                
+
                 <!-- 其他 -->
                 <div class="category-header" data-category="other" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -594,170 +646,211 @@
                         <span>自定义</span>
                     </div>
                 </div>
-                
+
                 <div style="margin-top: 10px; padding: 10px; background: #0f3460; border-radius: 6px; font-size: 0.85em;">
                     <i class="fas fa-info-circle" style="color: #00d9ff;"></i>
                     <span id="marker-tip" style="color: #aaa;">请选择一个标记类型后点击地图</span>
                 </div>
             </div>
-            
+
+            <!-- 似乎是路线绘制代码，不懂但先复制吧 -->
+            <div class="section">
+                <h2><i class="fas fa-route"></i> 路线绘制</h2>
+                <div style="background: #0f3460; padding: 12px; border-radius: 8px; border: 1px solid #1a4a7a;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #eee; font-weight: bold;"><i class="fas fa-pen"></i> 开启画笔</span>
+                        <label class="switch">
+                            <input type="checkbox" id="route-mode-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div id="route-tools" style="display: none; margin-top: 15px; border-top: 1px dashed #1a4a7a; padding-top: 15px;">
+                        <div style="font-size: 0.8em; color: #888; margin-bottom: 8px;">选择路线颜色：</div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 12px;" id="route-colors">
+                            <button class="route-color-btn active" data-color="#FF3333" style="background: #FF3333;" title="亮红"></button>
+                            <button class="route-color-btn" data-color="#FF1493" style="background: #FF1493;" title="亮粉"></button>
+                            <button class="route-color-btn" data-color="#00FF00" style="background: #00FF00;" title="亮绿"></button>
+                            <button class="route-color-btn" data-color="#00EAFF" style="background: #00EAFF;" title="亮蓝"></button>
+                        </div>
+
+                        <div style="font-size: 0.75em; color: #00d9ff; margin-bottom: 10px; line-height: 1.4;">
+                            <i class="fas fa-info-circle"></i> 提示：点击地图连续添加节点，点击【完成】生成路线，或点击【取消】清空当前画笔。
+                        </div>
+
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-success" id="finish-route-btn" style="margin: 0; flex: 1; padding: 8px; font-size: 0.85em;">完成</button>
+                            <button class="btn btn-secondary" id="cancel-route-btn" style="margin: 0; flex: 1; padding: 8px; background: #e94560; font-size: 0.85em;">取消</button>
+                        </div>
+                        <div id="route-list-container" style="margin-top: 15px; border-top: 1px dashed #1a4a7a; padding-top: 15px;">
+                            <div style="font-size: 0.85em; color: #00d9ff; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                                <span><i class="fas fa-list"></i> 路线管理</span>
+                                <span style="color: #888; font-size: 0.8em;" id="route-count-display">0 条</span>
+                            </div>
+                            <div id="route-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                                <div style="color: #888; font-size: 0.8em; text-align: center; padding: 10px;">暂无已保存的路线</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 筛选器（分类折叠） -->
             <div class="section">
                 <h2><i class="fas fa-filter"></i> 筛选显示</h2>
                 <div id="filter-types">
-                
-                <!-- 全部显示 -->
-                <div class="marker-type active" data-type="all" data-category="all" style="margin-bottom: 15px;">
-                    <i class="fas fa-eye"></i>
-                    <span>全部显示</span>
+
+                    <!-- 全部显示 -->
+                    <div class="marker-type active" data-type="all" data-category="all" style="margin-bottom: 15px;">
+                        <i class="fas fa-eye"></i>
+                        <span>全部显示</span>
+                    </div>
+
+                    <!-- 宝箱类筛选 -->
+                    <div class="category-header" data-category="chest-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <!--<div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-gift" style="color: #f39c12;"></i>
+                    <span style="color: #eee; font-weight: bold;">宝箱</span>
+                </div>-->
+                        <i class="fas fa-chevron-down" style="color: #888;"></i>
+                    </div>
+                    <div class="category-content" data-category="chest-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                        <div class="marker-type active" data-type="chest" data-category="chest">
+                            <i class="fas fa-gift" style="color: #f39c12;"></i>
+                            <span>宝箱</span>
+                        </div>
+                        <div class="marker-type active" data-type="chest_wood" data-category="chest">
+                            <i class="fas fa-box" style="color: #8b4513;"></i>
+                            <span>木</span>
+                        </div>
+                        <div class="marker-type active" data-type="chest_iron" data-category="chest">
+                            <i class="fas fa-box" style="color: #708090;"></i>
+                            <span>铁</span>
+                        </div>
+                        <div class="marker-type active" data-type="chest_silver" data-category="chest">
+                            <i class="fas fa-box" style="color: #c0c0c0;"></i>
+                            <span>银</span>
+                        </div>
+                        <div class="marker-type active" data-type="chest_gold" data-category="chest">
+                            <i class="fas fa-box" style="color: #ffd700;"></i>
+                            <span>金</span>
+                        </div>
+                        <div class="marker-type active" data-type="chest_holy" data-category="chest">
+                            <i class="fas fa-box" style="color: #e6e6fa;"></i>
+                            <span>神圣</span>
+                        </div>
+                        <div class="marker-type active" data-type="chest_dark" data-category="chest">
+                            <i class="fas fa-box" style="color: #4b0082;"></i>
+                            <span>暗黑</span>
+                        </div>
+                    </div>
+
+                    <!-- 探索类筛选 -->
+                    <div class="category-header" data-category="explore-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-compass" style="color: #3498db;"></i>
+                            <span style="color: #eee; font-weight: bold;">探索</span>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color: #888;"></i>
+                    </div>
+                    <div class="category-content" data-category="explore-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                        <div class="marker-type active" data-type="puzzle" data-category="explore">
+                            <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
+                            <span>解谜</span>
+                        </div>
+                        <div class="marker-type active" data-type="quest" data-category="explore">
+                            <i class="fas fa-scroll" style="color: #3498db;"></i>
+                            <span>任务</span>
+                        </div>
+                        <div class="marker-type active" data-type="flower" data-category="explore">
+                            <i class="fas fa-fan" style="color: #e91e63;"></i>
+                            <span>采集</span>
+                        </div>
+                        <div class="marker-type active" data-type="teleport" data-category="explore">
+                            <i class="fas fa-door-open" style="color: #9b59b6;"></i>
+                            <span>传送</span>
+                        </div>
+                    </div>
+
+                    <!-- 生物类筛选 -->
+                    <div class="category-header" data-category="creature-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                            <span style="color: #eee; font-weight: bold;">生物</span>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color: #888;"></i>
+                    </div>
+                    <div class="category-content" data-category="creature-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                        <div class="marker-type active" data-type="umi" data-category="creature">
+                            <i class="fas fa-cat" style="color: #2d3436;"></i>
+                            <span>乌咪</span>
+                        </div>
+                        <!--<div class="marker-type active" data-type="egg" data-category="creature">
+                    <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                    <span>蛋</span>
+                </div>-->
+                        <div class="marker-type active" data-type="chipo" data-category="creature">
+                            <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                            <span>奇波</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_battle" data-category="creature">
+                            <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
+                            <span>对决</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_egg" data-category="creature">
+                            <i class="fas fa-egg" style="color: #ffd700;"></i>
+                            <span>奇波蛋</span>
+                        </div>
+                    </div>
+
+                    <!-- 其他筛选 -->
+                    <div class="category-header" data-category="other-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-ellipsis-h" style="color: #95a5a6;"></i>
+                            <span style="color: #eee; font-weight: bold;">其他</span>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color: #888;"></i>
+                    </div>
+                    <div class="category-content" data-category="other-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                        <div class="marker-type active" data-type="enemy" data-category="other">
+                            <i class="fas fa-skull" style="color: #e74c3c;"></i>
+                            <span>敌人</span>
+                        </div>
+                        <div class="marker-type active" data-type="star" data-category="other">
+                            <i class="fas fa-map-marker-alt" style="color: #00bfff;"></i>
+                            <span>星脉</span>
+                        </div>
+                        <div class="marker-type active" data-type="fish" data-category="other">
+                            <i class="fas fa-fish" style="color: #1e90ff;"></i>
+                            <span>钓鱼</span>
+                        </div>
+                        <div class="marker-type active" data-type="custom" data-category="other">
+                            <i class="fas fa-star" style="color: #2ecc71;"></i>
+                            <span>自定义</span>
+                        </div>
+                    </div>
                 </div>
-                
-                <!-- 宝箱类筛选 -->
-                <div class="category-header" data-category="chest-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <!--<div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-gift" style="color: #f39c12;"></i>
-                        <span style="color: #eee; font-weight: bold;">宝箱</span>
-                    </div>-->
-                    <i class="fas fa-chevron-down" style="color: #888;"></i>
-                </div>
-                <div class="category-content" data-category="chest-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
-                    <div class="marker-type active" data-type="chest" data-category="chest">
-                        <i class="fas fa-gift" style="color: #f39c12;"></i>
-                        <span>宝箱</span>
+
+                <!-- 标记聚合开关 -->
+                <div class="section">
+                    <h2><i class="fas fa-th-large"></i> 标记聚合</h2>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #0f3460; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-th-large" style="color: #00d9ff;"></i>
+                            <span style="color: #eee; font-size: 0.9em;">启用聚合</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="cluster-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
                     </div>
-                    <div class="marker-type active" data-type="chest_wood" data-category="chest">
-                        <i class="fas fa-box" style="color: #8b4513;"></i>
-                        <span>木</span>
-                    </div>
-                    <div class="marker-type active" data-type="chest_iron" data-category="chest">
-                        <i class="fas fa-box" style="color: #708090;"></i>
-                        <span>铁</span>
-                    </div>
-                    <div class="marker-type active" data-type="chest_silver" data-category="chest">
-                        <i class="fas fa-box" style="color: #c0c0c0;"></i>
-                        <span>银</span>
-                    </div>
-                    <div class="marker-type active" data-type="chest_gold" data-category="chest">
-                        <i class="fas fa-box" style="color: #ffd700;"></i>
-                        <span>金</span>
-                    </div>
-                    <div class="marker-type active" data-type="chest_holy" data-category="chest">
-                        <i class="fas fa-box" style="color: #e6e6fa;"></i>
-                        <span>神圣</span>
-                    </div>
-                    <div class="marker-type active" data-type="chest_dark" data-category="chest">
-                        <i class="fas fa-box" style="color: #4b0082;"></i>
-                        <span>暗黑</span>
+                    <div style="margin-top: 8px; font-size: 0.75em; color: #888; padding: 0 5px;">
+                        <i class="fas fa-info-circle"></i>
+                        聚合模式下，缩放时标记会自动聚类显示
                     </div>
                 </div>
-                
-                <!-- 探索类筛选 -->
-                <div class="category-header" data-category="explore-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-compass" style="color: #3498db;"></i>
-                        <span style="color: #eee; font-weight: bold;">探索</span>
-                    </div>
-                    <i class="fas fa-chevron-down" style="color: #888;"></i>
-                </div>
-                <div class="category-content" data-category="explore-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
-                    <div class="marker-type active" data-type="puzzle" data-category="explore">
-                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
-                        <span>解谜</span>
-                    </div>
-                    <div class="marker-type active" data-type="quest" data-category="explore">
-                        <i class="fas fa-scroll" style="color: #3498db;"></i>
-                        <span>任务</span>
-                    </div>
-                    <div class="marker-type active" data-type="flower" data-category="explore">
-                        <i class="fas fa-fan" style="color: #e91e63;"></i>
-                        <span>采集</span>
-                    </div>
-                    <div class="marker-type active" data-type="teleport" data-category="explore">
-                        <i class="fas fa-door-open" style="color: #9b59b6;"></i>
-                        <span>传送</span>
-                    </div>
-                </div>
-                
-                <!-- 生物类筛选 -->
-                <div class="category-header" data-category="creature-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
-                        <span style="color: #eee; font-weight: bold;">生物</span>
-                    </div>
-                    <i class="fas fa-chevron-down" style="color: #888;"></i>
-                </div>
-                <div class="category-content" data-category="creature-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
-                    <div class="marker-type active" data-type="umi" data-category="creature">
-                        <i class="fas fa-cat" style="color: #2d3436;"></i>
-                        <span>乌咪</span>
-                    </div>
-                    <!--<div class="marker-type active" data-type="egg" data-category="creature">
-                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                        <span>蛋</span>
-                    </div>-->
-                    <div class="marker-type active" data-type="chipo" data-category="creature">
-                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
-                        <span>奇波</span>
-                    </div>
-                    <div class="marker-type active" data-type="chipo_battle" data-category="creature">
-                        <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
-                        <span>对决</span>
-                    </div>
-                    <div class="marker-type active" data-type="chipo_egg" data-category="creature">
-                        <i class="fas fa-egg" style="color: #ffd700;"></i>
-                        <span>奇波蛋</span>
-                    </div>
-                </div>
-                
-                <!-- 其他筛选 -->
-                <div class="category-header" data-category="other-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-ellipsis-h" style="color: #95a5a6;"></i>
-                        <span style="color: #eee; font-weight: bold;">其他</span>
-                    </div>
-                    <i class="fas fa-chevron-down" style="color: #888;"></i>
-                </div>
-                <div class="category-content" data-category="other-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
-                    <div class="marker-type active" data-type="enemy" data-category="other">
-                        <i class="fas fa-skull" style="color: #e74c3c;"></i>
-                        <span>敌人</span>
-                    </div>
-                    <div class="marker-type active" data-type="star" data-category="other">
-                        <i class="fas fa-map-marker-alt" style="color: #00bfff;"></i>
-                        <span>星脉</span>
-                    </div>
-                    <div class="marker-type active" data-type="fish" data-category="other">
-                        <i class="fas fa-fish" style="color: #1e90ff;"></i>
-                        <span>钓鱼</span>
-                    </div>
-                    <div class="marker-type active" data-type="custom" data-category="other">
-                        <i class="fas fa-star" style="color: #2ecc71;"></i>
-                        <span>自定义</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 标记聚合开关 -->
-            <div class="section">
-                <h2><i class="fas fa-th-large"></i> 标记聚合</h2>
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #0f3460; border-radius: 8px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-th-large" style="color: #00d9ff;"></i>
-                        <span style="color: #eee; font-size: 0.9em;">启用聚合</span>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="cluster-toggle" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div style="margin-top: 8px; font-size: 0.75em; color: #888; padding: 0 5px;">
-                    <i class="fas fa-info-circle"></i>
-                    聚合模式下，缩放时标记会自动聚类显示
-                </div>
-            </div>
-            
+
             </div>  <!-- 关闭 filter-types -->
-            
             <!-- 操作按钮 -->
             <div class="section">
                 <h2><i class="fas fa-tools"></i> 操作</h2>
@@ -765,11 +858,11 @@
                     <div style="font-size: 0.9em; color: #00d9ff; margin-bottom: 8px;">导入模式</div>
                     <div style="display: flex; gap: 15px;">
                         <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="radio" name="import-mode" value="override" checked style="accent-color: #00d9ff;">
+                            <input type="radio" name="import-mode" value="override" style="accent-color: #00d9ff;">
                             <span>覆盖导入</span>
                         </label>
                         <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                            <input type="radio" name="import-mode" value="incremental" style="accent-color: #00d9ff;">
+                            <input type="radio" name="import-mode" value="incremental" checked style="accent-color: #00d9ff;">
                             <span>增量导入</span>
                         </label>
                     </div>
@@ -788,7 +881,7 @@
                     <i class="fas fa-trash"></i> 清空所有
                 </button>
             </div>
-            
+
             <!-- 云端存储 -->
             <div class="section">
                 <h2><i class="fas fa-cloud"></i> 云端存储</h2>
@@ -814,7 +907,7 @@
                     <div id="cos-files" style="max-height: 300px; overflow-y: auto; font-size: 12px;"></div>
                 </div>
             </div>
-            
+
             <!-- 帮助 -->
             <div class="section">
                 <div class="help-tip">
@@ -828,25 +921,205 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- 地图容器 -->
         <div id="map-container">
             <div id="map"></div>
         </div>
     </div>
-    
+
+    <button id="refresh-btn" onclick="location.reload()" title="刷新页面">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
     <!-- 提示框 -->
     <div id="toast"></div>
-    
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    
+    <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+
     <script>
         // ==================== 初始化 ====================
         console.log('🗺️ 普罗米利亚地图标记工具 v3.4.14');
         console.log('🔄 初始化中...');
-        
+
+        // === 新增：路线模式的基础变量与界面交互 ===
+        let currentRouteColor = '#FF3333'; // 默认是亮红色
+
+        // 监听路线开关
+        const routeToggle = document.getElementById('route-mode-toggle');
+        const routeTools = document.getElementById('route-tools');
+
+        routeToggle.addEventListener('change', function () {
+            const isRouteMode = this.checked;
+
+            if (isRouteMode) {
+                // 如果打开了路线开关，就自动把“浏览模式”打开（防止画线的时候不小心点出宝箱）
+                const browseToggle = document.getElementById('browse-mode-toggle');
+                if (browseToggle && !browseToggle.checked) {
+                    browseToggle.checked = true;
+                }
+                routeTools.style.display = 'block'; // 显示颜色面板
+                showToast('已进入路线绘制模式', 'success');
+            } else {
+                routeTools.style.display = 'none'; // 隐藏颜色面板
+            }
+
+            // === 核心黑科技修复：关闭画笔时，让所有隐形判定线“变空气”，允许鼠标穿透！ ===
+            Object.values(allRoutes).forEach(route => {
+                if (route.hitArea && route.hitArea.getElement()) {
+                    route.hitArea.getElement().style.pointerEvents = isRouteMode ? 'visiblePainted' : 'none';
+                }
+            });
+        });
+
+        // 监听颜色选择
+        document.querySelectorAll('.route-color-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                // 移除所有按钮的 active 状态
+                document.querySelectorAll('.route-color-btn').forEach(b => b.classList.remove('active'));
+                // 给当前点的按钮加上 active
+                this.classList.add('active');
+                // 保存选中的颜色
+                currentRouteColor = this.dataset.color;
+            });
+        });
+        // ==========================================
+
+        // === 新增：路线绘制的核心变量与按钮逻辑 ===
+        let currentRoutePoints = [];
+        let currentRouteLine = null;
+        let currentRouteDecorator = null;
+        let currentRouteStartMarker = null; // 新增：起点的圆点反馈
+        let allRoutes = {};
+        let routeCounter = 0;
+
+        // 监听“取消”按钮
+        document.getElementById('cancel-route-btn').addEventListener('click', function () {
+            if (currentRouteLine) map.removeLayer(currentRouteLine);
+            if (currentRouteDecorator) map.removeLayer(currentRouteDecorator);
+            if (currentRouteStartMarker) map.removeLayer(currentRouteStartMarker);
+            currentRoutePoints = [];
+            currentRouteLine = null;
+            currentRouteDecorator = null;
+            currentRouteStartMarker = null;
+            showToast('已清空当前画笔', 'info');
+        });
+
+        // 监听“完成”按钮
+        document.getElementById('finish-route-btn').addEventListener('click', function () {
+            if (currentRoutePoints.length < 2) {
+                showToast('路线至少需要两个节点哦！', 'error');
+                return;
+            }
+
+            // === 新增：弹窗询问路线名称 ===
+            let defaultName = '路线 ' + (Object.keys(allRoutes).length + 1);
+            let routeName = prompt('请给这条路线起个响亮的名字吧：', defaultName);
+
+            // 如果用户点了取消，说明他还没画完，直接 return 让他继续画
+            if (routeName === null) return;
+            if (routeName.trim() === '') routeName = '未命名路线';
+
+            const routeId = 'route_' + Date.now() + '_' + routeCounter++;
+
+            // 保存到内存中，并多存一个 name 和 visible 状态
+            allRoutes[routeId] = {
+                id: routeId,
+                name: routeName,
+                line: currentRouteLine,
+                decorator: currentRouteDecorator,
+                color: currentRouteColor,
+                visible: true // 默认可见
+            };
+
+            // 清理起点提示标记
+            if (currentRouteStartMarker) map.removeLayer(currentRouteStartMarker);
+
+            // 清空画笔状态
+            currentRoutePoints = [];
+            currentRouteLine = null;
+            currentRouteDecorator = null;
+            currentRouteStartMarker = null;
+
+            // 刷新侧边栏列表！
+            renderRouteList();
+            saveToLocalStorage();
+            showToast(`路线 [${routeName}] 保存成功！`, 'success');
+        });
+
+        // === 新增：渲染路线列表与交互的核心函数 ===
+        function renderRouteList() {
+            const listContainer = document.getElementById('route-list');
+            const countDisplay = document.getElementById('route-count-display');
+            const routes = Object.values(allRoutes);
+
+            countDisplay.textContent = `${routes.length} 条`;
+
+            if (routes.length === 0) {
+                listContainer.innerHTML = '<div style="color: #888; font-size: 0.8em; text-align: center; padding: 10px;">暂无已保存的路线</div>';
+                return;
+            }
+
+            let html = '';
+            // 倒序排列，让最新画的路线在最上面
+            routes.slice().reverse().forEach(route => {
+                const eyeIcon = route.visible ? 'fa-eye' : 'fa-eye-slash';
+                const eyeColor = route.visible ? '#00d9ff' : '#888';
+                const nameColor = route.visible ? '#eee' : '#666';
+
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #1a2a4a; padding: 8px 10px; border-radius: 6px; border-left: 4px solid ${route.color};">
+                        <span style="font-size: 0.85em; color: ${nameColor}; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: 0.2s;" title="${route.name}">${route.name}</span>
+                        <div style="display: flex; gap: 12px; margin-left: 10px;">
+                            <i class="fas ${eyeIcon}" style="color: ${eyeColor}; cursor: pointer; transition: 0.2s;" onclick="toggleRoute('${route.id}')" title="显示/隐藏"></i>
+                            <i class="fas fa-trash" style="color: #e94560; cursor: pointer; transition: 0.2s;" onclick="deleteRoute('${route.id}')" title="删除路线"></i>
+                        </div>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = html;
+        }
+
+        // 切换路线显示/隐藏
+        window.toggleRoute = function (id) {
+            const route = allRoutes[id];
+            if (!route) return;
+
+            route.visible = !route.visible; // 状态反转
+
+            // 根据状态在地图上添加或移除
+            if (route.visible) {
+                map.addLayer(route.line);
+                map.addLayer(route.decorator);
+            } else {
+                map.removeLayer(route.line);
+                map.removeLayer(route.decorator);
+            }
+            renderRouteList(); // 刷新 UI（改变眼睛图标和文字颜色）
+            saveToLocalStorage();
+        };
+
+        // 在列表里删除路线
+        window.deleteRoute = function (id) {
+            if (confirm(`确定要彻底删除路线 [${allRoutes[id].name}] 吗？`)) {
+                const route = allRoutes[id];
+                // 如果在地图上显示着，就先从地图上拔掉
+                if (route.visible) {
+                    map.removeLayer(route.line);
+                    map.removeLayer(route.decorator);
+                }
+                // 从内存中删掉数据
+                delete allRoutes[id];
+                renderRouteList(); // 刷新 UI
+                saveToLocalStorage();
+                showToast('路线已删除', 'success');
+            }
+        };
+        // ==========================================
+      
         // 标记类型配置（分类折叠）
         const MARKER_CONFIGS = {
             // === 宝箱类 ===
@@ -857,27 +1130,27 @@
             chest_gold: { icon: 'fa-box', color: '#ffd700', label: '金宝箱', category: 'chest' },
             chest_holy: { icon: 'fa-box', color: '#e6e6fa', label: '神圣箱', category: 'chest' },
             chest_dark: { icon: 'fa-box', color: '#4b0082', label: '暗黑箱', category: 'chest' },
-            
+
             // === 探索类 ===
             puzzle: { icon: 'fa-puzzle-piece', color: '#a55eea', label: '解谜', category: 'explore' },
             quest: { icon: 'fa-scroll', color: '#3498db', label: '任务', category: 'explore' },
             flower: { icon: 'fa-fan', color: '#e91e63', label: '采集', category: 'explore' },
             teleport: { icon: 'fa-door-open', color: '#9b59b6', label: '传送', category: 'explore' },
-            
+
             // === 生物类 ===
             umi: { icon: 'fa-cat', color: '#2d3436', label: '乌咪', category: 'creature' },
             egg: { icon: 'fa-egg', color: '#ffeaa7', label: '蛋', category: 'creature' },
             chipo: { icon: 'fa-paw', color: '#ff6b9d', label: '奇波', category: 'creature' },
             chipo_battle: { icon: 'fa-fist-raised', color: '#ff4500', label: '奇波对决', category: 'creature' },
             chipo_egg: { icon: 'fa-egg', color: '#ffd700', label: '奇波蛋', category: 'creature' },
-            
+
             // === 其他 ===
             enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人', category: 'other' },
             star: { icon: 'fa-map-marker-alt', color: '#00bfff', label: '星脉节点', category: 'other' },
             fish: { icon: 'fa-fish', color: '#1e90ff', label: '钓鱼点', category: 'other' },
             custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义', category: 'other' }
         };
-        
+
         // 分类配置（用于折叠显示）
         const CATEGORY_CONFIGS = {
             chest: { label: '宝箱', icon: 'fa-gift', color: '#f39c12' },
@@ -885,10 +1158,10 @@
             creature: { label: '生物', icon: 'fa-paw', color: '#ff6b9d' },
             other: { label: '其他', icon: 'fa-ellipsis-h', color: '#95a5a6' }
         };
-        
+
         // 当前选中的标记类型（默认不选择，避免误触）
         let currentMarkerType = null;
-        
+
         // 筛选状态（按分类）
         const filterState = {
             // 分类展开状态
@@ -899,12 +1172,12 @@
             // 具体类型
             all: true
         };
-        
+
         // 为所有标记类型初始化筛选状态（默认全部启用）
         Object.keys(MARKER_CONFIGS).forEach(type => {
             filterState[type] = true;
         });
-        
+
         // 分类展开状态（用于 UI）
         const categoryExpanded = {
             chest: true,
@@ -912,10 +1185,10 @@
             creature: true,
             other: true
         };
-        
+
         // 隐藏的标记层（用于筛选）
         const hiddenMarkers = new Map();
-        
+
         // ==================== 多地图配置 ====================
         const MAP_CONFIGS = {
             shalulu: {
@@ -961,14 +1234,14 @@
                 type: 'image'
             }
         };
-        
+
         // 当前地图
         let currentMapId = localStorage.getItem('promilia-current-map') || 'shalulu';
         let currentMapConfig = MAP_CONFIGS[currentMapId];
         let mapOverlay = null;
         let tileOverlays = [];
         let tileLayer = null;
-        
+
         // 当前筛选状态（保存到 localStorage）
         let savedFilterState = localStorage.getItem('promilia-filter-state');
         if (savedFilterState) {
@@ -978,13 +1251,13 @@
                 console.error('❌ 加载筛选状态失败:', e);
             }
         }
-        
+
         // 标记聚合状态（Issue #1）
         let clusterEnabled = localStorage.getItem('promilia-cluster-enabled') !== 'false';  // 默认启用
-        
+
         // ==================== 地图初始化 ====================
         console.log('📍 初始化地图...');
-        
+
         // 创建地图（使用简单坐标系）
         const map = L.map('map', {
             crs: L.CRS.Simple,
@@ -992,7 +1265,7 @@
             maxZoom: 2,
             zoomControl: true
         });
-        
+
         // 标记集群
         console.log('📌 初始化标记集群...');
         const markers = L.markerClusterGroup({
@@ -1000,7 +1273,7 @@
             zoomToBoundsOnClick: true,
             spiderfyOnMaxZoom: true
         });
-        
+
         // 根据聚合状态决定是否添加到地图
         if (clusterEnabled) {
             map.addLayer(markers);
@@ -1008,24 +1281,24 @@
         } else {
             console.log('⚠️ 标记聚合已禁用（标记将直接显示在地图上）');
         }
-        
+
         // 创建彩色占位背景
         function createPlaceholder(mapId) {
             const config = MAP_CONFIGS[mapId];
             console.log(`🎨 创建占位背景：${config.name}, 颜色：${config.color}`);
-            
+
             const canvas = document.createElement('canvas');
             canvas.width = config.width;
             canvas.height = config.height;
             const ctx = canvas.getContext('2d');
-            
+
             // 渐变背景
             const gradient = ctx.createLinearGradient(0, 0, config.width, config.height);
             gradient.addColorStop(0, config.color);
             gradient.addColorStop(1, '#1a1a2e');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, config.width, config.height);
-            
+
             // 网格线
             ctx.strokeStyle = 'rgba(255,255,255,0.2)';
             ctx.lineWidth = 2;
@@ -1042,7 +1315,7 @@
                 ctx.lineTo(config.width, y);
                 ctx.stroke();
             }
-            
+
             // 图标
             ctx.fillStyle = 'rgba(255,255,255,0.3)';
             ctx.font = 'bold 120px Arial';
@@ -1050,7 +1323,7 @@
             ctx.textBaseline = 'middle';
             const icons = { shalulu: '🏡', xinaya: '🌱', fulisi: '🌾' };
             ctx.fillText(icons[mapId] || '🗺️', config.width / 2, config.height / 2 - 60);
-            
+
             // 名称
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 36px Arial';
@@ -1058,19 +1331,19 @@
             ctx.font = '16px Arial';
             ctx.fillStyle = 'rgba(255,255,255,0.6)';
             ctx.fillText('(占位背景)', config.width / 2, config.height / 2 + 50);
-            
+
             return canvas.toDataURL('image/png');
         }
-        
+
         // 保存当前视图状态（按地图）
         const mapViews = {};
-        
+
         // 加载/切换地图
         function loadMap(mapId, keepZoom = false) {
             const config = MAP_CONFIGS[mapId];
-            
+
             console.log(`🔄 切换地图：${currentMapId} -> ${mapId}, keepZoom=${keepZoom}`);
-            
+
             // 【关键】切换前保存当前地图的标记数据和视图
             if (currentMapId) {
                 // 创建不含 popup 引用的数据副本（popup 是 DOM 对象，不能被 JSON 序列化）
@@ -1080,7 +1353,7 @@
                     markersToSave[key] = markerDataWithoutPopup;
                 });
                 allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markersToSave));
-                
+
                 // 只有在地图已初始化视图后才保存（避免首次加载时报错）
                 try {
                     mapViews[currentMapId] = {
@@ -1092,13 +1365,13 @@
                     console.log(`⚠️ ${currentMapId} 地图视图未初始化，跳过保存`);
                 }
             }
-            
+
             currentMapId = mapId;
             currentMapConfig = config;
-            
+
             // 保存当前地图 ID 到 localStorage
             localStorage.setItem('promilia-current-map', mapId);
-            
+
             // 清除旧地图
             if (mapOverlay) {
                 map.removeLayer(mapOverlay);
@@ -1112,52 +1385,52 @@
                 map.removeLayer(tileLayer);
                 tileLayer = null;
             }
-            
+
             // 清除旧标记（在加载新地图前清空集群）
             markers.clearLayers();
             Object.keys(markerData).forEach(key => delete markerData[key]);
-            
+
             // 边界（Simple CRS: [[x1, y1], [x2, y2]]）
             const bounds = [[0, 0], [config.width, config.height]];
-            
+
             // 根据地图类型加载（单张图片 or 单层瓦片 or 多层瓦片）
             if (config.type === 'tileLayer' && config.tileUrl) {
                 // === 多层瓦片地图加载（Leaflet TileLayer） ===
                 console.log(`🗺️ 加载多层瓦片地图：${config.name} (zoom ${config.minZoom}-${config.maxZoom})`);
-                
+
                 // 移除旧的 TileLayer
                 if (tileLayer) {
                     map.removeLayer(tileLayer);
                     tileLayer = null;
                 }
-                
+
                 // 移除旧的单层瓦片
                 if (tileOverlays.length > 0) {
                     tileOverlays.forEach(tile => map.removeLayer(tile));
                     tileOverlays = [];
                 }
-                
+
                 // 创建 TileLayer（Simple CRS 下使用自定义瓦片网格）
                 // 注意：CRS 是 map 的属性，不是 TileLayer 的属性
-                
+
                 // 检查是否有自定义网格配置
                 if (config.gridSizes) {
                     // === 自定义网格尺寸（非标准瓦片系统） ===
                     console.log(`  📐 使用自定义网格:`, config.gridSizes);
-                    
+
                     // 使用 GridLayer 自定义瓦片加载
                     tileLayer = L.gridLayer({
                         minZoom: config.minZoom || 0,
                         maxZoom: config.maxZoom || 2
                     });
-                    
+
                     // 自定义瓦片创建逻辑
-                    tileLayer.createTile = function(coords, done) {
+                    tileLayer.createTile = function (coords, done) {
                         const tile = document.createElement('div');
                         const zoom = coords.z;
                         const x = coords.x;
                         const y = coords.y;
-                        
+
                         // 检查坐标是否在有效范围内
                         const gridSize = config.gridSizes[zoom];
                         if (gridSize === undefined || x < 0 || y < 0 || x >= gridSize || y >= gridSize) {
@@ -1168,13 +1441,13 @@
                             done(null, tile);
                             return tile;
                         }
-                        
+
                         // 生成瓦片 URL
                         const url = config.tileUrl
                             .replace('{z}', zoom)
                             .replace('{x}', x)
                             .replace('{y}', y);
-                        
+
                         // 创建图片
                         const img = document.createElement('img');
                         img.style.width = '100%';
@@ -1186,11 +1459,11 @@
                         };
                         img.src = url;
                         tile.appendChild(img);
-                        
+
                         console.log(`  ✅ 加载瓦片：z=${zoom}, (${x},${y}) → ${url}`);
                         return tile;
                     };
-                    
+
                     tileLayer.addTo(map);
                 } else {
                     // === 标准瓦片尺寸（256×256） ===
@@ -1204,30 +1477,30 @@
                     });
                     tileLayer.addTo(map);
                 }
-                
+
                 // 设置地图缩放范围和视图
                 map.setMinZoom(config.minZoom || 0);
                 map.setMaxZoom(config.maxZoom || 2);
-                
+
                 // 设置视图到地图中心
                 const center = [config.height / 2, config.width / 2];
                 map.setView(center, config.minZoom || 0);
-                
+
                 console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
-                
+
             } else if (config.type === 'tiles' && config.tiles) {
                 // === 单层瓦片地图加载（简单行列） ===
                 console.log(`🗺️ 加载单层瓦片地图：${config.name} (${config.tileCols}x${config.tileRows} 瓦片)`);
-                
+
                 // 移除旧瓦片
                 if (tileOverlays.length > 0) {
                     tileOverlays.forEach(tile => map.removeLayer(tile));
                     tileOverlays = [];
                 }
-                
+
                 const tileSize = config.tileSize || 1024;
                 const tileDir = config.tiles;
-                
+
                 // 按行列顺序加载瓦片
                 for (let row = 0; row < config.tileRows; row++) {
                     for (let col = 0; col < config.tileCols; col++) {
@@ -1236,19 +1509,19 @@
                             [row * tileSize, col * tileSize],
                             [(row + 1) * tileSize, (col + 1) * tileSize]
                         ];
-                        
+
                         const testTile = new Image();
-                        testTile.onload = function() {
+                        testTile.onload = function () {
                             const tileOverlay = L.imageOverlay(tileUrl, tileBounds).addTo(map);
                             tileOverlays.push(tileOverlay);
                         };
-                        testTile.onerror = function() {
+                        testTile.onerror = function () {
                             console.log(`⚠️ 瓦片加载失败：${tileUrl}`);
                         };
                         testTile.src = tileUrl;
                     }
                 }
-                
+
                 // 超时保护（增加超时时间到 15 秒）
                 let tileLoadTimeout = setTimeout(() => {
                     if (tileOverlays.length === 0) {
@@ -1259,7 +1532,7 @@
                         console.log(`✅ 单层瓦片地图加载完成：${tileOverlays.length} 张瓦片`);
                     }
                 }, 15000);  // 15 秒超时
-                
+
                 // 检查是否所有瓦片都已加载
                 const totalTiles = config.tileRows * config.tileCols;
                 const checkAllTilesLoaded = setInterval(() => {
@@ -1269,20 +1542,20 @@
                         clearInterval(checkAllTilesLoaded);
                     }
                 }, 500);
-                
+
             } else {
                 // === 单张图片地图加载 ===
                 const mapImageUrl = config.image;
                 const testImg = new Image();
                 let imageLoaded = false;
-                
-                testImg.onload = function() {
+
+                testImg.onload = function () {
                     console.log(`✅ 地图图片加载成功：${mapImageUrl}`);
                     imageLoaded = true;
                     if (mapOverlay) map.removeLayer(mapOverlay);
                     mapOverlay = L.imageOverlay(mapImageUrl, bounds).addTo(map);
                 };
-                testImg.onerror = function() {
+                testImg.onerror = function () {
                     console.log(`⚠️ 地图图片加载失败 (${mapImageUrl})，使用占位背景`);
                     imageLoaded = true;
                     if (mapOverlay) map.removeLayer(mapOverlay);
@@ -1290,7 +1563,7 @@
                     mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
                 };
                 testImg.src = mapImageUrl;
-                
+
                 // 超时保护（增加超时时间到 15 秒）
                 setTimeout(() => {
                     if (!imageLoaded) {
@@ -1301,7 +1574,7 @@
                     // 如果已加载成功，不执行任何操作（避免覆盖）
                 }, 15000);  // 15 秒超时
             }
-            
+
             // 恢复视图（如果有保存的视图）
             if (keepZoom && mapViews[mapId]) {
                 console.log(`🔍 恢复 ${mapId} 的视图 (zoom=${mapViews[mapId].zoom})`);
@@ -1310,46 +1583,46 @@
                 // 没有保存的视图时，总是 fitBounds（包括 keepZoom=true 但无缓存的情况）
                 map.fitBounds(bounds);
             }
-            
+
             // 更新 UI
             document.getElementById('current-map-name').textContent = config.name;
             document.getElementById('current-map-size').textContent = `${config.width}×${config.height}`;
             document.getElementById('map-select').value = mapId;
-            
+
             // 加载标记
             loadMarkersForMap(mapId);
             updateStats();
-            
+
             // 应用筛选状态
             updateFilterUI();
             updateMarkerVisibility();
-            
+
             console.log(`✅ 地图加载完成：${config.name}`);
             showToast(`已切换至：${config.name}`, 'success');
         }
-        
+
         // 切换地图
-        window.switchMap = function(mapId) {
+        window.switchMap = function (mapId) {
             loadMap(mapId);
         };
-        
+
         // 标记数据（按地图分离）
         let markerIdCounter = 0;
         const markerData = {}; // 当前地图的标记数据
         const allMarkersData = {}; // 所有地图的标记数据 { mapId: { markerId: data } }
-        
+
         // 加载指定地图的标记
         function loadMarkersForMap(mapId) {
             console.log(`📍 加载地图标记：${mapId}`);
-            
+
             // 清空当前标记
             markers.clearLayers();
             Object.keys(markerData).forEach(key => delete markerData[key]);
-            
+
             // 从 localStorage 加载（每次都从 localStorage 加载，确保数据最新）
             const storageKey = MAP_CONFIGS[mapId].storageKey;
             let markersToLoad = {};
-            
+
             try {
                 const saved = localStorage.getItem(storageKey);
                 if (saved) {
@@ -1363,40 +1636,93 @@
             } catch (e) {
                 console.error(`❌ 加载标记失败 (${mapId}):`, e);
             }
-            
+
             // 保存到内存和当前 markerData
             allMarkersData[mapId] = markersToLoad;
             Object.assign(markerData, markersToLoad);
-            
+
             // 添加到地图（根据聚合状态决定添加到集群还是直接添加到地图）
             Object.values(markerData).forEach(marker => {
                 // 检查筛选状态
                 if (!filterState[marker.type]) {
                     return;
                 }
-                
+
                 const m = L.marker([marker.lat, marker.lng], {
                     icon: createMarkerIcon(marker.type)
                 });
                 const popup = m.bindPopup(createPopupContent(marker));
                 marker.popup = popup.getPopup();  // 重新建立 popup 引用
-                
+
                 if (clusterEnabled) {
                     markers.addLayer(m);
                 } else {
                     map.addLayer(m);
                 }
             });
-            
+
             // 确保集群已添加到地图
             if (clusterEnabled && !map.hasLayer(markers)) {
                 map.addLayer(markers);
             }
-            
+
             console.log(`✅ 加载完成：${Object.keys(markerData).length} 个标记 (${mapId})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
             updateStats();
+
+            // === 新增：加载并重新在地图上画出路线 ===
+            if (typeof allRoutes !== 'undefined') {
+                // 1. 先把地图上旧的路线全拔掉
+                Object.values(allRoutes).forEach(r => {
+                    if (r.line) map.removeLayer(r.line);
+                    if (r.decorator) map.removeLayer(r.decorator);
+                });
+                // 2. 清空内存数据
+                for (let k in allRoutes) delete allRoutes[k];
+
+                try {
+                    const storageKey = MAP_CONFIGS[mapId].storageKey;
+                    const saved = localStorage.getItem(storageKey);
+                    if (saved) {
+                        const data = JSON.parse(saved);
+                        if (data.routeCounter) routeCounter = data.routeCounter;
+                        const loadedRoutes = data.routes || {};
+
+                        // 3. 遍历读取的数据，重新在地图上作画！
+                        Object.values(loadedRoutes).forEach(routeData => {
+                            const line = L.polyline(routeData.points, {
+                                color: routeData.color,
+                                weight: 6,
+                                opacity: 1.0
+                            });
+
+                            const decorator = L.polylineDecorator(line, {
+                                patterns: [
+                                    { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: routeData.color } }) }
+                                ]
+                            });
+
+                            if (routeData.visible) {
+                                line.addTo(map);
+                                decorator.addTo(map);
+                            }
+
+                            allRoutes[routeData.id] = {
+                                id: routeData.id,
+                                name: routeData.name,
+                                color: routeData.color,
+                                visible: routeData.visible,
+                                line: line,
+                                decorator: decorator
+                            };
+                        });
+                    }
+                } catch (e) { console.error('加载路线失败:', e); }
+
+                // 4. 刷新侧边栏的路线列表
+                if (typeof renderRouteList === 'function') renderRouteList();
+            }
         }
-        
+
         // 保存当前地图的标记
         function saveCurrentMapMarkers() {
             const storageKey = currentMapConfig.storageKey;
@@ -1407,10 +1733,28 @@
                     const { popup, ...markerDataWithoutPopup } = markerData[key];
                     markersToSave[key] = markerDataWithoutPopup;
                 });
-                
+
+                // === 新增：提取路线的纯数据以便保存 ===
+                const routesToSave = {};
+                if (typeof allRoutes !== 'undefined') {
+                    Object.keys(allRoutes).forEach(key => {
+                        const r = allRoutes[key];
+                        routesToSave[key] = {
+                            id: r.id,
+                            name: r.name,
+                            color: r.color,
+                            visible: r.visible,
+                            points: r.line.getLatLngs() // 核心：只提取所有坐标点！
+                        };
+                    });
+                }
+                // ===================================
+
                 const data = {
                     markers: markersToSave,
+                    routes: routesToSave, // === 新增：把路线数据塞进保险箱 ===
                     counter: markerIdCounter,
+                    routeCounter: typeof routeCounter !== 'undefined' ? routeCounter : 0,
                     savedAt: new Date().toISOString()
                 };
                 localStorage.setItem(storageKey, JSON.stringify(data));
@@ -1422,29 +1766,29 @@
                 showToast('保存失败：存储空间不足', 'error');
             }
         }
-        
+
         // 创建自定义标记图标
         function createMarkerIcon(type) {
             const config = MARKER_CONFIGS[type];
-            
+
             // 处理未知标记类型
             if (!config) {
                 const html = `
-                    <div style="
-                        width: 40px;
-                        height: 40px;
-                        background: #999;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border: 3px solid white;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                    ">
-                        <i class="fas fa-question" style="color: white; font-size: 18px;"></i>
-                    </div>
-                `;
-                
+                            <div style="
+                                width: 40px;
+                                height: 40px;
+                                background: #999;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                border: 3px solid white;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                            ">
+                                <i class="fas fa-question" style="color: white; font-size: 18px;"></i>
+                            </div>
+                        `;
+
                 return L.divIcon({
                     html: html,
                     className: 'custom-marker',
@@ -1453,26 +1797,26 @@
                     popupAnchor: [0, -20]
                 });
             }
-            
+
             // 如果配置了图片图标（AP 专用标记）
             if (config.useImage && config.imagePath) {
                 const html = `
-                    <div style="
-                        width: 40px;
-                        height: 40px;
-                        background: white;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border: 3px solid ${config.color};
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                        overflow: hidden;
-                    ">
-                        <img src="${config.imagePath}" style="width: 28px; height: 28px; object-fit: contain;" alt="${config.label}" />
-                    </div>
-                `;
-                
+                            <div style="
+                                width: 40px;
+                                height: 40px;
+                                background: white;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                border: 3px solid ${config.color};
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                                overflow: hidden;
+                            ">
+                                <img src="${config.imagePath}" style="width: 28px; height: 28px; object-fit: contain;" alt="${config.label}" />
+                            </div>
+                        `;
+
                 return L.divIcon({
                     html: html,
                     className: 'custom-marker-image',
@@ -1481,24 +1825,24 @@
                     popupAnchor: [0, -20]
                 });
             }
-            
+
             // 默认使用 FontAwesome 图标
             const html = `
-                <div style="
-                    width: 40px;
-                    height: 40px;
-                    background: ${config.color};
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border: 3px solid white;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                ">
-                    <i class="fas ${config.icon}" style="color: white; font-size: 18px;"></i>
-                </div>
-            `;
-            
+                        <div style="
+                            width: 40px;
+                            height: 40px;
+                            background: ${config.color};
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border: 3px solid white;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                        ">
+                            <i class="fas ${config.icon}" style="color: white; font-size: 18px;"></i>
+                        </div>
+                    `;
+
             return L.divIcon({
                 html: html,
                 className: 'custom-marker',
@@ -1507,14 +1851,14 @@
                 popupAnchor: [0, -20]
             });
         }
-        
+
         // 添加标记
         function addMarker(latlng, type = currentMarkerType) {
             const id = 'marker_' + Date.now() + '_' + markerIdCounter++;
             const marker = L.marker(latlng, {
                 icon: createMarkerIcon(type)
             });
-            
+
             const data = {
                 id: id,
                 type: type,
@@ -1524,72 +1868,72 @@
                 createdAt: new Date().toISOString(),
                 popup: null  // 保存弹窗引用
             };
-            
+
             markerData[id] = data;
-            
+
             // 绑定弹窗并保存引用
             const popup = marker.bindPopup(createPopupContent(data));
             data.popup = popup.getPopup();
-            
+
             // 根据聚合状态决定添加到集群还是直接添加到地图
             if (clusterEnabled) {
                 markers.addLayer(marker);
             } else {
                 map.addLayer(marker);
             }
-            
+
             // 自动保存
             saveToLocalStorage();
             updateStats();
-            
+
             console.log(`✅ 添加标记：${id} (${type})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
             return marker;
         }
-        
+
         // 创建弹窗内容
         function createPopupContent(data) {
             const config = MARKER_CONFIGS[data.type];
             return `
-                <div class="popup-content">
-                    <h3><i class="fas ${config.icon}" style="color: ${config.color};"></i> ${config.label}</h3>
-                    <p style="font-size: 0.85em; color: #888;">
-                        坐标：${data.lat.toFixed(1)}, ${data.lng.toFixed(1)}
-                    </p>
-                    <textarea placeholder="添加备注..." id="note-${data.id}">${data.note || ''}</textarea>
-                    <div class="popup-actions">
-                        <button class="btn-save" onclick="saveMarkerNote('${data.id}')">
-                            <i class="fas fa-save"></i> 保存
-                        </button>
-                        <button class="btn-delete" onclick="deleteMarker('${data.id}')">
-                            <i class="fas fa-trash"></i> 删除
-                        </button>
-                    </div>
-                </div>
-            `;
+                        <div class="popup-content">
+                            <h3><i class="fas ${config.icon}" style="color: ${config.color};"></i> ${config.label}</h3>
+                            <p style="font-size: 0.85em; color: #888;">
+                                坐标：${data.lat.toFixed(1)}, ${data.lng.toFixed(1)}
+                            </p>
+                            <textarea placeholder="添加备注..." id="note-${data.id}">${data.note || ''}</textarea>
+                            <div class="popup-actions">
+                                <button class="btn-save" onclick="saveMarkerNote('${data.id}')">
+                                    <i class="fas fa-save"></i> 保存
+                                </button>
+                                <button class="btn-delete" onclick="deleteMarker('${data.id}')">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </div>
+                        </div>
+                    `;
         }
-        
+
         // 保存标记备注
-        window.saveMarkerNote = function(id) {
+        window.saveMarkerNote = function (id) {
             const note = document.getElementById(`note-${id}`).value;
             if (markerData[id]) {
                 markerData[id].note = note;
                 saveToLocalStorage();
-                
+
                 // 更新弹窗中的备注显示
                 const popup = markerData[id].popup;
                 if (popup) {
                     popup.setContent(createPopupContent(markerData[id]));
                 }
-                
+
                 showToast('备注已保存', 'success');
             }
         };
-        
+
         // 删除标记
-        window.deleteMarker = function(id) {
+        window.deleteMarker = function (id) {
             if (markerData[id]) {
                 delete markerData[id];
-                
+
                 // 从集群或地图中移除标记（根据聚合状态）
                 if (clusterEnabled) {
                     // 从集群中移除
@@ -1606,42 +1950,109 @@
                         }
                     });
                 }
-                
+
                 saveToLocalStorage();
                 updateStats();
                 showToast('标记已删除', 'success');
             }
         };
-        
+
         // 清空所有标记
-        window.clearAllMarkers = function() {
-            if (confirm('确定要清空所有标记吗？此操作不可恢复！')) {
+        window.clearAllMarkers = function () {
+            if (confirm('确定要清空所有标记和路线吗？此操作不可恢复！')) {
                 // 清空集群中的标记
                 markers.clearLayers();
-                
+
                 // 清空当前地图的标记数据
                 Object.keys(markerData).forEach(key => delete markerData[key]);
-                
+
+                // 清空路线数据
+                if (typeof allRoutes !== 'undefined') {
+                    // 从地图上移除所有路线
+                    Object.values(allRoutes).forEach(route => {
+                        if (route.line) map.removeLayer(route.line);
+                        if (route.decorator) map.removeLayer(route.decorator);
+                    });
+                    // 清空内存中的路线数据
+                    for (let key in allRoutes) {
+                        delete allRoutes[key];
+                    }
+                    // 重置路线计数器
+                    routeCounter = 0;
+                }
+
                 // 清空内存中的所有地图数据
                 if (currentMapId) {
                     allMarkersData[currentMapId] = {};
                 }
-                
+
                 // 重置标记计数器
                 markerIdCounter = 0;
-                
+
                 // 保存到 localStorage
                 saveToLocalStorage();
                 updateStats();
-                showToast('已清空所有标记', 'success');
+                // 刷新路线列表
+                if (typeof renderRouteList === 'function') renderRouteList();
+                showToast('已清空所有标记和路线，即将重新加载地图...', 'success');
+                setTimeout(() => {
+                    location.reload(); // 1.5秒后自动刷新页面
+                }, 500);
             }
         };
-        
+
         // ==================== 地图点击事件 ====================
-        map.on('click', function(e) {
-            if (!currentMarkerType || currentMarkerType === 'none') {
+        map.on('click', function (e) {
+
+            // === 新增：如果在路线绘制模式下，拦截点击去画线！ ===
+            const routeToggle = document.getElementById('route-mode-toggle');
+            if (routeToggle && routeToggle.checked) {
+                currentRoutePoints.push(e.latlng);
+
+                // 清除旧的临时线、箭头和起点标记
+                if (currentRouteLine) map.removeLayer(currentRouteLine);
+                if (currentRouteDecorator) map.removeLayer(currentRouteDecorator);
+                if (currentRouteStartMarker) map.removeLayer(currentRouteStartMarker);
+
+                // 如果只有一个点，画一个圆点作为起点反馈！
+                if (currentRoutePoints.length === 1) {
+                    currentRouteStartMarker = L.circleMarker(currentRoutePoints[0], {
+                        radius: 6,
+                        color: '#fff',
+                        weight: 2,
+                        fillColor: currentRouteColor,
+                        fillOpacity: 1
+                    }).addTo(map);
+                }
+                // 如果有两个及以上的点，画线和箭头
+                else {
+                    currentRouteLine = L.polyline(currentRoutePoints, {
+                        color: currentRouteColor,
+                        weight: 6,
+                        opacity: 1.0
+                    }).addTo(map);
+
+                    currentRouteDecorator = L.polylineDecorator(currentRouteLine, {
+                        patterns: [
+                            { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: currentRouteColor } }) }
+                        ]
+                    }).addTo(map);
+                }
+
+                return; // 拦截成功！
+            }
+            // ====================================================
+
+            // 1. 先检查浏览模式开关是否打开
+            const isBrowseMode = document.getElementById('browse-mode-toggle').checked;
+            if (isBrowseMode) {
+                showToast('当前为浏览模式，请先关闭开关或选择一个标记', 'info');
+                return; // 直接退出，不添加标记
+            }
+
+            // 2. 如果开关关了，但没选标记类型
+            if (!currentMarkerType) {
                 showToast('请先选择一个标记类型', 'info');
-                // 闪烁提示
                 const markerSection = document.getElementById('marker-types');
                 markerSection.style.transition = 'opacity 0.3s';
                 markerSection.style.opacity = '0.5';
@@ -1650,10 +2061,10 @@
             }
             addMarker(e.latlng, currentMarkerType);
         });
-        
+
         // 保存地图视图（缩放级别和中心点）- 按地图保存
         let saveViewTimeout;
-        map.on('moveend zoomend', function() {
+        map.on('moveend zoomend', function () {
             clearTimeout(saveViewTimeout);
             saveViewTimeout = setTimeout(() => {
                 const view = {
@@ -1667,7 +2078,7 @@
                 console.log(`💾 视图已保存：${currentMapId} (zoom=${view.zoom})`);
             }, 500);
         });
-        
+
         // 恢复地图视图（从 localStorage）
         function restoreView() {
             try {
@@ -1682,7 +2093,7 @@
                 console.error('❌ 恢复视图失败:', e);
             }
         }
-        
+
         // ==================== 标记类型选择 ====================
         // 恢复上次选择的标记类型
         function restoreMarkerType() {
@@ -1704,39 +2115,38 @@
                 console.log(`🔍 恢复标记类型：${currentMarkerType}`);
             }
         }
-        
+
         document.querySelectorAll('#marker-types .marker-type').forEach(el => {
-            el.addEventListener('click', function(e) {
+            el.addEventListener('click', function (e) {
                 e.stopPropagation();  // 防止触发分类折叠
                 document.querySelectorAll('#marker-types .marker-type').forEach(e => e.classList.remove('active'));
                 this.classList.add('active');
                 currentMarkerType = this.dataset.type;
-                
+
                 // 保存到 localStorage
                 localStorage.setItem('promilia-marker-type', currentMarkerType);
-                
+                const browseToggle = document.getElementById('browse-mode-toggle');
+                if (browseToggle && browseToggle.checked) {
+                    browseToggle.checked = false;
+                    showToast('已退出浏览模式', 'success');
+                }
                 // 更新提示信息
                 const tipEl = document.getElementById('marker-tip');
-                if (currentMarkerType === 'none') {
-                    tipEl.textContent = '浏览模式：点击地图不会添加标记';
-                    tipEl.style.color = '#888';
-                } else {
-                    const config = MARKER_CONFIGS[currentMarkerType];
-                    tipEl.textContent = `当前类型：${config.label}，点击地图添加标记`;
-                    tipEl.style.color = config.color;
-                }
-                
+                const config = MARKER_CONFIGS[currentMarkerType];
+                tipEl.textContent = `当前类型：${config.label}，点击地图添加标记`;
+                tipEl.style.color = config.color;
+
                 console.log(`📍 切换标记类型：${currentMarkerType}`);
             });
         });
-        
+
         // ==================== 筛选器功能 ====================
         // 筛选器点击事件（支持分类折叠）- 只匹配筛选器区域内的元素
         document.querySelectorAll('#filter-types .marker-type').forEach(el => {
-            el.addEventListener('click', function(e) {
+            el.addEventListener('click', function (e) {
                 e.stopPropagation();  // 防止触发分类折叠
                 const type = this.dataset.type;
-                
+
                 if (type === 'all') {
                     // 点击"全部"：切换所有筛选
                     const newState = !filterState.all;
@@ -1751,39 +2161,39 @@
                     // 点击具体类型：切换该类型
                     filterState[type] = !filterState[type];
                     this.classList.toggle('active');
-                    
+
                     // 更新"全部"状态
                     const allActive = Object.values(filterState).every(v => v);
                     filterState.all = allActive;
                     document.querySelector('#filter-types .marker-type[data-type="all"]').classList.toggle('active', allActive);
                 }
-                
+
                 updateMarkerVisibility();
                 saveFilterState();
                 console.log(`🔍 筛选状态：`, filterState);
             });
         });
-        
+
         // 分类折叠点击事件（筛选器）
         document.querySelectorAll('.category-header[data-category*="filter"]').forEach(header => {
-            header.addEventListener('click', function() {
+            header.addEventListener('click', function () {
                 const category = this.dataset.category;
                 const content = document.querySelector(`.category-content[data-category="${category}"]`);
                 const icon = this.querySelector('.fa-chevron-down');
-                
+
                 // 切换展开/折叠状态
                 this.classList.toggle('collapsed');
                 content.classList.toggle('collapsed');
-                
+
                 console.log(`📂 筛选分类 ${category}: ${content.classList.contains('collapsed') ? '折叠' : '展开'}`);
             });
         });
-        
+
         // 保存筛选状态到 localStorage
         function saveFilterState() {
             localStorage.setItem('promilia-filter-state', JSON.stringify(filterState));
         }
-        
+
         // 更新筛选器 UI 显示
         function updateFilterUI() {
             document.querySelectorAll('.marker-type[data-type]').forEach(el => {
@@ -1792,7 +2202,7 @@
                 el.classList.toggle('active', isActive);
             });
         }
-        
+
         // 更新标记可见性（支持聚合/非聚合模式）
         function updateMarkerVisibility() {
             if (clusterEnabled) {
@@ -1802,7 +2212,7 @@
                         markers.removeLayer(layer);
                     }
                 });
-                
+
                 // 根据筛选状态重新添加到集群
                 Object.values(markerData).forEach(data => {
                     if (filterState[data.type]) {
@@ -1820,7 +2230,7 @@
                         map.removeLayer(layer);
                     }
                 });
-                
+
                 // 根据筛选状态重新添加到地图
                 Object.values(markerData).forEach(data => {
                     if (filterState[data.type]) {
@@ -1833,13 +2243,13 @@
                 });
             }
         }
-        
+
         // ==================== 本地存储（多地图） ====================
         // saveToLocalStorage 改为 saveCurrentMapMarkers（已在上面定义）
         const saveToLocalStorage = saveCurrentMapMarkers;
-        
+
         // ==================== 导入导出 ====================
-        window.exportData = function() {
+        window.exportData = function () {
             // 导出所有地图的完整数据
             const exportData = {
                 version: '1.3',
@@ -1847,31 +2257,34 @@
                 toolName: '普罗米利亚地图标记工具',
                 maps: {}
             };
-            
+
             // 先保存当前地图（确保最新数据写入 localStorage）
             saveCurrentMapMarkers();
-            
+
             // 收集所有地图的数据（直接从 localStorage 读取）
             let totalMarkers = 0;
             Object.keys(MAP_CONFIGS).forEach(mapId => {
                 const config = MAP_CONFIGS[mapId];
                 const storageKey = config.storageKey;
-                
+
                 try {
                     const saved = localStorage.getItem(storageKey);
                     let markers = [];
-                    
+
+                    let routes = []; // === 新增变量 ===
                     if (saved) {
                         const data = JSON.parse(saved);
                         markers = Object.values(data.markers || {});
+                        routes = Object.values(data.routes || {}); // === 新增：读取路线 ===
                     }
-                    
-                    exportData.maps[mapId] = {
+
+                    exportData.maps[mapId] = { // (如果在exportData里，这里是 exportData.maps)
                         mapName: config.name,
                         markers: markers,
+                        routes: routes, // === 新增：把路线打包进去 ===
                         markerCount: markers.length
                     };
-                    
+
                     totalMarkers += markers.length;
                     console.log(`📊 ${config.name}: ${markers.length} 个标记`);
                 } catch (e) {
@@ -1884,66 +2297,74 @@
                     };
                 }
             });
-            
+
             const json = JSON.stringify(exportData, null, 2);
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            
+
             const a = document.createElement('a');
             a.href = url;
             a.download = `promilia-all-maps-${Date.now()}.json`;
             a.click();
-            
+
             URL.revokeObjectURL(url);
-            
+
             showToast(`已导出 ${totalMarkers} 个标记（${Object.keys(exportData.maps).length} 张地图）`, 'success');
         };
-        
-        window.importData = function(event) {
+
+        window.importData = function (event) {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             // 获取导入模式
             const importMode = document.querySelector('input[name="import-mode"]:checked').value;
-            
+
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    
+
                     // 检测数据格式：v1.3+ 多地图格式 vs 旧版单地图格式
                     if (data.maps && typeof data.maps === 'object') {
                         // === v1.3+ 多地图格式 ===
                         const importInfo = [];
                         let totalMarkers = 0;
-                        
+
                         Object.keys(data.maps).forEach(mapId => {
                             const mapData = data.maps[mapId];
                             const markerCount = mapData.markers ? mapData.markers.length : 0;
-                            importInfo.push(`  • ${mapData.mapName || mapId}: ${markerCount} 个标记`);
+                            const routeCount = mapData.routes ? mapData.routes.length : 0;
+                            importInfo.push(`  • ${mapData.mapName || mapId}: ${markerCount} 个标记, ${routeCount} 条路线`);
                             totalMarkers += markerCount;
                         });
-                        
+
                         const modeText = importMode === 'override' ? '覆盖' : '增量';
+                        // 计算总路线数
+                        let totalRoutes = 0;
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            totalRoutes += mapData.routes ? mapData.routes.length : 0;
+                        });
+
                         if (!confirm(`检测到 v1.3 多地图备份文件\n\n` +
                             `导入模式：${modeText}导入\n` +
-                            `共 ${totalMarkers} 个标记，${Object.keys(data.maps).length} 张地图：\n\n` +
+                            `共 ${totalMarkers} 个标记，${totalRoutes} 条路线，${Object.keys(data.maps).length} 张地图：\n\n` +
                             importInfo.join('\n') + '\n\n' +
                             `点击"确定"导入所有数据\n点击"取消"取消导入`)) {
                             return;
                         }
-                        
+
                         // 导入所有地图数据
                         let importedCount = 0;
                         Object.keys(data.maps).forEach(mapId => {
                             const mapData = data.maps[mapId];
                             if (!mapData.markers || !Array.isArray(mapData.markers)) return;
-                            
+
                             const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
                             let markersObj = {};
-                            
+
                             if (importMode === 'incremental') {
-                                // 增量导入：保留现有标记
+                                // 增量导入：保留现有标记和路线
                                 try {
                                     const saved = localStorage.getItem(storageKey);
                                     if (saved) {
@@ -1954,42 +2375,59 @@
                                     console.error(`❌ 读取现有数据失败 (${mapId}):`, e);
                                 }
                             }
-                            
+
                             // 添加新标记
                             mapData.markers.forEach(marker => {
                                 markersObj[marker.id] = marker;
                                 importedCount++;
                             });
-                            
+
+                            // 处理路线数据
+                            let routesObj = {};
+                            if (importMode === 'incremental') {
+                                // 增量导入：保留现有路线
+                                try {
+                                    const saved = localStorage.getItem(storageKey);
+                                    if (saved) {
+                                        const existingData = JSON.parse(saved);
+                                        routesObj = existingData.routes || {};
+                                    }
+                                } catch (e) {
+                                    console.error(`❌ 读取现有路线数据失败 (${mapId}):`, e);
+                                }
+                            }
+                            // 添加新路线
+                            if (mapData.routes && Array.isArray(mapData.routes)) {
+                                mapData.routes.forEach(route => {
+                                    routesObj[route.id] = route;
+                                });
+                            }
+
                             // 保存到 localStorage
                             localStorage.setItem(storageKey, JSON.stringify({
                                 markers: markersObj,
+                                routes: routesObj,
                                 counter: mapData.counter || Date.now(),
+                                routeCounter: mapData.routeCounter || 0,
                                 savedAt: new Date().toISOString()
                             }));
-                            
+
                             // 更新内存中的数据
                             allMarkersData[mapId] = markersObj;
                         });
-                        
-                        // 如果当前地图有数据，刷新显示
-                        if (allMarkersData[currentMapId]) {
-                            markers.clearLayers();
-                            Object.keys(markerData).forEach(key => delete markerData[key]);
-                            Object.assign(markerData, allMarkersData[currentMapId]);
-                            
-                            Object.values(markerData).forEach(marker => {
-                                const m = L.marker([marker.lat, marker.lng], {
-                                    icon: createMarkerIcon(marker.type)
-                                });
-                                m.bindPopup(createPopupContent(marker));
-                                markers.addLayer(m);
-                            });
-                            updateStats();
-                        }
-                        
-                        showToast(`已${importMode === 'override' ? '覆盖' : '增量'}导入 ${importedCount} 个标记到 ${Object.keys(data.maps).length} 张地图`, 'success');
-                        
+
+                        // 重新加载当前地图的数据，包括标记和路线
+                        loadMarkersForMap(currentMapId);
+
+                        // 计算导入的路线数
+                        let importedRoutes = 0;
+                        Object.keys(data.maps).forEach(mapId => {
+                            const mapData = data.maps[mapId];
+                            importedRoutes += mapData.routes ? mapData.routes.length : 0;
+                        });
+
+                        showToast(`已${importMode === 'override' ? '覆盖' : '增量'}导入 ${importedCount} 个标记和 ${importedRoutes} 条路线到 ${Object.keys(data.maps).length} 张地图`, 'success');
+
                     } else if (data.markers && Array.isArray(data.markers)) {
                         // === 旧版单地图格式（兼容） ===
                         const modeText = importMode === 'override' ? '覆盖' : '增量';
@@ -2000,16 +2438,25 @@
                             `点击"确定"导入到当前地图（${currentMapConfig.name}）\n` +
                             `点击"取消"取消导入`
                         );
-                        
+
                         if (!importToCurrent) return;
-                        
+
                         // 导入到当前地图
                         if (importMode === 'override') {
-                            // 覆盖导入：清除现有标记
+                            // 覆盖导入：清除现有标记和路线
                             markers.clearLayers();
                             Object.keys(markerData).forEach(key => delete markerData[key]);
+                            
+                            // 清除现有路线
+                            if (typeof allRoutes !== 'undefined') {
+                                Object.values(allRoutes).forEach(r => {
+                                    if (r.line) map.removeLayer(r.line);
+                                    if (r.decorator) map.removeLayer(r.decorator);
+                                });
+                                for (let k in allRoutes) delete allRoutes[k];
+                            }
                         }
-                        
+
                         // 添加新标记
                         data.markers.forEach(marker => {
                             markerData[marker.id] = marker;
@@ -2019,11 +2466,47 @@
                             m.bindPopup(createPopupContent(marker));
                             markers.addLayer(m);
                         });
-                        
+
+                        // 处理路线数据
+                        if (data.routes && Array.isArray(data.routes) && importMode === 'override') {
+                            data.routes.forEach(routeData => {
+                                const line = L.polyline(routeData.points, {
+                                    color: routeData.color,
+                                    weight: 6,
+                                    opacity: 1.0
+                                });
+
+                                const decorator = L.polylineDecorator(line, {
+                                    patterns: [
+                                        { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: routeData.color } }) }
+                                    ]
+                                });
+
+                                if (routeData.visible) {
+                                    line.addTo(map);
+                                    decorator.addTo(map);
+                                }
+
+                                allRoutes[routeData.id] = {
+                                    id: routeData.id,
+                                    name: routeData.name,
+                                    color: routeData.color,
+                                    visible: routeData.visible,
+                                    line: line,
+                                    decorator: decorator
+                                };
+                            });
+                        }
+
                         markerIdCounter = Date.now();
                         saveToLocalStorage();
                         updateStats();
-                        showToast(`已${importMode === 'override' ? '覆盖' : '增量'}导入 ${data.markers.length} 个标记到 ${currentMapConfig.name}`, 'success');
+                        
+                        // 刷新路线列表
+                        if (typeof renderRouteList === 'function') renderRouteList();
+                        
+                        const routeCount = data.routes ? data.routes.length : 0;
+                        showToast(`已${importMode === 'override' ? '覆盖' : '增量'}导入 ${data.markers.length} 个标记和 ${routeCount} 条路线到 ${currentMapConfig.name}`, 'success');
                     } else {
                         throw new Error('无法识别的数据格式');
                     }
@@ -2035,41 +2518,41 @@
             reader.readAsText(file);
             event.target.value = '';
         };
-        
+
         // ==================== 统计更新 ====================
         function updateStats() {
             const total = Object.keys(markerData).length;
             document.getElementById('total-markers').textContent = total;
             document.getElementById('current-map-count').textContent = total;
-            
+
             // 按分类统计
-            const counts = { 
+            const counts = {
                 chest: 0,      // 宝箱类
                 explore: 0,    // 探索类 (puzzle, quest, flower, teleport)
                 creature: 0,   // 生物类 (umi, egg, chipo, chipo_battle, chipo_egg)
                 other: 0       // 其他 (enemy, star, fish, custom)
             };
-            
+
             Object.values(markerData).forEach(m => {
                 const config = MARKER_CONFIGS[m.type];
                 if (config && config.category) {
                     counts[config.category]++;
                 }
             });
-            
+
             // 更新分类统计显示
             document.getElementById('count-chest').textContent = counts.chest;
             document.getElementById('count-explore').textContent = counts.explore;
             document.getElementById('count-creature').textContent = counts.creature;
             document.getElementById('count-other').textContent = counts.other;
         }
-        
+
         function updateLastSaved() {
             const now = new Date();
             const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             document.getElementById('last-saved').textContent = time;
         }
-        
+
         // ==================== 腾讯云 COS 云端存储 ====================
         // COS 配置
         const COS_CONFIG = {
@@ -2078,18 +2561,18 @@
             SecretId: '请输入文本',
             SecretKey: '请输入文本'
         };
-        
+
         // COS 签名生成（HMAC-SHA1）
         function generateCOSAuth(key, method = 'GET', contentType = '', headers = '') {
             const now = Math.floor(Date.now() / 1000);
             const expired = now + 3600;
-            
+
             const r = {
                 T: now,
                 E: expired,
                 K: COS_CONFIG.SecretId
             };
-            
+
             // 构造签名字符串
             const signStr = [
                 method.toLowerCase(),
@@ -2100,56 +2583,56 @@
                 now,
                 expired
             ].join('\n');
-            
+
             // HMAC-SHA1 签名
             const hmac = CryptoJS.HmacSHA1(signStr, COS_CONFIG.SecretKey);
             const sign = CryptoJS.enc.Base64.stringify(hmac);
-            
+
             r.A = sign;
-            
+
             // 返回授权头
-            return 'q-sign-algorithm=sha1&q-ak=' + COS_CONFIG.SecretId + 
-                   '&q-sign-time=' + now + ';' + expired + 
-                   '&q-key-time=' + now + ';' + expired + 
-                   '&q-header-list=&q-url-param-list=&q-signature=' + sign;
+            return 'q-sign-algorithm=sha1&q-ak=' + COS_CONFIG.SecretId +
+                '&q-sign-time=' + now + ';' + expired +
+                '&q-key-time=' + now + ';' + expired +
+                '&q-header-list=&q-url-param-list=&q-signature=' + sign;
         }
-        
+
         // 生成预签名 URL（COS 签名 v5 规范）
         function generatePresignedURL(key, method = 'PUT', expired = 3600, contentType = 'application/json; charset=UTF-8', params = {}) {
             const now = Math.floor(Date.now() / 1000);
             const exp = now + expired;
             const keyTime = `${now};${exp}`;
-            
+
             // 1. 计算 SignKey = HMAC-SHA1(SecretKey, KeyTime)
             const signKey = CryptoJS.HmacSHA1(keyTime, COS_CONFIG.SecretKey).toString(CryptoJS.enc.Hex);
-            
+
             // 2. 构造 HttpString
             const httpMethod = method.toLowerCase();
             const uriPath = '/' + key;
             const host = `${COS_CONFIG.Bucket}.cos.${COS_CONFIG.Region}.myqcloud.com`;
-            
+
             // 查询参数（按字母顺序排序，值需要 URL 编码）
             const sortedParamKeys = Object.keys(params).sort();
             const httpParams = sortedParamKeys
                 .map(k => `${k.toLowerCase()}=${encodeURIComponent(params[k])}`)
                 .join('&');
-            
+
             // Headers（只有 content-type 非空时才包含）
             const httpHeaders = contentType ? `content-type=${encodeURIComponent(contentType)}&host=${host}` : `host=${host}`;
-            
+
             const httpString = `${httpMethod}\n${uriPath}\n${httpParams}\n${httpHeaders}\n`;
-            
+
             // 3. 计算 StringToSign
             const sha1HttpString = CryptoJS.SHA1(httpString).toString(CryptoJS.enc.Hex);
             const stringToSign = `sha1\n${keyTime}\n${sha1HttpString}\n`;
-            
+
             // 4. 计算签名 Signature = HMAC-SHA1(SignKey, StringToSign)
             const signature = CryptoJS.HmacSHA1(stringToSign, signKey).toString(CryptoJS.enc.Hex);
-            
+
             // 5. 构建预签名 URL
             const headerList = contentType ? 'content-type;host' : 'host';
             const urlParamList = sortedParamKeys.map(k => k.toLowerCase()).join(';');
-            
+
             const queryString = [
                 'q-sign-algorithm=sha1',
                 'q-ak=' + COS_CONFIG.SecretId,
@@ -2159,25 +2642,37 @@
                 'q-url-param-list=' + urlParamList,
                 'q-signature=' + signature
             ].join('&');
-            
+
             const paramsQuery = sortedParamKeys.length > 0
                 ? '&' + sortedParamKeys.map(k => `${k.toLowerCase()}=${encodeURIComponent(params[k])}`).join('&')
                 : '';
-            
+
             const url = `https://${host}/${key}?${queryString}${paramsQuery}`;
-            
+
             return url;
         }
-        
+        // === 新增：记录上一次上传的时间（初始为 0） ===
+        let lastUploadTime = 0;
+
         // 上传到 COS
-        window.uploadToCOS = async function() {
+        window.uploadToCOS = async function () {
+            // === 新增：30 秒冷却时间检查 ===
+            const currentTime = Date.now();
+            if (currentTime - lastUploadTime < 30000) { // 30000 毫秒 = 30 秒
+                const waitSeconds = Math.ceil((30000 - (currentTime - lastUploadTime)) / 1000);
+                showToast(`上传太频繁啦！请等待 ${waitSeconds} 秒后再试`, 'error');
+                return; // 拦截操作，直接退出函数
+            }
+            lastUploadTime = currentTime; // 记录这次通过检查的时间
+            // ================================
+
             const statusDiv = document.getElementById('cos-status');
             statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 准备上传...';
-            
+
             try {
                 // 先保存当前地图
                 saveCurrentMapMarkers();
-                
+
                 // 收集所有地图数据
                 const uploadData = {
                     version: '3.4.14',
@@ -2185,169 +2680,173 @@
                     toolName: '普罗米利亚地图标记工具',
                     maps: {}
                 };
-                
+
                 let totalMarkers = 0;
                 Object.keys(MAP_CONFIGS).forEach(mapId => {
                     const config = MAP_CONFIGS[mapId];
                     const storageKey = config.storageKey;
-                    
+
                     try {
                         const saved = localStorage.getItem(storageKey);
                         let markers = [];
-                        
+
+                        let routes = []; // === 新增变量 ===
                         if (saved) {
                             const data = JSON.parse(saved);
                             markers = Object.values(data.markers || {});
+                            routes = Object.values(data.routes || {}); // === 新增：读取路线 ===
                         }
-                        
-                        uploadData.maps[mapId] = {
+
+                        uploadData.maps[mapId] = { // (如果在exportData里，这里是 exportData.maps)
                             mapName: config.name,
                             markers: markers,
+                            routes: routes, // === 新增：把路线打包进去 ===
                             markerCount: markers.length
                         };
-                        
+
                         totalMarkers += markers.length;
                     } catch (e) {
                         console.error(`读取 ${config.name} 失败:`, e);
                     }
                 });
-                
+
                 statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在上传到云端...';
-                
+
                 // 生成文件名和云端路径
                 // 只保留 日-时-分（如：21-15-30）
                 const date = new Date();
                 const timestamp = `${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}-${String(date.getMinutes()).padStart(2, '0')}`;
                 const filename = `yveshao-${timestamp}.json`;
                 const cloudPath = `promilia-markers/yveshao/${filename}`;
-                
+
+
                 // 生成预签名 PUT URL（使用 generatePresignedURL 函数）
                 const uploadUrl = generatePresignedURL(cloudPath, 'PUT', 3600, 'application/json; charset=UTF-8');
-                
+
                 console.log('上传 URL:', uploadUrl);
-                
+
                 // 转换为 JSON
                 const json = JSON.stringify(uploadData, null, 2);
                 const contentType = 'application/json; charset=UTF-8';
-                
+
                 // 使用 XMLHttpRequest 上传（避免 fetch 的 CORS 预检问题）
                 await new Promise((resolve, reject) => {
                     const xhr = new XMLHttpRequest();
                     xhr.open('PUT', uploadUrl, true);
                     xhr.setRequestHeader('Content-Type', contentType);
-                    
-                    xhr.onload = function() {
+
+                    xhr.onload = function () {
                         if (xhr.status >= 200 && xhr.status < 300) {
                             resolve(xhr);
                         } else {
                             reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText}`));
                         }
                     };
-                    
-                    xhr.onerror = function() {
+
+                    xhr.onerror = function () {
                         reject(new Error('网络错误'));
                     };
-                    
+
                     xhr.send(json);
                 });
-                
+
                 // 生成下载链接
                 const downloadUrl = generatePresignedURL(cloudPath, 'GET', 3600);
-                
+
                 statusDiv.innerHTML = `✅ 上传成功！<br>📦 文件：${filename}<br>📊 共 ${totalMarkers} 个标记<br>🔗 <a href="${downloadUrl}" target="_blank" style="color:#4fc3f7;">点击下载链接（1 小时有效）</a>`;
                 showToast(`已上传 ${totalMarkers} 个标记到云端`, 'success');
-                
+
             } catch (e) {
                 console.error('上传失败:', e);
                 statusDiv.innerHTML = `❌ 上传失败：${e.message}<br><small>提示：请使用 HTTP 服务器运行（python3 -m http.server 8000），不要直接打开文件</small>`;
                 showToast('上传到云端失败', 'error');
             }
         };
-        
+
         // 从 COS 加载（通过文件选择）
-        window.loadFromCOS = async function() {
+        window.loadFromCOS = async function () {
             const statusDiv = document.getElementById('cos-status');
-            
+
             // 提示用户选择文件
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
-            input.onchange = function(e) {
+            input.onchange = function (e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                
+
                 statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在解析文件...';
-                
+
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     try {
                         const data = JSON.parse(e.target.result);
-                        
+
                         // 验证数据格式
                         if (!data.maps) {
                             throw new Error('无效的备份文件格式');
                         }
-                        
+
                         // 显示导入确认
                         let info = `版本：${data.version || '未知'}\n`;
                         let totalMarkers = 0;
+                        let totalRoutes = 0;
                         Object.keys(data.maps).forEach(mapId => {
-                            const count = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
-                            info += `  • ${data.maps[mapId].mapName || mapId}: ${count} 个标记\n`;
-                            totalMarkers += count;
+                            const markerCount = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
+                            const routeCount = data.maps[mapId].routes?.length || 0;
+                            info += `  • ${data.maps[mapId].mapName || mapId}: ${markerCount} 个标记, ${routeCount} 条路线\n`;
+                            totalMarkers += markerCount;
+                            totalRoutes += routeCount;
                         });
-                        
-                        if (!confirm(`从备份文件加载\n\n${info}\n共 ${totalMarkers} 个标记\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
+
+                        if (!confirm(`从备份文件加载\n\n${info}\n共 ${totalMarkers} 个标记, ${totalRoutes} 条路线\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
                             statusDiv.innerHTML = '';
                             return;
                         }
-                        
+
                         // 导入数据
                         let importedCount = 0;
                         Object.keys(data.maps).forEach(mapId => {
                             const mapData = data.maps[mapId];
                             if (!mapData.markers || !Array.isArray(mapData.markers)) return;
-                            
+
                             const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
                             const markersObj = {};
-                            
+
                             mapData.markers.forEach(marker => {
                                 markersObj[marker.id] = marker;
                             });
-                            
+
+                            // 处理路线数据
+                            let routesObj = {};
+                            if (mapData.routes && Array.isArray(mapData.routes)) {
+                                mapData.routes.forEach(route => {
+                                    routesObj[route.id] = route;
+                                });
+                            }
+
                             // 保存到 localStorage
                             localStorage.setItem(storageKey, JSON.stringify({
                                 mapId: mapId,
                                 mapName: mapData.mapName || mapId,
                                 markers: markersObj,
+                                routes: routesObj,
                                 counter: Date.now(),
+                                routeCounter: mapData.routeCounter || 0,
                                 savedAt: new Date().toISOString()
                             }));
-                            
+
                             // 更新内存
                             allMarkersData[mapId] = markersObj;
                             importedCount += mapData.markers.length;
                         });
-                        
-                        // 刷新当前地图显示
-                        if (allMarkersData[currentMapId]) {
-                            markers.clearLayers();
-                            Object.keys(markerData).forEach(key => delete markerData[key]);
-                            Object.assign(markerData, allMarkersData[currentMapId]);
-                            
-                            Object.values(markerData).forEach(marker => {
-                                const m = L.marker([marker.lat, marker.lng], {
-                                    icon: createMarkerIcon(marker.type)
-                                });
-                                m.bindPopup(createPopupContent(marker));
-                                markers.addLayer(m);
-                            });
-                            updateStats();
-                        }
-                        
+
+                        // 重新加载当前地图的标记和路线
+                        loadMarkersForMap(currentMapId);
+
                         statusDiv.innerHTML = `✅ 已加载 ${importedCount} 个标记`;
                         showToast(`已从文件加载 ${importedCount} 个标记`, 'success');
-                        
+
                     } catch (parseErr) {
                         console.error('解析失败:', parseErr);
                         statusDiv.innerHTML = `❌ 解析失败：${parseErr.message}`;
@@ -2358,46 +2857,46 @@
             };
             input.click();
         };
-        
+
         // 从 COS URL 直接加载（高级功能）
-        window.loadFromCOSUrl = async function() {
+        window.loadFromCOSUrl = async function () {
             const url = prompt('请输入 COS 下载链接：');
             if (!url) return;
-            
+
             const statusDiv = document.getElementById('cos-status');
             statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在从云端下载...';
-            
+
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('下载失败');
-                
+
                 const data = await response.json();
-                
+
                 // 验证数据格式
                 if (!data.maps) {
                     throw new Error('无效的备份文件格式');
                 }
-                
+
                 // 导入数据
                 importBackupData(data);
-                
+
             } catch (e) {
                 console.error('下载失败:', e);
                 statusDiv.innerHTML = `❌ 下载失败：${e.message}`;
                 showToast('从云端下载失败', 'error');
             }
         };
-        
+
         // 列出 COS 文件
-        window.listCOSFiles = async function() {
+        window.listCOSFiles = async function () {
             const statusDiv = document.getElementById('cos-status');
             const fileListDiv = document.getElementById('cos-file-list');
             const filesDiv = document.getElementById('cos-files');
-            
+
             statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在获取文件列表...';
             fileListDiv.style.display = 'block';
             filesDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加载中...';
-            
+
             try {
                 // 使用 COS ListObjects API 生成预签名 URL
                 // ListObjects 操作 key 为空，通过 prefix 参数指定前缀
@@ -2408,177 +2907,193 @@
                     '',
                     { 'prefix': 'promilia-markers/yveshao/', 'max-keys': '20' }
                 );
-                
+
                 const response = await fetch(listUrl);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
+
                 const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-                
+
                 const contents = xmlDoc.querySelectorAll('Contents');
-                
+
                 if (contents.length === 0) {
                     filesDiv.innerHTML = '<div style="color:#888;padding:10px;">暂无备份文件</div>';
                     statusDiv.innerHTML = '';
                     return;
                 }
-                
+
                 // 显示文件列表
                 let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
                 contents.forEach(item => {
                     const key = item.querySelector('Key')?.textContent;
                     const lastModified = item.querySelector('LastModified')?.textContent;
                     const size = item.querySelector('Size')?.textContent;
-                    
+
                     if (!key || key.endsWith('/')) return;
-                    
+
                     const date = new Date(lastModified);
                     const dateStr = date.toLocaleString('zh-CN');
                     const sizeStr = (parseInt(size) / 1024).toFixed(1) + ' KB';
-                    
+
                     html += `
-                        <div style="display:flex;justify-content:space-between;align-items:center;background:#1a1a2e;padding:8px;border-radius:4px;border:1px solid #0f3460;">
-                            <div style="flex:1;min-width:0;">
-                                <div style="color:#4fc3f7;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📦 ${key.split('/').pop()}</div>
-                                <div style="color:#888;font-size:11px;">${dateStr} · ${sizeStr}</div>
-                            </div>
-                            <button onclick="downloadFromCOS('${key}')" style="background:#0f3460;color:#4fc3f7;border:1px solid #4fc3f7;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px;">⬇️ 下载</button>
-                        </div>
-                    `;
+                                <div style="display:flex;justify-content:space-between;align-items:center;background:#1a1a2e;padding:8px;border-radius:4px;border:1px solid #0f3460;">
+                                    <div style="flex:1;min-width:0;">
+                                        <div style="color:#4fc3f7;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📦 ${key.split('/').pop()}</div>
+                                        <div style="color:#888;font-size:11px;">${dateStr} · ${sizeStr}</div>
+                                    </div>
+                                    <button onclick="downloadFromCOS('${key}')" style="background:#0f3460;color:#4fc3f7;border:1px solid #4fc3f7;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:11px;">⬇️ 下载</button>
+                                </div>
+                            `;
                 });
                 html += '</div>';
-                
+
                 filesDiv.innerHTML = html;
                 statusDiv.innerHTML = `✅ 找到 ${contents.length} 个备份文件`;
-                
+
             } catch (e) {
                 console.error('获取列表失败:', e);
                 filesDiv.innerHTML = `<div style="color:#f44336;padding:10px;">❌ 获取失败：${e.message}</div>`;
                 statusDiv.innerHTML = '';
             }
         };
-        
+
         // 从 COS 下载指定文件
-        window.downloadFromCOS = async function(cloudPath) {
+        window.downloadFromCOS = async function (cloudPath) {
             const statusDiv = document.getElementById('cos-status');
             statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在下载...';
-            
+
             try {
                 // GET 请求不需要 Content-Type，传空字符串
                 const downloadUrl = generatePresignedURL(cloudPath, 'GET', 3600, '');
-                
+
                 const response = await fetch(downloadUrl);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
+
                 const data = await response.json();
-                
+
                 // 验证数据格式
                 if (!data.maps) {
                     throw new Error('无效的备份文件格式');
                 }
-                
+
                 // 显示导入确认
                 let info = `版本：${data.version || '未知'}\n`;
                 let totalMarkers = 0;
+                let totalRoutes = 0;
                 Object.keys(data.maps).forEach(mapId => {
-                    const count = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
-                    info += `  • ${data.maps[mapId].mapName || mapId}: ${count} 个标记\n`;
-                    totalMarkers += count;
+                    const markerCount = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
+                    const routeCount = data.maps[mapId].routes?.length || 0;
+                    info += `  • ${data.maps[mapId].mapName || mapId}: ${markerCount} 个标记, ${routeCount} 条路线\n`;
+                    totalMarkers += markerCount;
+                    totalRoutes += routeCount;
                 });
-                
-                if (!confirm(`从云端加载\n\n${info}\n共 ${totalMarkers} 个标记\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
+
+                if (!confirm(`从云端加载\n\n${info}\n共 ${totalMarkers} 个标记, ${totalRoutes} 条路线\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
                     statusDiv.innerHTML = '';
                     return;
                 }
-                
+
                 // 导入数据
                 importBackupData(data);
-                
+
             } catch (e) {
                 console.error('下载失败:', e);
                 statusDiv.innerHTML = `❌ 下载失败：${e.message}`;
                 showToast('从云端下载失败', 'error');
             }
         };
-        
+
         // 导入备份数据（通用函数）
         function importBackupData(data) {
             const statusDiv = document.getElementById('cos-status');
-            
+
             // 获取导入模式
             const importMode = document.querySelector('input[name="import-mode"]:checked').value;
             const modeText = importMode === 'override' ? '覆盖' : '增量';
-            
+
             // 导入数据
             let importedCount = 0;
+            let importedRoutesCount = 0;
             Object.keys(data.maps).forEach(mapId => {
                 const mapData = data.maps[mapId];
                 if (!mapData.markers || !Array.isArray(mapData.markers)) return;
-                
+
                 const storageKey = MAP_CONFIGS[mapId]?.storageKey || `promilia-markers-${mapId}`;
                 let markersObj = {};
-                
+                let routesObj = {};
+
                 if (importMode === 'incremental') {
-                    // 增量导入：保留现有标记
+                    // 增量导入：保留现有标记和路线
                     try {
                         const saved = localStorage.getItem(storageKey);
                         if (saved) {
                             const existingData = JSON.parse(saved);
                             markersObj = existingData.markers || {};
+                            routesObj = existingData.routes || {};
                         }
                     } catch (e) {
                         console.error(`❌ 读取现有数据失败 (${mapId}):`, e);
                     }
                 }
-                
+
                 // 添加新标记
                 mapData.markers.forEach(marker => {
                     markersObj[marker.id] = marker;
                 });
-                
+
+                // 处理路线数据
+                if (mapData.routes && Array.isArray(mapData.routes)) {
+                    mapData.routes.forEach(route => {
+                        routesObj[route.id] = route;
+                    });
+                    importedRoutesCount += mapData.routes.length;
+                }
+
                 localStorage.setItem(storageKey, JSON.stringify({
                     mapId: mapId,
                     mapName: mapData.mapName || mapId,
                     markers: markersObj,
+                    routes: routesObj,
                     counter: Date.now(),
+                    routeCounter: mapData.routeCounter || 0,
                     savedAt: new Date().toISOString()
                 }));
-                
+
                 allMarkersData[mapId] = markersObj;
                 importedCount += mapData.markers.length;
             });
-            
-            // 重新加载当前地图的标记（使用 loadMarkersForMap 确保逻辑一致）
+
+            // 重新加载当前地图的标记和路线
             loadMarkersForMap(currentMapId);
-            
-            statusDiv.innerHTML = `✅ 已${modeText}加载 ${importedCount} 个标记`;
-            showToast(`已${modeText}加载 ${importedCount} 个标记`, 'success');
+
+            statusDiv.innerHTML = `✅ 已${modeText}加载 ${importedCount} 个标记和 ${importedRoutesCount} 条路线`;
+            showToast(`已${modeText}加载 ${importedCount} 个标记和 ${importedRoutesCount} 条路线`, 'success');
         };
-        
+
         // ==================== 提示框 ====================
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.className = type;
             toast.classList.add('show');
-            
+
             setTimeout(() => {
                 toast.classList.remove('show');
             }, 3000);
         }
-        
+
         // ==================== 标记聚合开关事件监听（Issue #1） ====================
         const clusterToggle = document.getElementById('cluster-toggle');
         if (clusterToggle) {
             // 设置初始状态
             clusterToggle.checked = clusterEnabled;
-            
+
             // 监听开关变化
-            clusterToggle.addEventListener('change', function() {
+            clusterToggle.addEventListener('change', function () {
                 clusterEnabled = this.checked;
                 localStorage.setItem('promilia-cluster-enabled', clusterEnabled);
-                
+
                 if (clusterEnabled) {
                     // 启用聚合：将标记移到集群
                     console.log('✅ 启用标记聚合');
@@ -2603,35 +3118,35 @@
             });
             console.log('✅ 聚合开关已初始化');
         }
-        
+
         // ==================== 分类折叠事件监听 ====================
         document.querySelectorAll('.category-header').forEach(header => {
-            header.addEventListener('click', function() {
+            header.addEventListener('click', function () {
                 const category = this.dataset.category;
                 const content = document.querySelector(`.category-content[data-category="${category}"]`);
                 const icon = this.querySelector('.fa-chevron-down');
-                
+
                 // 切换展开/折叠状态
                 this.classList.toggle('collapsed');
                 content.classList.toggle('collapsed');
                 categoryExpanded[category] = !this.classList.contains('collapsed');
-                
+
                 console.log(`📂 分类 ${category}: ${categoryExpanded[category] ? '展开' : '折叠'}`);
             });
         });
-        
+
         // ==================== 启动 ====================
         console.log('🚀 启动应用...');
-        
+
         // 恢复地图视图（缩放级别和中心点）
         restoreView();
-        
+
         // 恢复上次选择的标记类型
         restoreMarkerType();
-        
+
         // 初始化地图（使用保存的地图 ID，保持缩放）
         loadMap(currentMapId, true);
-        
+
         console.log('✅ 应用启动完成');
         showToast('普罗米利亚地图工具已就绪', 'success');
     </script>
