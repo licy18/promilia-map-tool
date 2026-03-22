@@ -6,7 +6,8 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Made with 🐸](https://img.shields.io/badge/made%20with-%F0%9F%90%B8-green.svg?style=flat-square)](https://github.com/licy18/promilia-map-tool)
 
-**📦 GitHub:** https://github.com/licy18/promilia-map-tool
+**📦 GitHub:** https://github.com/licy18/promilia-map-tool  
+**🏷️ 最新版本:** v3.4.15 (2026-03-22)
 
 ---
 
@@ -256,6 +257,27 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 ## 📝 更新日志
+
+### v3.4.15 (2026-03-22) - 🗺️ 路线绘制功能
+- ✨ **新增：** 路线绘制模式，点击地图连续添加节点
+- ✨ **新增：** 6 种路线颜色可选（红/粉/绿/蓝/紫/橙）
+- ✨ **新增：** 路线管理面板，查看/编辑/删除已保存的路线
+- ✨ **新增：** 路线数据保存到 localStorage
+- 🎨 **UI：** 路线绘制工具栏（颜色选择/完成/取消）
+- 🎨 **UI：** 路线管理面板（列表显示/计数）
+
+### v3.4.14 (2026-03-21) - 📥 增量导入功能
+- ✨ **新增：** 导入模式选择（覆盖导入/增量导入）
+- ✨ **新增：** 增量导入保留现有标记
+- 🎨 **UI：** 导入模式选择区域和说明提示
+
+### v3.4.13 (2026-03-21) - ☁️ 云端文件列表功能
+- ✨ **新增：** 查看云端备份文件列表
+- ✨ **新增：** 选择下载指定备份文件
+- ✨ **新增：** 文件信息展示（时间、大小）
+- 🔧 **修复：** ListObjects API 签名（key 为空）
+- 🔧 **修复：** 参数名转小写
+- 🔧 **修复：** GET 请求 Content-Type 处理
 
 ### v3.4.12 (2026-03-21) - ☁️ 云端存储功能
 - ✨ **新增：** 腾讯云 COS 云端备份支持
@@ -515,5 +537,5 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 **开发：** 呱呱 (Guāguā) 🐸  
-**最后更新：** 2026-03-18  
-**最新版本：** v3.4.4
+**最后更新：** 2026-03-22  
+**最新版本：** v3.4.15
