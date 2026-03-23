@@ -20,7 +20,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #1a1a2e;
@@ -28,12 +28,12 @@
             height: 100vh;
             overflow: hidden;
         }
-        
+
         #app {
             display: flex;
             height: 100vh;
         }
-        
+
         /* 侧边栏 */
         #sidebar {
             width: 320px;
@@ -42,19 +42,19 @@
             overflow-y: auto;
             border-right: 2px solid #0f3460;
         }
-        
-        #sidebar h1 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
-            color: #e94560;
-        }
-        
-        #sidebar .subtitle {
-            font-size: 0.85em;
-            color: #888;
-            margin-bottom: 20px;
-        }
-        
+
+            #sidebar h1 {
+                font-size: 1.5em;
+                margin-bottom: 10px;
+                color: #e94560;
+            }
+
+            #sidebar .subtitle {
+                font-size: 0.85em;
+                color: #888;
+                margin-bottom: 20px;
+            }
+
         /* 地图切换器 */
         .map-switcher {
             margin-bottom: 20px;
@@ -62,22 +62,22 @@
             border-radius: 8px;
             overflow: hidden;
         }
-        
-        .map-switcher select {
-            width: 100%;
-            padding: 12px;
-            background: #16213e;
-            border: none;
-            color: #eee;
-            font-size: 1em;
-            cursor: pointer;
-            outline: none;
-        }
-        
-        .map-switcher select:focus {
-            background: #1a2a4a;
-        }
-        
+
+            .map-switcher select {
+                width: 100%;
+                padding: 12px;
+                background: #16213e;
+                border: none;
+                color: #eee;
+                font-size: 1em;
+                cursor: pointer;
+                outline: none;
+            }
+
+                .map-switcher select:focus {
+                    background: #1a2a4a;
+                }
+
         .map-info {
             padding: 10px 12px;
             background: #0a1a2a;
@@ -85,30 +85,30 @@
             color: #888;
             border-top: 1px solid #1a4a7a;
         }
-        
-        .map-info strong {
-            color: #00d9ff;
-        }
-        
+
+            .map-info strong {
+                color: #00d9ff;
+            }
+
         .section {
             margin-bottom: 25px;
         }
-        
-        .section h2 {
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            color: #00d9ff;
-            border-bottom: 1px solid #0f3460;
-            padding-bottom: 5px;
-        }
-        
+
+            .section h2 {
+                font-size: 1.1em;
+                margin-bottom: 10px;
+                color: #00d9ff;
+                border-bottom: 1px solid #0f3460;
+                padding-bottom: 5px;
+            }
+
         /* 标记类型选择 */
         .marker-types {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
         }
-        
+
         .marker-type {
             padding: 12px 8px;
             background: #0f3460;
@@ -118,26 +118,26 @@
             text-align: center;
             transition: all 0.2s;
         }
-        
-        .marker-type:hover {
-            background: #1a4a7a;
-        }
-        
-        .marker-type.active {
-            border-color: #e94560;
-            background: #1a4a7a;
-        }
-        
-        .marker-type i {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-            display: block;
-        }
-        
-        .marker-type span {
-            font-size: 0.75em;
-        }
-        
+
+            .marker-type:hover {
+                background: #1a4a7a;
+            }
+
+            .marker-type.active {
+                border-color: #e94560;
+                background: #1a4a7a;
+            }
+
+            .marker-type i {
+                font-size: 1.5em;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            .marker-type span {
+                font-size: 0.75em;
+            }
+
         /* 按钮 */
         .btn {
             display: block;
@@ -150,52 +150,52 @@
             font-size: 0.95em;
             transition: all 0.2s;
         }
-        
+
         .btn-primary {
             background: #e94560;
             color: white;
         }
-        
-        .btn-primary:hover {
-            background: #ff6b6b;
-        }
-        
+
+            .btn-primary:hover {
+                background: #ff6b6b;
+            }
+
         .btn-secondary {
             background: #0f3460;
             color: #eee;
         }
-        
-        .btn-secondary:hover {
-            background: #1a4a7a;
-        }
-        
+
+            .btn-secondary:hover {
+                background: #1a4a7a;
+            }
+
         .btn-success {
             background: #28a745;
             color: white;
         }
-        
-        .btn-success:hover {
-            background: #34ce57;
-        }
-        
+
+            .btn-success:hover {
+                background: #34ce57;
+            }
+
         .btn-info {
             background: #17a2b8;
             color: white;
         }
-        
-        .btn-info:hover {
-            background: #138496;
-        }
-        
+
+            .btn-info:hover {
+                background: #138496;
+            }
+
         .btn-group {
             display: flex;
             gap: 10px;
         }
-        
-        .btn-group .btn {
-            flex: 1;
-        }
-        
+
+            .btn-group .btn {
+                flex: 1;
+            }
+
         /* 统计信息 */
         .stats {
             background: #0f3460;
@@ -203,56 +203,56 @@
             border-radius: 8px;
             margin-bottom: 15px;
         }
-        
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
         }
-        
+
         .stat-item {
             text-align: center;
         }
-        
+
         .stat-value {
             font-size: 1.5em;
             font-weight: bold;
             color: #00d9ff;
         }
-        
+
         .stat-label {
             font-size: 0.75em;
             color: #888;
         }
-        
+
         /* 地图区域 */
         #map-container {
             flex: 1;
             position: relative;
             background: #0a0a15;
         }
-        
+
         #map {
             width: 100%;
             height: 100%;
         }
-        
+
         /* 标记弹窗 */
         .leaflet-popup-content-wrapper {
             background: #16213e;
             color: #eee;
             border-radius: 8px;
         }
-        
+
         .leaflet-popup-tip {
             background: #16213e;
         }
-        
+
         .popup-content h3 {
             margin-bottom: 10px;
             color: #e94560;
         }
-        
+
         .popup-content textarea {
             width: 100%;
             min-height: 80px;
@@ -264,36 +264,36 @@
             resize: vertical;
             margin: 10px 0;
         }
-        
+
         .popup-actions {
             display: flex;
             gap: 8px;
             margin-top: 10px;
         }
-        
-        .popup-actions button {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .popup-actions .btn-save {
-            background: #00d9ff;
-            color: #000;
-        }
-        
-        .popup-actions .btn-delete {
-            background: #e94560;
-            color: white;
-        }
-        
+
+            .popup-actions button {
+                flex: 1;
+                padding: 8px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            .popup-actions .btn-save {
+                background: #00d9ff;
+                color: #000;
+            }
+
+            .popup-actions .btn-delete {
+                background: #e94560;
+                color: white;
+            }
+
         /* 文件输入隐藏 */
         #file-input {
             display: none;
         }
-        
+
         /* 提示信息 */
         #toast {
             position: fixed;
@@ -308,19 +308,19 @@
             transition: transform 0.3s;
             z-index: 10000;
         }
-        
-        #toast.show {
-            transform: translateX(0);
-        }
-        
-        #toast.success {
-            border-color: #00ff88;
-        }
-        
-        #toast.error {
-            border-color: #e94560;
-        }
-        
+
+            #toast.show {
+                transform: translateX(0);
+            }
+
+            #toast.success {
+                border-color: #00ff88;
+            }
+
+            #toast.error {
+                border-color: #e94560;
+            }
+
         /* 帮助提示 */
         .help-tip {
             font-size: 0.8em;
@@ -330,7 +330,7 @@
             background: #0f3460;
             border-radius: 4px;
         }
-        
+
         /* 开关控件 */
         .switch {
             position: relative;
@@ -338,13 +338,13 @@
             width: 50px;
             height: 26px;
         }
-        
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
+
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+
         .slider {
             position: absolute;
             cursor: pointer;
@@ -356,52 +356,52 @@
             transition: .3s;
             border-radius: 26px;
         }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .3s;
-            border-radius: 50%;
-        }
-        
+
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 20px;
+                width: 20px;
+                left: 3px;
+                bottom: 3px;
+                background-color: white;
+                transition: .3s;
+                border-radius: 50%;
+            }
+
         input:checked + .slider {
             background-color: #00d9ff;
         }
-        
-        input:checked + .slider:before {
-            transform: translateX(24px);
-        }
-        
+
+            input:checked + .slider:before {
+                transform: translateX(24px);
+            }
+
         /* 分类折叠 */
         .category-header {
             user-select: none;
             transition: background 0.2s;
         }
-        
-        .category-header:hover {
-            background: #1a4a7a !important;
-        }
-        
-        .category-header .fa-chevron-down {
-            transition: transform 0.3s;
-        }
-        
-        .category-header.collapsed .fa-chevron-down {
-            transform: rotate(-90deg);
-        }
-        
+
+            .category-header:hover {
+                background: #1a4a7a !important;
+            }
+
+            .category-header .fa-chevron-down {
+                transition: transform 0.3s;
+            }
+
+            .category-header.collapsed .fa-chevron-down {
+                transform: rotate(-90deg);
+            }
+
         .category-content {
             transition: all 0.3s;
         }
-        
-        .category-content.collapsed {
-            display: none !important;
-        }
+
+            .category-content.collapsed {
+                display: none !important;
+            }
         /* === 新增：悬浮刷新按钮 === */
         #refresh-btn {
             position: fixed;
@@ -454,6 +454,8 @@
             position: absolute;
             top: 20px;
             right: 20px;
+            width: 160px; /* 【统一大小】固定宽度 */
+            box-sizing: border-box; /* 防止内边距撑破宽度 */
             z-index: 9999;
             background: rgba(15, 52, 96, 0.8);
             border: 1px solid #00d9ff;
@@ -464,6 +466,7 @@
             backdrop-filter: blur(5px);
             transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-align: center; /* 【统一大小】文字居中 */
         }
 
             #radar-toggle-btn:hover {
@@ -473,7 +476,7 @@
 
         #radar-panel {
             position: absolute;
-            top: 70px;
+            top: 120px; 
             right: 20px;
             z-index: 9998;
             width: 320px;
@@ -489,15 +492,6 @@
             flex-direction: column;
         }
 
-        .radar-label-icon {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 24px;
-            font-weight: bold;
-            text-shadow: 0 0 5px #000, 0 0 10px #000;
-            text-align: center;
-        }
         
         /* 隐藏Leaflet默认的右下角链接标签 - 方案2：CSS样式 */
         .leaflet-control-attribution {
@@ -561,12 +555,87 @@
                 height: 10px;
                 font-size: 7px;
             }
+/* === 新增：云端用户管理样式 === */
+        #user-toggle-btn {
+            position: absolute;
+            top: 70px; /* 【布局调整】放在雷达按钮的正下方 */
+            right: 20px; /* 【布局调整】右侧对齐 */
+            width: 160px; /* 【统一大小】固定与雷达一致的宽度 */
+            box-sizing: border-box;
+            z-index: 9999;
+            background: rgba(15, 52, 96, 0.8);
+            border: 1px solid #e94560;
+            color: #eee;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center; /* 【统一大小】内容居中对齐 */
+            gap: 8px;
+        }
+
+            #user-toggle-btn:hover {
+                background: #e94560;
+            }
+
+        /* 【新增防爆框保障】即使以后加了超长的英文名，按钮也不会被撑爆变形 */
+        #current-user-display {
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #user-panel {
+            position: absolute;
+            top: 120px; /* 【布局调整】和雷达面板在同等高度展开 */
+            right: 20px; /* 【布局调整】右侧对齐 */
+            z-index: 9998;
+            width: 250px;
+            background: rgba(26, 26, 46, 0.95);
+            border: 1px solid #e94560;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+
         }
         /* ================================ */
     </style>
+
 </head>
 <body>
     <div id="app">
+        <button id="user-toggle-btn">
+            <i class="fas fa-user-circle"></i> <span id="current-user-display">user</span> <i id="user-lock-icon" class="fas fa-unlock" style="font-size: 0.8em;"></i>
+        </button>
+        <div id="user-panel">
+            <div style="color: #e94560; font-weight: bold; margin-bottom: 5px; border-bottom: 1px dashed #1a4a7a; padding-bottom: 8px;">
+                <i class="fas fa-cloud"></i> COS 云端用户设置
+            </div>
+            <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 5px;">
+                <select id="user-select" class="btn" style="flex: 1; margin: 0; background: #0f3460; color: #eee; border: 1px solid #1a4a7a; text-align: left; padding: 8px; cursor: pointer;"></select>
+                <button id="delete-user-btn" class="btn btn-secondary" style="margin: 0; padding: 8px 12px; width: auto; background: #e94560;" title="删除当前选中的用户"><i class="fas fa-trash"></i></button>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="new-user-input" placeholder="输入新ID(仅限英文)" style="flex: 1; padding: 8px; background: #0f3460; border: 1px solid #1a4a7a; color: #eee; border-radius: 4px; outline: none;">
+                <button id="add-user-btn" class="btn btn-success" style="margin: 0; padding: 8px 12px; width: auto;"><i class="fas fa-plus"></i></button>
+            </div>
+            <button id="lock-user-btn" class="btn btn-primary" style="margin-top: 5px;">
+                <i class="fas fa-lock"></i> 锁定存储路径
+            </button>
+            <div style="font-size: 0.75em; color: #888; line-height: 1.4;">
+                锁定后下拉面板控件将被禁用。<br>当前上传路径：<br><span style="color:#00d9ff">promilia-markers/<span id="preview-user-path">user</span>/</span>
+            </div>
+        </div>
+       
         <!--* === 新增：右上角雷达系统样式 === */-->
         <button id="radar-toggle-btn"><i class="fas fa-radar"></i> 区域雷达</button>
         <div id="radar-panel" style="display: none;">
@@ -584,15 +653,16 @@
                 <div style="font-size: 0.85em; color: #888; margin-bottom: 5px;">2. 自动切割当前屏幕</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                     <button class="btn btn-primary" onclick="runRadar('grid', 4)" style="margin:0; padding: 5px;"><i class="fas fa-th-large"></i> 4 宫格</button>
-                    <button class="btn btn-primary" onclick="runRadar('triangle', 4)" style="margin:0; padding: 5px;"><i class="fas fa-play" style="transform: rotate(-90deg);"></i> 4 三角</button>
+                    <button class="btn btn-primary" onclick="runRadar('triangle', 4)" style="margin:0; padding: 5px;"><i class="fas fa-play" style="transform: rotate(-90deg);"></i> 16 三角</button>
                     <button class="btn btn-primary" onclick="runRadar('grid', 16)" style="margin:0; padding: 5px;"><i class="fas fa-th"></i> 16 宫格</button>
-                    <button class="btn btn-primary" onclick="runRadar('triangle', 16)" style="margin:0; padding: 5px;"><i class="fas fa-forward" style="transform: rotate(-90deg);"></i> 16 三角</button>
+                    <button class="btn btn-primary" onclick="runRadar('triangle', 16)" style="margin:0; padding: 5px;"><i class="fas fa-forward" style="transform: rotate(-90deg);"></i> 64 三角</button>
                     <button class="btn btn-primary" onclick="runRadar('grid', 64)" style="margin:0; padding: 5px;"><i class="fas fa-border-all"></i> 64 宫格</button>
-                    <button class="btn btn-primary" onclick="runRadar('triangle', 64)" style="margin:0; padding: 5px;"><i class="fas fa-fast-forward" style="transform: rotate(-90deg);"></i> 64 三角</button>
+                    <button class="btn btn-primary" onclick="runRadar('triangle', 64)" style="margin:0; padding: 5px;"><i class="fas fa-fast-forward" style="transform: rotate(-90deg);"></i> 256 三角</button>
                 </div>
             </div>
 
             <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <button class="btn btn-info" onclick="enableRadarDraw()" style="margin:0; flex: 1;"><i class="fas fa-crop-alt"></i> 自由框选</button>
                 <button class="btn btn-secondary" onclick="clearRadar()" style="margin:0; flex: 1; background: #e94560;"><i class="fas fa-trash"></i> 清除雷达</button>
             </div>
 
@@ -683,9 +753,9 @@
                 </div>
                 <div class="category-content" data-category="chest" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
                     <!--<div class="marker-type" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
-                    <i class="fas fa-gift" style="color: #f39c12;"></i>
-                    <span>宝箱</span>
-                </div>-->
+                <i class="fas fa-gift" style="color: #f39c12;"></i>
+                <span>宝箱</span>
+            </div>-->
                     <div class="marker-type" data-type="chest_wood" data-color="#8b4513" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #8b4513;"></i>
                         <span>木宝箱</span>
@@ -753,9 +823,9 @@
                         <span>乌咪</span>
                     </div>
                     <!--<div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
-                    <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                    <span>蛋</span>
-                </div> -->
+                <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                <span>蛋</span>
+            </div> -->
                     <div class="marker-type" data-type="chipo" data-color="#ff6b9d" data-icon="fa-paw">
                         <i class="fas fa-paw" style="color: #ff6b9d;"></i>
                         <span>奇波</span>
@@ -858,17 +928,17 @@
 
                     <!-- 宝箱类筛选 -->
                     <div class="category-header" data-category="chest-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
-                        <!--<div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-gift" style="color: #f39c12;"></i>
-                        <span style="color: #eee; font-weight: bold;">宝箱</span>
-                    </div>-->
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-gift" style="color: #f39c12;"></i>
+                            <span style="color: #eee; font-weight: bold;">宝箱</span>
+                        </div>
                         <i class="fas fa-chevron-down" style="color: #888;"></i>
                     </div>
                     <div class="category-content" data-category="chest-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
-                        <div class="marker-type active" data-type="chest" data-category="chest">
-                            <i class="fas fa-gift" style="color: #f39c12;"></i>
-                            <span>宝箱</span>
-                        </div>
+                        <!--<div class="marker-type active" data-type="chest" data-category="chest">
+                <i class="fas fa-gift" style="color: #f39c12;"></i>
+                <span>宝箱</span>
+            </div>-->
                         <div class="marker-type active" data-type="chest_wood" data-category="chest">
                             <i class="fas fa-box" style="color: #8b4513;"></i>
                             <span>木</span>
@@ -936,9 +1006,9 @@
                             <span>乌咪</span>
                         </div>
                         <!--<div class="marker-type active" data-type="egg" data-category="creature">
-                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                        <span>蛋</span>
-                    </div>-->
+                <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                <span>蛋</span>
+            </div>-->
                         <div class="marker-type active" data-type="chipo" data-category="creature">
                             <i class="fas fa-paw" style="color: #ff6b9d;"></i>
                             <span>奇波</span>
@@ -1000,7 +1070,19 @@
                     </div>
                 </div>
 
-            </div>  <!-- 关闭 filter-types -->
+                <!--标签搜索栏-->
+                <div class="section" id="search-section">
+                    <h2><i class="fas fa-search"></i> 标记搜索</h2>
+                    <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                        <input type="text" id="marker-search-input" placeholder="可使用备注关键词搜索..." style="flex: 1; padding: 8px; background: #0f3460; border: 1px solid #1a4a7a; color: #eee; border-radius: 4px; outline: none; transition: border-color 0.3s;">
+                        <button class="btn btn-primary" onclick="searchMarkers()" style="margin: 0; padding: 8px 12px; width: auto;" title="搜索"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div id="search-results" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; padding-right: 5px;">
+                    </div>
+                </div>
+            </div> 
+
+            <!-- 关闭 filter-types -->
             <!-- 操作按钮 -->
             <div class="section">
                 <h2><i class="fas fa-tools"></i> 操作</h2>
@@ -1035,6 +1117,19 @@
             <!-- 云端存储 -->
             <div class="section">
                 <h2><i class="fas fa-cloud"></i> 云端存储</h2>
+
+                <div style="margin-bottom: 12px;">
+                    <div id="cos-config-toggle" style="font-size: 0.8em; color: #888; cursor: pointer; text-decoration: underline; display: inline-block;">
+                        <i class="far fa-square"></i> 在此填入服务器秘钥（目前仅支持腾讯COS）
+                    </div>
+                    <div id="cos-config-panel" style="display: none; margin-top: 10px; background: #0f3460; padding: 12px; border-radius: 6px; border: 1px dashed #1a4a7a;">
+                        <input type="text" id="cos-bucket" placeholder="Bucket (例: abdcefj)" style="width: 100%; margin-bottom: 8px; padding: 6px; background: #16213e; color: #eee; border: 1px solid #1a4a7a; border-radius: 4px; outline: none;">
+                        <input type="text" id="cos-region" placeholder="Region (例: ab-guangzhou)" style="width: 100%; margin-bottom: 8px; padding: 6px; background: #16213e; color: #eee; border: 1px solid #1a4a7a; border-radius: 4px; outline: none;">
+                        <input type="password" id="cos-secret-id" placeholder="SecretId" style="width: 100%; margin-bottom: 8px; padding: 6px; background: #16213e; color: #eee; border: 1px solid #1a4a7a; border-radius: 4px; outline: none;">
+                        <input type="password" id="cos-secret-key" placeholder="SecretKey" style="width: 100%; margin-bottom: 8px; padding: 6px; background: #16213e; color: #eee; border: 1px solid #1a4a7a; border-radius: 4px; outline: none;">
+                        <button class="btn btn-primary" onclick="saveCosConfig()" style="margin: 0; padding: 6px; font-size: 0.85em; width: 100%;"><i class="fas fa-lock"></i> 保存并锁定在本地</button>
+                    </div>
+                </div>
                 <button class="btn btn-success" onclick="uploadToCOS()">
                     <i class="fas fa-cloud-upload-alt"></i> 上传到云端
                 </button>
@@ -1368,12 +1463,16 @@
                 filterState[type] = true;
             });
 
-            // 分类展开状态（用于 UI）
-            const categoryExpanded = {
-                chest: true,
-                explore: true,
-                creature: true,
-                other: true
+            // 分类展开状态（用于 UI）- 默认全折叠，优先从本地读取记忆
+            let categoryExpanded = JSON.parse(localStorage.getItem('promilia-category-expanded')) || {
+                'chest': false,
+                'explore': false,
+                'creature': false,
+                'other': false,
+                'chest-filter': false,
+                'explore-filter': false,
+                'creature-filter': false,
+                'other-filter': false
             };
 
             // 隐藏的标记层（用于筛选）
@@ -2382,20 +2481,6 @@
                 });
             });
 
-            // 分类折叠点击事件（筛选器）
-            document.querySelectorAll('.category-header[data-category*="filter"]').forEach(header => {
-                header.addEventListener('click', function () {
-                    const category = this.dataset.category;
-                    const content = document.querySelector(`.category-content[data-category="${category}"]`);
-                    const icon = this.querySelector('.fa-chevron-down');
-
-                    // 切换展开/折叠状态
-                    this.classList.toggle('collapsed');
-                    content.classList.toggle('collapsed');
-
-                    console.log(`📂 筛选分类 ${category}: ${content.classList.contains('collapsed') ? '折叠' : '展开'}`);
-                });
-            });
 
             // 保存筛选状态到 localStorage
             function saveFilterState() {
@@ -2764,14 +2849,180 @@
                 document.getElementById('last-saved').textContent = time;
             }
 
+            // === 新增：云端用户管理逻辑 ===
+            let defaultUsers = ['user']; 
+            let userList = JSON.parse(localStorage.getItem('promilia-users')) || defaultUsers;
+            let currentUser = localStorage.getItem('promilia-current-user') || userList[0]; // 默认认准列表第一个
+            let isUserLocked = localStorage.getItem('promilia-user-locked') === 'true'; // 默认状态从缓存读
+
+            function renderUserSelect() {
+                const select = document.getElementById('user-select');
+                select.innerHTML = userList.map(u => `<option value="${u}" ${u === currentUser ? 'selected' : ''}>${u}</option>`).join('');
+                document.getElementById('current-user-display').textContent = currentUser;
+                document.getElementById('preview-user-path').textContent = currentUser;
+            }
+
+            function toggleUserLock(forceState) {
+                isUserLocked = forceState !== undefined ? forceState : !isUserLocked;
+                localStorage.setItem('promilia-user-locked', isUserLocked);
+
+                const lockIcon = document.getElementById('user-lock-icon');
+                const select = document.getElementById('user-select');
+                const input = document.getElementById('new-user-input');
+                const addBtn = document.getElementById('add-user-btn');
+                const lockBtn = document.getElementById('lock-user-btn');
+                const deleteBtn = document.getElementById('delete-user-btn'); // 【新增】获取删除按钮
+
+                if (isUserLocked) {
+                    lockIcon.className = 'fas fa-lock';
+                    lockIcon.style.color = '#00ff88';
+                    select.disabled = true;
+                    input.disabled = true;
+                    addBtn.disabled = true;
+                    if (deleteBtn) deleteBtn.disabled = true; // 【新增】锁定删除
+                    lockBtn.innerHTML = '<i class="fas fa-unlock"></i> 解除锁定并修改';
+                    lockBtn.className = 'btn btn-secondary';
+                } else {
+                    lockIcon.className = 'fas fa-unlock';
+                    lockIcon.style.color = '#eee';
+                    select.disabled = false;
+                    input.disabled = false;
+                    addBtn.disabled = false;
+                    if (deleteBtn) deleteBtn.disabled = false; // 【新增】解锁删除
+                    lockBtn.innerHTML = '<i class="fas fa-lock"></i> 锁定当前用户';
+                    lockBtn.className = 'btn btn-primary';
+                }
+            }
+
+            // 用户UI初始化
+            renderUserSelect();
+            toggleUserLock(isUserLocked);
+
+            // 监听面板开关
+            document.getElementById('user-toggle-btn').addEventListener('click', () => {
+                const panel = document.getElementById('user-panel');
+                panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+            });
+
+            // 监听下拉框选择
+            document.getElementById('user-select').addEventListener('change', (e) => {
+                currentUser = e.target.value;
+                localStorage.setItem('promilia-current-user', currentUser);
+                document.getElementById('current-user-display').textContent = currentUser;
+                document.getElementById('preview-user-path').textContent = currentUser;
+            });
+
+            // 监听添加新用户
+            document.getElementById('add-user-btn').addEventListener('click', () => {
+                const val = document.getElementById('new-user-input').value.trim();
+                if (!/^[A-Za-z]+$/.test(val)) {
+                    showToast('用户名仅限使用纯英文字母喵！', 'error');
+                    return;
+                }
+                if (!userList.includes(val)) {
+                    userList.push(val);
+                    localStorage.setItem('promilia-users', JSON.stringify(userList));
+                    renderUserSelect();
+                    // 自动选中新加的
+                    document.getElementById('user-select').value = val;
+                    document.getElementById('user-select').dispatchEvent(new Event('change'));
+                    showToast('新用户添加成功！', 'success');
+                } else {
+                    showToast('这个用户已经存在啦！', 'info');
+                }
+                document.getElementById('new-user-input').value = '';
+            });
+
+            // === 新增：监听删除用户 ===
+            document.getElementById('delete-user-btn').addEventListener('click', () => {
+                if (userList.length <= 1) {
+                    showToast('至少要保留一个用户喵！不能全删光啦！', 'error');
+                    return;
+                }
+                const userToDelete = document.getElementById('user-select').value;
+                if (confirm(`确定要从列表中彻底删除用户 [${userToDelete}] 吗？`)) {
+                    // 从数组中过滤掉
+                    userList = userList.filter(u => u !== userToDelete);
+                    localStorage.setItem('promilia-users', JSON.stringify(userList));
+
+                    // 如果删除的是当前选中的用户，自动切换到列表里的第一个
+                    if (currentUser === userToDelete) {
+                        currentUser = userList[0];
+                        localStorage.setItem('promilia-current-user', currentUser);
+                    }
+
+                    renderUserSelect();
+                    showToast(`用户 ${userToDelete} 已被永久删除喵！`, 'success');
+                }
+            });
+
+            // 监听锁定按钮
+            document.getElementById('lock-user-btn').addEventListener('click', () => {
+                toggleUserLock();
+                if (isUserLocked) showToast('云端路径已锁定！防误触开启喵', 'success');
+                else showToast('路径已解锁，请谨慎操作！', 'info');
+            });
+
             // ==================== 腾讯云 COS 云端存储 ====================
-            // COS 配置
-            const COS_CONFIG = {
-                Bucket: '#################',
-                Region: '#################',
-                SecretId: '#################################',
-                SecretKey: '################################'
+            // === 修改：COS 动态配置（从本地读取，不再明文硬编码） ===
+            let COS_CONFIG = JSON.parse(localStorage.getItem('promilia-cos-config')) || {
+                Bucket: '',
+                Region: '',
+                SecretId: '',
+                SecretKey: ''
             };
+
+            // 渲染配置面板状态
+            function initCosConfigUI() {
+                document.getElementById('cos-bucket').value = COS_CONFIG.Bucket;
+                document.getElementById('cos-region').value = COS_CONFIG.Region;
+                document.getElementById('cos-secret-id').value = COS_CONFIG.SecretId;
+                document.getElementById('cos-secret-key').value = COS_CONFIG.SecretKey;
+
+                if (COS_CONFIG.SecretId) {
+                    document.getElementById('cos-config-toggle').innerHTML = '<i class="far fa-check-square"></i> 已配置服务器秘钥（点击修改）';
+                }
+            }
+
+            // 监听配置入口点击
+            document.getElementById('cos-config-toggle').addEventListener('click', function () {
+                const panel = document.getElementById('cos-config-panel');
+                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // 保存配置到本地
+            window.saveCosConfig = function () {
+                COS_CONFIG.Bucket = document.getElementById('cos-bucket').value.trim();
+                COS_CONFIG.Region = document.getElementById('cos-region').value.trim();
+                COS_CONFIG.SecretId = document.getElementById('cos-secret-id').value.trim();
+                COS_CONFIG.SecretKey = document.getElementById('cos-secret-key').value.trim();
+
+                if (!COS_CONFIG.SecretId || !COS_CONFIG.SecretKey || !COS_CONFIG.Bucket || !COS_CONFIG.Region) {
+                    showToast('请填写完整的四个配置信息喵！', 'error');
+                    return;
+                }
+
+                localStorage.setItem('promilia-cos-config', JSON.stringify(COS_CONFIG));
+
+                document.getElementById('cos-config-panel').style.display = 'none';
+                document.getElementById('cos-config-toggle').innerHTML = '<i class="far fa-check-square"></i> 已配置服务器秘钥（点击修改）';
+
+                showToast('COS 秘钥已安全保存在本地缓存中！', 'success');
+            };
+
+            // 每次调用 COS API 前的拦截检查
+            function checkCosConfigured() {
+                if (!COS_CONFIG.SecretId || !COS_CONFIG.SecretKey || !COS_CONFIG.Bucket || !COS_CONFIG.Region) {
+                    showToast('请先在上方配置 COS 服务器秘钥！', 'error');
+                    const panel = document.getElementById('cos-config-panel');
+                    if (panel.style.display === 'none') {
+                        document.getElementById('cos-config-toggle').click(); // 自动展开面板提醒用户
+                    }
+                    return false;
+                }
+                return true;
+            }
+            // =======================================================
 
             // COS 签名生成（HMAC-SHA1）
             function generateCOSAuth(key, method = 'GET', contentType = '', headers = '') {
@@ -2867,6 +3118,8 @@
 
             // 上传到 COS
             window.uploadToCOS = async function () {
+                if (!checkCosConfigured()) return; // 【新增】拦截器：检查是否填写了秘钥
+
                 // === 新增：30 秒冷却时间检查 ===
                 const currentTime = Date.now();
                 if (currentTime - lastUploadTime < 30000) { // 30000 毫秒 = 30 秒
@@ -2927,8 +3180,8 @@
                     // 只保留 日-时-分（如：21-15-30）
                     const date = new Date();
                     const timestamp = `${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}-${String(date.getMinutes()).padStart(2, '0')}`;
-                    const filename = `maojiejie-${timestamp}.json`;
-                    const cloudPath = `promilia-markers/maojiejie/${filename}`;
+                    const filename = `${currentUser}-${timestamp}.json`; // 【修改】动态使用当前用户
+                    const cloudPath = `promilia-markers/${currentUser}/${filename}`; // 【修改】动态使用当前用户
 
                     // 生成预签名 PUT URL（使用 generatePresignedURL 函数）
                     const uploadUrl = generatePresignedURL(cloudPath, 'PUT', 3600, 'application/json; charset=UTF-8');
@@ -3099,6 +3352,7 @@
 
             // 列出 COS 文件
             window.listCOSFiles = async function () {
+                if (!checkCosConfigured()) return; // 【新增】拦截器：检查是否填写了秘钥
                 const statusDiv = document.getElementById('cos-status');
                 const fileListDiv = document.getElementById('cos-file-list');
                 const filesDiv = document.getElementById('cos-files');
@@ -3115,7 +3369,7 @@
                         'GET',
                         3600,
                         '',
-                        { 'prefix': 'promilia-markers/maojiejie/', 'max-keys': '20' }
+                        { 'prefix': `promilia-markers/${currentUser}/`, 'max-keys': '20' } // 【修改】动态使用当前用户拼接前缀
                     );
 
                     const response = await fetch(listUrl);
@@ -3329,24 +3583,40 @@
                 console.log('✅ 聚合开关已初始化');
             }
 
-            // ==================== 分类折叠事件监听 ====================
+            // ==================== 分类折叠初始化与事件监听 ====================
             document.querySelectorAll('.category-header').forEach(header => {
-                header.addEventListener('click', function () {
-                    const category = this.dataset.category;
-                    const content = document.querySelector(`.category-content[data-category="${category}"]`);
-                    const icon = this.querySelector('.fa-chevron-down');
+                const category = header.dataset.category;
+                const content = document.querySelector(`.category-content[data-category="${category}"]`);
 
+                // 1. 网页加载瞬间：根据本地记忆或默认状态，自动应用折叠/展开样式
+                if (categoryExpanded[category]) {
+                    header.classList.remove('collapsed');
+                    content.classList.remove('collapsed');
+                } else {
+                    header.classList.add('collapsed');
+                    content.classList.add('collapsed');
+                }
+
+                // 2. 绑定点击事件：点击后立刻将新状态存入本地缓存
+                header.addEventListener('click', function () {
                     // 切换展开/折叠状态
                     this.classList.toggle('collapsed');
                     content.classList.toggle('collapsed');
-                    categoryExpanded[category] = !this.classList.contains('collapsed');
 
-                    console.log(`📂 分类 ${category}: ${categoryExpanded[category] ? '展开' : '折叠'}`);
+                    // 获取当前最新状态并存入字典
+                    const isExpanded = !this.classList.contains('collapsed');
+                    categoryExpanded[category] = isExpanded;
+
+                    // 写入 localStorage (仅保存在本地)
+                    localStorage.setItem('promilia-category-expanded', JSON.stringify(categoryExpanded));
+
+                    console.log(`📂 分类 ${category}: ${isExpanded ? '展开' : '折叠'} (已保存至本地)`);
                 });
             });
 
             // === 新增：区域统计雷达核心引擎 ===
             let radarLayerGroup = L.featureGroup().addTo(map); // 装雷达网格的专属图层
+            let radarRegionsMap = {}; // 【新增】用于存放区域 ID 与多边形实例的映射，实现点击定位
             const EPSILON = 0.0005; // 【黑科技】：压线判定的容差宽度（地图坐标单位）
 
             // 1. 面板开关逻辑
@@ -3378,20 +3648,94 @@
                 return Math.pow(p.lat - (v.lat + t * (w.lat - v.lat)), 2) + Math.pow(p.lng - (v.lng + t * (w.lng - v.lng)), 2);
             }
 
-            // 4. 清理雷达
+            // 4. 清理雷达与自由框选逻辑
+            let isDrawingRadar = false;
+            let radarDrawStart = null;
+            let radarTempRect = null;
+
             window.clearRadar = function () {
                 radarLayerGroup.clearLayers();
                 document.getElementById('radar-report').innerHTML = '等待扫描...';
+
+                // 安全兜底：如果在划线中途点清理，恢复地图物理状态
+                isDrawingRadar = false;
+                map.dragging.enable();
+                document.getElementById('map-container').style.cursor = '';
+                if (radarTempRect) {
+                    map.removeLayer(radarTempRect);
+                    radarTempRect = null;
+                }
             };
 
-            // 5. 核心扫描启动器
-            window.runRadar = function (mode, count) {
+            window.enableRadarDraw = function () {
+                clearRadar(); // 先清理旧网格
+
+                // 开启浏览模式，防止你划框的时候点出宝箱
+                const browseToggle = document.getElementById('browse-mode-toggle');
+                if (browseToggle && !browseToggle.checked) {
+                    browseToggle.checked = true;
+                    browseToggle.dispatchEvent(new Event('change'));
+                }
+
+                isDrawingRadar = true;
+                map.dragging.disable(); // 禁用地图拖拽，把左键让给画笔
+                document.getElementById('map-container').style.cursor = 'crosshair'; // 变成十字瞄准星
+                showToast('请在地图上【按住鼠标左键拖拽】划定扫描区域', 'info');
+            };
+
+            // 监听鼠标在地图上的拖拽
+            map.on('mousedown', function (e) {
+                if (!isDrawingRadar) return;
+                radarDrawStart = e.latlng;
+            });
+
+            map.on('mousemove', function (e) {
+                if (!isDrawingRadar || !radarDrawStart) return;
+                if (radarTempRect) map.removeLayer(radarTempRect);
+                radarTempRect = L.rectangle([radarDrawStart, e.latlng], {
+                    color: '#00d9ff', weight: 2, fillOpacity: 0.2, dashArray: '5, 5'
+                }).addTo(map); // 画出酷炫的虚线瞄准框
+            });
+
+            map.on('mouseup', function (e) {
+                if (!isDrawingRadar || !radarDrawStart) return;
+
+                const finalBounds = L.latLngBounds(radarDrawStart, e.latlng);
+
+                // 划完后立刻恢复地图的拖拽功能
+                isDrawingRadar = false;
+                map.dragging.enable();
+                document.getElementById('map-container').style.cursor = '';
+                radarDrawStart = null;
+                if (radarTempRect) map.removeLayer(radarTempRect);
+
+                // 如果只是误点了一下（没划出面积），就不触发
+                if (finalBounds.getNorth() === finalBounds.getSouth()) return;
+
+                // 触发雷达！模式设为纯矩形，分 1 块，把用户划的边界传进去！
+                runRadar('grid', 1, finalBounds);
+            });
+
+            // 5. 核心扫描启动器 (新增 customBounds 参数接收手划区域)
+            window.runRadar = function (mode, count, customBounds = null) {
                 clearRadar();
                 document.getElementById('radar-report').innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在雷达扫描中...';
 
-                // 获取当前屏幕视野
-                const bounds = map.getBounds();
-                const north = bounds.getNorth(), south = bounds.getSouth(), east = bounds.getEast(), west = bounds.getWest();
+                let north, south, east, west;
+
+                if (customBounds) {
+                    // 模式 A：自由框选 -> 使用你手划的绝对坐标边界！
+                    north = customBounds.getNorth();
+                    south = customBounds.getSouth();
+                    east = customBounds.getEast();
+                    west = customBounds.getWest();
+                } else {
+                    // 模式 B：全局扫描 -> 获取当前地图的真实物理边界！无视屏幕缩放！
+                    north = currentMapConfig.width;
+                    south = 0;
+                    east = currentMapConfig.height;
+                    west = 0;
+                }
 
                 // 计算行列数 (4 -> 2x2, 16 -> 4x4, 64 -> 8x8)
                 const cols = Math.sqrt(count);
@@ -3426,11 +3770,20 @@
 
                 // 绘制区块并统计
                 let reportHTML = '';
+                radarRegionsMap = {}; // 清空旧引用
+
                 regions.forEach((polyCoords, index) => {
                     const regionId = (index + 1).toString().padStart(2, '0');
-                    const polygon = L.polygon(polyCoords, { color: '#ff3333', weight: 2, fillOpacity: 0.1 }).addTo(radarLayerGroup);
+                    const polygon = L.polygon(polyCoords, {
+                        color: '#ff3333',
+                        weight: 2,
+                        fillOpacity: 0.1,
+                        regionId: regionId // 注入自定义属性
+                    }).addTo(radarLayerGroup);
 
-                    // 计算重心用于贴标签
+                    radarRegionsMap[regionId] = polygon; // 存入索引
+
+                    // 计算重心贴标签
                     let centerLat = 0, centerLng = 0;
                     polyCoords.forEach(p => { centerLat += p[0]; centerLng += p[1]; });
                     centerLat /= polyCoords.length; centerLng /= polyCoords.length;
@@ -3440,73 +3793,57 @@
                         interactive: false
                     }).addTo(radarLayerGroup);
 
-                    // 统计该区域内的点
                     let stats = {};
                     let total = 0;
-                    let boundaryCount = 0;
-
                     Object.values(markerData).forEach(marker => {
-                        if (!activeTargets.includes(marker.type)) return; // 过滤非目标
-
+                        if (!activeTargets.includes(marker.type)) return;
                         const p = L.latLng(marker.lat, marker.lng);
-                        const polyBounds = polygon.getBounds();
+                        if (!polygon.getBounds().contains(p)) return;
 
-                        // 粗筛：如果都不在矩形边界内，直接跳过加速
-                        if (!polyBounds.contains(p)) return;
-
-                        // 精筛与压线检测
                         let isInside = false;
                         let isBoundary = false;
-
-                        // 简单的射线法判断在多边形内
                         let j = polyCoords.length - 1;
                         for (let i = 0; i < polyCoords.length; i++) {
                             const vi = L.latLng(polyCoords[i][0], polyCoords[i][1]);
                             const vj = L.latLng(polyCoords[j][0], polyCoords[j][1]);
-
                             if (((vi.lng > p.lng) !== (vj.lng > p.lng)) && (p.lat < (vj.lat - vi.lat) * (p.lng - vi.lng) / (vj.lng - vi.lng) + vi.lat)) {
                                 isInside = !isInside;
                             }
-
-                            // 检测是否距离边缘小于容差（压线！）
-                            if (Math.sqrt(distToSegmentSquared(p, vi, vj)) < EPSILON) {
-                                isBoundary = true;
-                            }
+                            if (Math.sqrt(distToSegmentSquared(p, vi, vj)) < EPSILON) isBoundary = true;
                             j = i;
                         }
 
-                        // 绝不遗漏原则：只要在里面或者压线，统统算！
                         if (isInside || isBoundary) {
                             total++;
                             if (!stats[marker.type]) stats[marker.type] = { count: 0, boundary: 0 };
                             stats[marker.type].count++;
-                            if (isBoundary) {
-                                stats[marker.type].boundary++;
-                                boundaryCount++;
-                            }
+                            if (isBoundary) stats[marker.type].boundary++;
                         }
                     });
 
-                    // 生成该区域的报告 (仅在有数据时显示，或者全显示？这里选择显示非0区域，避免报告太长)
                     if (total > 0) {
                         let details = Object.keys(stats).map(type => {
                             const cfg = MARKER_CONFIGS[type];
-                            const bStr = stats[type].boundary > 0 ? `<span style="color:#ffcc00; font-size:0.8em;">(含压线:${stats[type].boundary})</span>` : '';
-                            return `<div style="margin-left: 10px;">- <span style="color:${cfg.color}">${cfg.label}</span>: ${stats[type].count} ${bStr}</div>`;
+                            return `<div style="margin-left: 10px;">- ${cfg.label}: ${stats[type].count}</div>`;
                         }).join('');
 
+                        // 【重点修改】：给外层 DIV 加上 onclick="focusRadarRegion('${regionId}')"
                         reportHTML += `
-                        <div style="background: rgba(255,255,255,0.05); padding: 5px; margin-bottom: 5px; border-radius: 4px; border-left: 3px solid #ff3333;">
-                            <strong style="color: #fff;">区域 ${regionId}</strong>: 总计 ${total} 个
+                        <div onclick="focusRadarRegion('${regionId}')" style="background: rgba(255,255,255,0.05); padding: 8px; margin-bottom: 5px; border-radius: 4px; border-left: 3px solid #ff3333; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(255,51,51,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                            <strong style="color: #00d9ff;">区域 ${regionId}</strong> <i class="fas fa-search-plus" style="font-size:0.8em; opacity:0.6"></i>: 总计 ${total} 个
                             ${details}
                         </div>
                     `;
                     }
-
-                    // 鼠标移入高亮
-                    polygon.on('mouseover', function () { this.setStyle({ fillOpacity: 0.4 }); });
-                    polygon.on('mouseout', function () { this.setStyle({ fillOpacity: 0.1 }); });
                 });
+
+                // 【新增】：在报告最后加上导出按钮
+                if (reportHTML !== '') {
+                    reportHTML = `<button class="btn btn-info" onclick="copyRadarReport()" style="margin-bottom:10px; padding:5px;"><i class="fas fa-copy"></i> 复制文字报告</button>` + reportHTML;
+                } else {
+                    reportHTML = '<div style="color:#00ff00;">未发现目标资产！</div>';
+                }
+                document.getElementById('radar-report').innerHTML = reportHTML;
 
                 if (reportHTML === '') reportHTML = '<div style="color:#00ff00;">当前视野及目标下未发现资产！</div>';
                 document.getElementById('radar-report').innerHTML = reportHTML;
@@ -3514,6 +3851,140 @@
             };
             // ==========================================
 
+            // 【新增】雷达点击定位与复制报告工具函数
+            window.focusRadarRegion = function (id) {
+                const poly = radarRegionsMap[id];
+                if (poly) {
+                    map.fitBounds(poly.getBounds(), { padding: [100, 100], maxZoom: 1, animate: true });
+                    const originalStyle = { fillOpacity: 0.1, color: '#ff3333' };
+                    poly.setStyle({ fillOpacity: 0.7, color: '#00d9ff' });
+                    setTimeout(() => { poly.setStyle(originalStyle); }, 800);
+                    showToast(`已定位至区域 ${id}`, 'info');
+                }
+            };
+
+            window.copyRadarReport = function () {
+                const reportArea = document.getElementById('radar-report');
+                if (!reportArea) return;
+
+                let text = reportArea.innerText.replace(/一键复制对账报告/g, '').trim();
+                const mapName = currentMapConfig ? currentMapConfig.name : "未知地图";
+                const finalStr = `【普罗米利亚资产对账雷达报告 - ${mapName}】\n生成时间：${new Date().toLocaleString()}\n------------------\n${text}`;
+
+                navigator.clipboard.writeText(finalStr).then(() => {
+                    showToast('报告已成功复制到剪贴板！喵~', 'success');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    showToast('复制失败，请手动选中复制', 'error');
+                });
+            };
+
+            // === 新增：备注搜索与全局追踪核心引擎 ===
+            window.searchMarkers = function () {
+                const keyword = document.getElementById('marker-search-input').value.trim().toLowerCase();
+                const resultsContainer = document.getElementById('search-results');
+
+                if (!keyword) {
+                    resultsContainer.innerHTML = '<div style="color: #888; font-size: 0.8em; text-align: center; padding: 10px;">请输入关键词进行搜索喵~</div>';
+                    return;
+                }
+
+                let resultsHTML = '';
+                let count = 0;
+
+                // 遍历当前地图的所有标记
+                Object.values(markerData).forEach(marker => {
+                    // 只搜索有备注且包含关键词的标记
+                    if (marker.note && marker.note.toLowerCase().includes(keyword)) {
+                        count++;
+                        const config = MARKER_CONFIGS[marker.type] || { label: '未知', color: '#999', icon: 'fa-question' };
+
+                        // 高亮关键词的小黑科技
+                        const highlightedNote = marker.note.replace(new RegExp(keyword, 'gi'), match => `<span style="color: #e94560; font-weight: bold; background: rgba(233,69,96,0.2); border-radius: 2px;">${match}</span>`);
+
+                        resultsHTML += `
+                            <div onclick="focusSearchResult('${marker.id}')" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border-left: 4px solid ${config.color}; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.transform='translateX(2px)';" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.transform='translateX(0)';">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i class="fas ${config.icon}" style="color: ${config.color}; font-size: 1.1em;"></i>
+                                        <span style="font-weight: bold; color: #eee; font-size: 0.9em;">${config.label}</span>
+                                    </div>
+                                    <i class="fas fa-location-arrow" style="color: #00d9ff; font-size: 0.8em; opacity: 0.6;"></i>
+                                </div>
+                                <div style="color: #aaa; font-size: 0.85em; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                    ${highlightedNote}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (count === 0) {
+                    resultsContainer.innerHTML = '<div style="color: #f39c12; font-size: 0.85em; text-align: center; padding: 15px;"><i class="fas fa-ghost" style="font-size: 2em; margin-bottom: 10px; opacity: 0.5; display: block;"></i>未找到匹配的备注内容！</div>';
+                } else {
+                    resultsContainer.innerHTML = `<div style="color: #00d9ff; font-size: 0.8em; margin-bottom: 8px; padding-left: 5px;"><i class="fas fa-crosshairs"></i> 侦测到 ${count} 个目标：</div>` + resultsHTML;
+                }
+            };
+
+            // 监听输入框的回车键，丝滑触发搜索
+            document.getElementById('marker-search-input').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') searchMarkers();
+            });
+
+            // 追踪引擎：点击列表自动平移、破开聚合簇并打开弹窗
+            window.focusSearchResult = function (id) {
+                const markerInfo = markerData[id];
+                if (!markerInfo) return;
+
+                // 防呆设计：如果当前类型被筛选器隐藏了，拦截并提示
+                if (!filterState[markerInfo.type]) {
+                    showToast('该标记目前被【筛选显示】隐藏了，请先勾选显示该类型喵！', 'error');
+                    // 给对应的分类头部闪烁一下提示
+                    const config = MARKER_CONFIGS[markerInfo.type];
+                    if (config && config.category) {
+                        const header = document.querySelector(`.category-header[data-category="${config.category}-filter"]`);
+                        if (header) {
+                            header.style.background = '#e94560';
+                            setTimeout(() => header.style.background = '#0f3460', 500);
+                        }
+                    }
+                    return;
+                }
+
+                // 第一阶段：战术飞行（平滑移动视角，缩放到能看清的级别）
+                map.flyTo([markerInfo.lat, markerInfo.lng], 1, { duration: 1.5 });
+
+                // 第二阶段：精准打击（等飞行动画快结束时触发）
+                setTimeout(() => {
+                    let targetLayer = null;
+
+                    if (clusterEnabled) {
+                        // 聚合模式：深潜寻找（支持破开层层叠加的 Cluster）
+                        markers.eachLayer(layer => {
+                            if (layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                                targetLayer = layer;
+                            }
+                        });
+
+                        if (targetLayer) {
+                            // 终极黑科技：利用 MarkerCluster 原生的 zoomToShowLayer 方法
+                            // 它会自动放大并拨开周围聚集的标记，然后我们给它加上 openPopup
+                            markers.zoomToShowLayer(targetLayer, () => {
+                                targetLayer.openPopup();
+                            });
+                        }
+                    } else {
+                        // 非聚合模式：直接遍历地图表层
+                        map.eachLayer(layer => {
+                            if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                                targetLayer = layer;
+                            }
+                        });
+                        if (targetLayer) targetLayer.openPopup();
+                    }
+                }, 1600); // 给 flyTo 动画留足时间
+            };
+            
             // ==================== 启动 ====================
             console.log('🚀 启动应用...');
 
@@ -3522,6 +3993,9 @@
 
             // 恢复上次选择的标记类型
             restoreMarkerType();
+
+            // 初始化 COS 秘钥面板状态
+            initCosConfigUI();
 
             // 初始化地图（使用保存的地图 ID，保持缩放）
             loadMap(currentMapId, true);
