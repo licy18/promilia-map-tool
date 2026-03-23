@@ -498,6 +498,70 @@
             text-shadow: 0 0 5px #000, 0 0 10px #000;
             text-align: center;
         }
+        
+        /* 隐藏Leaflet默认的右下角链接标签 - 方案2：CSS样式 */
+        .leaflet-control-attribution {
+            display: none !important;
+        }
+        
+        /* B站链接标签样式 */
+        #bilibili-link {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #ff6b9d;
+            border-radius: 0;
+            box-shadow: 0 -2px 6px rgba(255, 107, 157, 0.3);
+            text-decoration: none;
+            color: white;
+            font-size: 10px;
+            font-weight: 400;
+            transition: all 0.2s ease;
+            z-index: 9998;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 160px;
+        }
+        
+        #bilibili-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 -3px 8px rgba(255, 107, 157, 0.5);
+            background: #ff5a8f;
+        }
+        
+        .bilibili-icon {
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            color: white;
+            font-size: 10px;
+        }
+        
+        .bilibili-text {
+            white-space: nowrap;
+            color: white;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            #bilibili-link {
+                padding: 3px 6px;
+                font-size: 8px;
+            }
+            
+            .bilibili-icon {
+                width: 10px;
+                height: 10px;
+                font-size: 7px;
+            }
+        }
         /* ================================ */
     </style>
 </head>
@@ -1389,7 +1453,8 @@
                 crs: L.CRS.Simple,
                 minZoom: -3,
                 maxZoom: 2,
-                zoomControl: true
+                zoomControl: true,
+                attributionControl: false // 方案1：通过配置参数隐藏右下角链接标签
             });
 
             // 标记集群
@@ -3464,5 +3529,15 @@
             console.log('✅ 应用启动完成');
             showToast('普罗米利亚地图工具已就绪', 'success');
         </script>
+        
+        <!-- B站链接标签 -->
+        <a href="https://space.bilibili.com/1577319" target="_blank" id="bilibili-link" title="点击获取最新版本">
+            <div class="bilibili-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.765-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773zM8 11.107c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c0-.373.129-.689.386-.947.258-.257.574-.386.947-.386zm8 0c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373z" fill="white"/>
+                </svg>
+            </div>
+            <div class="bilibili-text">点击获取最新版本</div>
+        </a>
 </body>
 </html>
