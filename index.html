@@ -67,15 +67,28 @@
                 width: 100%;
                 padding: 12px;
                 background: #16213e;
-                border: none;
+                border: 2px solid transparent;
                 color: #eee;
                 font-size: 1em;
                 cursor: pointer;
                 outline: none;
+                transition: all 0.3s ease;
+                border-radius: 6px;
             }
 
                 .map-switcher select:focus {
                     background: #1a2a4a;
+                    border-color: #00d9ff;
+                    box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2);
+                }
+                
+                .map-switcher select:hover {
+                    background: #1a2a4a;
+                }
+                
+                .map-switcher select:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
                 }
 
         .map-info {
@@ -116,16 +129,26 @@
             border-radius: 8px;
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
             .marker-type:hover {
                 background: #1a4a7a;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             }
 
             .marker-type.active {
                 border-color: #e94560;
                 background: #1a4a7a;
+                box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.3);
+            }
+            
+            .marker-type:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.2);
             }
 
             .marker-type i {
@@ -148,7 +171,26 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.95em;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .btn-primary {
@@ -253,16 +295,43 @@
             color: #e94560;
         }
 
-        .popup-content textarea {
+        .popup-content textarea,
+        input[type="text"],
+        input[type="password"] {
             width: 100%;
-            min-height: 80px;
+            min-height: 40px;
             background: #0f3460;
-            border: 1px solid #1a4a7a;
+            border: 2px solid #1a4a7a;
             color: #eee;
-            padding: 8px;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border-radius: 6px;
             resize: vertical;
             margin: 10px 0;
+            font-family: inherit;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .popup-content textarea:focus,
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #00d9ff;
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2);
+            background: #1a2a4a;
+        }
+        
+        .popup-content textarea:hover,
+        input[type="text"]:hover,
+        input[type="password"]:hover {
+            border-color: #00d9ff;
+        }
+        
+        .popup-content textarea:disabled,
+        input[type="text"]:disabled,
+        input[type="password"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .popup-actions {
@@ -302,23 +371,33 @@
             padding: 15px 25px;
             background: #16213e;
             border-left: 4px solid #00d9ff;
-            border-radius: 4px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transform: translateX(400px);
-            transition: transform 0.3s;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            transform: translateX(400px) translateY(20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 10000;
+            max-width: 300px;
         }
 
             #toast.show {
-                transform: translateX(0);
+                transform: translateX(0) translateY(0);
+                opacity: 1;
             }
 
             #toast.success {
                 border-color: #00ff88;
+                background: rgba(0, 255, 136, 0.1);
             }
 
             #toast.error {
                 border-color: #e94560;
+                background: rgba(233, 69, 96, 0.1);
+            }
+            
+            #toast.info {
+                border-color: #00d9ff;
+                background: rgba(0, 217, 255, 0.1);
             }
 
         /* 帮助提示 */
@@ -353,8 +432,9 @@
             right: 0;
             bottom: 0;
             background-color: #34495e;
-            transition: .3s;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             border-radius: 26px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
         }
 
             .slider:before {
@@ -365,30 +445,43 @@
                 left: 3px;
                 bottom: 3px;
                 background-color: white;
-                transition: .3s;
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                 border-radius: 50%;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             }
 
         input:checked + .slider {
             background-color: #00d9ff;
+            box-shadow: inset 0 2px 4px rgba(0, 217, 255, 0.3);
         }
 
             input:checked + .slider:before {
-                transform: translateX(24px);
+                transform: translateX(24px) scale(1.1);
             }
+            
+        input:focus + .slider {
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.3);
+        }
 
         /* 分类折叠 */
         .category-header {
             user-select: none;
-            transition: background 0.2s;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
         }
 
             .category-header:hover {
                 background: #1a4a7a !important;
+                transform: translateX(4px);
+            }
+
+            .category-header:active {
+                transform: translateX(2px);
             }
 
             .category-header .fa-chevron-down {
-                transition: transform 0.3s;
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             }
 
             .category-header.collapsed .fa-chevron-down {
@@ -396,11 +489,17 @@
             }
 
         .category-content {
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            max-height: 500px;
         }
 
             .category-content.collapsed {
-                display: none !important;
+                max-height: 0 !important;
+                opacity: 0;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
             }
         /* === 新增：悬浮刷新按钮 === */
         #refresh-btn {
@@ -437,16 +536,24 @@
             border-radius: 50%;
             border: 2px solid transparent;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            position: relative;
         }
 
             .route-color-btn:hover {
-                transform: scale(1.15); /* 鼠标悬停微微放大 */
+                transform: scale(1.2);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             }
 
             .route-color-btn.active {
-                border-color: white; /* 选中的颜色会有白边 */
-                box-shadow: 0 0 10px rgba(255,255,255,0.6);
+                border-color: white;
+                box-shadow: 0 0 15px rgba(255,255,255,0.8);
+                transform: scale(1.1);
+            }
+            
+            .route-color-btn:active {
+                transform: scale(0.95);
             }
 
         /* === 新增：右上角雷达系统样式 === */
@@ -464,7 +571,7 @@
             border-radius: 8px;
             cursor: pointer;
             backdrop-filter: blur(5px);
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             text-align: center; /* 【统一大小】文字居中 */
         }
@@ -472,6 +579,13 @@
             #radar-toggle-btn:hover {
                 background: #00d9ff;
                 color: #1a1a2e;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(0, 217, 255, 0.4);
+            }
+            
+            #radar-toggle-btn:active {
+                transform: translateY(0);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             }
 
         #radar-panel {
@@ -490,6 +604,7 @@
             max-height: 80vh;
             display: flex;
             flex-direction: column;
+            animation: slideInRight 0.3s ease-out;
         }
 
         /* === 新增：云端用户管理样式 === */
@@ -507,7 +622,7 @@
             border-radius: 8px;
             cursor: pointer;
             backdrop-filter: blur(5px);
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
@@ -517,7 +632,29 @@
 
             #user-toggle-btn:hover {
                 background: #e94560;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
             }
+            
+            #user-toggle-btn:active {
+                transform: translateY(0);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            }
+            
+        #user-panel {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
         /* 【新增防爆框保障】即使以后加了超长的英文名，按钮也不会被撑爆变形 */
         #current-user-display {
@@ -596,7 +733,87 @@
         }
         
         /* 响应式设计 */
+        @media (max-width: 1024px) {
+            #sidebar {
+                width: 280px;
+                padding: 15px;
+            }
+            
+            #radar-panel {
+                width: 280px;
+            }
+        }
+        
         @media (max-width: 768px) {
+            body {
+                overflow: auto;
+            }
+            
+            #app {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            #sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 50vh;
+                border-right: none;
+                border-bottom: 2px solid #0f3460;
+            }
+            
+            #map-container {
+                flex: 1;
+                min-height: 50vh;
+            }
+            
+            .marker-types,
+            .category-content {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+            }
+            
+            .marker-type {
+                padding: 8px 6px;
+            }
+            
+            .marker-type i {
+                font-size: 1.2em;
+            }
+            
+            .marker-type span {
+                font-size: 0.7em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            #radar-toggle-btn,
+            #user-toggle-btn {
+                width: 140px;
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+            
+            #radar-panel {
+                width: 260px;
+                top: 100px;
+            }
+            
+            #user-panel {
+                width: 240px;
+                top: 100px;
+            }
+            
+            #refresh-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+                bottom: 70px;
+            }
+            
             #bilibili-link {
                 padding: 3px 6px;
                 font-size: 8px;
@@ -606,6 +823,48 @@
                 width: 10px;
                 height: 10px;
                 font-size: 7px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #sidebar {
+                padding: 10px;
+            }
+            
+            #sidebar h1 {
+                font-size: 1.2em;
+            }
+            
+            .marker-types,
+            .category-content {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+            
+            .section h2 {
+                font-size: 1em;
+            }
+            
+            .btn {
+                padding: 10px;
+                font-size: 0.85em;
+            }
+            
+            #radar-toggle-btn,
+            #user-toggle-btn {
+                width: 120px;
+                padding: 6px 10px;
+                font-size: 0.75em;
+            }
+            
+            #radar-panel {
+                width: 240px;
+                top: 90px;
+            }
+            
+            #user-panel {
+                width: 220px;
+                top: 90px;
             }
         }
     </style>
