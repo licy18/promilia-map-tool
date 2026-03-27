@@ -1,5 +1,5 @@
 # 敏感配置（含密钥）
-index.html
+# index.html 不再包含敏感信息，已移除忽略
 !index.html.example
 
 # Python
