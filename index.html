@@ -29,6 +29,82 @@
             overflow: hidden;
         }
 
+        /* 自定义缩放控件样式 */
+        .custom-zoom-control {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: rgba(15, 52, 96, 0.95);
+            border: 1px solid #1a4a7a;
+            border-radius: 6px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 42px;
+        }
+
+        .custom-zoom-control button {
+            width: 28px;
+            height: 28px;
+            background: #16213e;
+            border: 1px solid #1a4a7a;
+            color: #00d9ff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin: 0 auto;
+        }
+
+        .custom-zoom-control button:hover {
+            background: #1a4a7a;
+            border-color: #00d9ff;
+            box-shadow: 0 0 8px rgba(0, 217, 255, 0.5);
+        }
+
+        .custom-zoom-control button:active {
+            transform: scale(0.95);
+        }
+
+        .zoom-slider {
+            width: 28px;
+            height: 80px;
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            background: #16213e;
+            outline: none;
+            border-radius: 4px;
+            margin: 0 auto;
+        }
+
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00d9ff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #1a1a2e;
+            box-shadow: 0 0 4px rgba(0, 217, 255, 0.8);
+        }
+
+        .zoom-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #00d9ff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #1a1a2e;
+            box-shadow: 0 0 4px rgba(0, 217, 255, 0.8);
+        }
+
         #app {
             display: flex;
             height: 100vh;
@@ -460,7 +536,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important; /* 加上黑色阴影压住透明感 */
             transform: translateX(400px);
             transition: transform 0.3s;
-            z-index: 10000;
+            z-index: 99999; /* 【最高层级】确保提示信息始终显示在所有元素之上，包括地图管理弹窗 */
         }
 
             #toast.show {
@@ -1542,6 +1618,11 @@
         <!-- 地图容器 -->
         <div id="map-container">
             <div id="map"></div>
+            <div class="custom-zoom-control">
+                <button id="zoom-in" onclick="zoomIn()">+</button>
+                <input type="range" id="zoom-slider" class="zoom-slider" min="-3" max="2" value="0" step="0.1">
+                <button id="zoom-out" onclick="zoomOut()">-</button>
+            </div>
             <button id="map-manager-btn" onclick="openMapManager()">
                 <i class="fas fa-layer-group"></i> 增改地图
             </button>
@@ -1910,43 +1991,9 @@
                 saveToLocalStorage();
                 showToast('路线已删除', 'success');
             }
-            // === 修复：真正物理等比例缩放的引擎 ===
-            window.updateAllRoutesThickness = function () {
-                // 严格按照底层瓦片缩放比例进行系数计算
-                let scale = Math.pow(2, map.getZoom());
-
-                // 【核心修复】取消了下限锁定，允许线条变成极细的 0.1px！
-                // 这样无论地图缩小到什么程度，路线在地面上的“占地面积”看着永远是一样大的！
-                let currentLineWeight = Math.max(0.1, Math.min(30, 5 * scale));
-                let currentArrowSize = Math.max(2, Math.min(50, 12 * scale));
-                let currentArrowWeight = Math.max(0.1, Math.min(10, 2 * scale));
-
-                // 1. 更新正在手动绘制的线
-                if (currentRouteLine) {
-                    currentRouteLine.setStyle({ weight: currentLineWeight });
-                }
-                if (currentRouteDecorator) {
-                    currentRouteDecorator.setPatterns([
-                        { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: currentRouteColor } }) }
-                    ]);
-                }
-
-                // 2. 更新内存里所有已经保存渲染的路线
-                Object.values(allRoutes).forEach(route => {
-                    if (route.line) {
-                        route.line.setStyle({ weight: currentLineWeight });
-                    }
-                    if (route.decorator) {
-                        route.decorator.setPatterns([
-                            { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: route.color } }) }
-                        ]);
-                    }
-                });
-            };
-
-            // 监听地图缩放，每次滚轮滑动结束后自动执行变粗细逻辑！
-            map.on('zoomend', updateAllRoutesThickness);
         };
+
+
         // ==========================================
 
         // 标记类型配置（分类折叠）
@@ -2094,7 +2141,7 @@
             crs: L.CRS.Simple,
             minZoom: -3,
             maxZoom: 2,
-            zoomControl: true,
+            zoomControl: false, // 禁用默认缩放控制
             attributionControl: false // 方案1：通过配置参数隐藏右下角链接标签
         });
 
@@ -2465,6 +2512,11 @@
 
             console.log(`✅ 地图加载完成：${config.name}`);
             showToast(`已切换至：${config.name}`, 'success');
+            
+            // 初始化路线粗细
+            if (typeof updateAllRoutesThickness === 'function') {
+                updateAllRoutesThickness();
+            }
 
             // === 新增：切换地图后自动开启防误触模式 ===
             const browseToggle = document.getElementById('browse-mode-toggle');
@@ -2479,6 +2531,45 @@
         window.switchMap = function (mapId) {
             loadMap(mapId);
         };
+
+        // === 修复：真正物理等比例缩放的引擎 ===
+        window.updateAllRoutesThickness = function () {
+            // 严格按照底层瓦片缩放比例进行系数计算
+            let scale = Math.pow(2, map.getZoom());
+
+            // 【核心修复】取消了下限锁定，允许线条变成极细的 0.1px！
+            // 这样无论地图缩小到什么程度，路线在地面上的“占地面积”看着永远是一样大的！
+            let currentLineWeight = Math.max(0.1, Math.min(30, 5 * scale));
+            let currentArrowSize = Math.max(2, Math.min(50, 12 * scale));
+            let currentArrowWeight = Math.max(0.1, Math.min(10, 2 * scale));
+
+            // 1. 更新正在手动绘制的线
+            if (currentRouteLine) {
+                currentRouteLine.setStyle({ weight: currentLineWeight });
+            }
+            if (currentRouteDecorator) {
+                currentRouteDecorator.setPatterns([
+                    { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: currentRouteColor } }) }
+                ]);
+            }
+
+            // 2. 更新内存里所有已经保存渲染的路线
+            Object.values(allRoutes).forEach(route => {
+                if (route.line) {
+                    route.line.setStyle({ weight: currentLineWeight });
+                }
+                if (route.decorator) {
+                    route.decorator.setPatterns([
+                        { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: route.color } }) }
+                    ]);
+                }
+            });
+        };
+
+        // 监听地图缩放，每次滚轮滑动结束后自动执行变粗细逻辑！
+        map.on('zoomend', updateAllRoutesThickness);
+
+
 
         // 标记数据（按地图分离）
         let markerIdCounter = 0;
@@ -4724,6 +4815,35 @@
             showToast('地图及关联数据已彻底抹除喵！', 'success');
         };
 
+        // ==================== 自定义缩放控制功能 ====================
+        // 缩放函数
+        function zoomIn() {
+            map.zoomIn();
+            updateZoomSlider();
+        }
+
+        function zoomOut() {
+            map.zoomOut();
+            updateZoomSlider();
+        }
+
+        // 更新滑动条值
+        function updateZoomSlider() {
+            const slider = document.getElementById('zoom-slider');
+            if (slider) {
+                slider.value = map.getZoom();
+            }
+        }
+
+        // 滑动条事件处理
+        document.getElementById('zoom-slider').addEventListener('input', function() {
+            const zoom = parseFloat(this.value);
+            map.setZoom(zoom);
+        });
+
+        // 监听地图缩放事件，更新滑动条
+        map.on('zoomend', updateZoomSlider);
+
         // ==================== 启动 ====================
         console.log('🚀 启动应用...');
 
@@ -4738,6 +4858,9 @@
 
         // 初始化地图（使用保存的地图 ID，保持缩放）
         loadMap(currentMapId, true);
+
+        // 初始化滑动条值
+        setTimeout(updateZoomSlider, 500);
 
         console.log('✅ 应用启动完成');
         showToast('普罗米利亚地图工具已就绪', 'success');
