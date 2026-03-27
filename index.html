@@ -75,7 +75,11 @@
         .zoom-slider {
             width: 28px;
             height: 80px;
-            -webkit-appearance: slider-vertical;
+            /* === 【修改 v3.7】顺应时代，采用全新的垂直书写模式，消灭黄字警告！ === */
+            appearance: auto; /* 恢复默认外观 */
+            writing-mode: vertical-lr; /* 让滑动条垂直站立 */
+            direction: rtl; /* 修复滑动方向，让上是加，下是减 */
+            /* ======================================================= */
             appearance: slider-vertical;
             background: #16213e;
             outline: none;
@@ -347,13 +351,30 @@
         #map-container {
             flex: 1;
             position: relative;
-            background: #0a0a15;
+            background-color: #080812; /* 更深邃的深渊底色 */
+            /* === 【新增 v3.7】纯 CSS 绘制的全息战术网格喵！ === */
+            background-image: linear-gradient(rgba(0, 217, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 217, 255, 0.07) 1px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(15, 52, 96, 0.5) 0%, transparent 80%);
+            background-size: 40px 40px, 40px 40px, 100% 100%;
+            background-position: center center;
+            /* ============================================== */
         }
 
         #map {
             width: 100%;
             height: 100%;
+            /* 强制剥开 Leaflet 自带的灰白色底布，让我们的全息网格透出来喵！ */
+            background: transparent !important;
         }
+
+        /* === 【终极版 v3.7】纯 CSS 标记动态等比例缩放（逆向补偿级丝滑版） === */
+        .custom-marker > div,
+        .custom-marker-image > div {
+            transform: scale(var(--marker-scale, 1));
+            transform-origin: center center;
+            /* 重点黑科技：将过渡动画时间绑定给 CSS 变量，由 JS 在底层精准指挥显卡！ */
+            transition: transform var(--marker-transition, 0s);
+        }
+        /* ================================================================= */
 
         /* 标记弹窗 */
         .leaflet-popup-content-wrapper {
@@ -534,7 +555,9 @@
             border-left: 4px solid #00d9ff;
             border-radius: 4px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important; /* 加上黑色阴影压住透明感 */
-            transform: translateX(400px);
+            /* === 【修改 v3.7】根据自身宽度动态后退，彻底把大尾巴藏进屏幕外喵！ === */
+            transform: translateX(150%);
+            /* =================================================================== */
             transition: transform 0.3s;
             z-index: 99999; /* 【最高层级】确保提示信息始终显示在所有元素之上，包括地图管理弹窗 */
         }
@@ -1108,7 +1131,7 @@
                     <button class="btn btn-primary" onclick="runRadar('grid', 16)" style="margin:0; padding: 5px;"><i class="fas fa-th"></i> 16 宫格</button>
                     <button class="btn btn-primary" onclick="runRadar('triangle', 16)" style="margin:0; padding: 5px;"><i class="fas fa-forward" style="transform: rotate(-90deg);"></i> 64 三角</button>
                     <button class="btn btn-primary" onclick="runRadar('grid', 64)" style="margin:0; padding: 5px;"><i class="fas fa-border-all"></i> 64 宫格</button>
-                    <button class="btn btn-primary" onclick="runRadar('triangle', 64)" style="margin:0; padding: 5px;"><i class="fas fa-fast-forward" style="transform: rotate(-90deg);"></i> 256 三角</button>
+                    <button class="btn btn-primary" onclick="runRadar('grid', 1)" style="margin:0; padding: 5px; background: #e94560;"><i class="fas fa-globe"></i> 全图总计</button>
                 </div>
             </div>
 
@@ -1126,7 +1149,7 @@
         <!-- 侧边栏 -->
         <div id="sidebar">
             <h1>🗺️ 普罗米利亚地图</h1>
-            <p class="subtitle">本地标记工具 v3.4.14</p>
+            <p class="subtitle">本地标记工具 v3.7</p>
 
             <!-- 地图切换器 -->
             <div class="map-switcher">
@@ -1204,9 +1227,9 @@
                 </div>
                 <div class="category-content" data-category="chest" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
                     <!--<div class="marker-type" data-type="chest" data-color="#f39c12" data-icon="fa-gift">
-                        <i class="fas fa-gift" style="color: #f39c12;"></i>
-                        <span>宝箱</span>
-                    </div>-->
+                <i class="fas fa-gift" style="color: #f39c12;"></i>
+                <span>宝箱</span>
+            </div>-->
                     <div class="marker-type" data-type="chest_wood" data-color="#8b4513" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #8b4513;"></i>
                         <span>木宝箱</span>
@@ -1274,9 +1297,9 @@
                         <span>乌咪</span>
                     </div>
                     <!--<div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
-                        <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                        <span>蛋</span>
-                    </div> -->
+                <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                <span>蛋</span>
+            </div> -->
                     <div class="marker-type" data-type="chipo" data-color="#ff6b9d" data-icon="fa-paw">
                         <i class="fas fa-paw" style="color: #ff6b9d;"></i>
                         <span>奇波</span>
@@ -1349,7 +1372,7 @@
                             <i class="fas fa-info-circle"></i> 提示：点击地图连续添加节点，点击【完成】生成路线，或点击【取消】清空当前画笔。
                         </div>
 
-                        
+
                         <div id="route-list-container" style="margin-top: 15px; border-top: 1px dashed #1a4a7a; padding-top: 15px;">
                             <div style="font-size: 0.85em; color: #00d9ff; margin-bottom: 8px; display: flex; justify-content: space-between;">
                                 <span><i class="fas fa-list"></i> 路线管理</span>
@@ -1384,9 +1407,9 @@
                     </div>
                     <div class="category-content" data-category="chest-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
                         <!--<div class="marker-type active" data-type="chest" data-category="chest">
-                            <i class="fas fa-gift" style="color: #f39c12;"></i>
-                            <span>宝箱</span>
-                        </div>-->
+                    <i class="fas fa-gift" style="color: #f39c12;"></i>
+                    <span>宝箱</span>
+                </div>-->
                         <div class="marker-type active" data-type="chest_wood" data-category="chest">
                             <i class="fas fa-box" style="color: #8b4513;"></i>
                             <span>木</span>
@@ -1454,9 +1477,9 @@
                             <span>乌咪</span>
                         </div>
                         <!--<div class="marker-type active" data-type="egg" data-category="creature">
-                            <i class="fas fa-egg" style="color: #ffeaa7;"></i>
-                            <span>蛋</span>
-                        </div>-->
+                    <i class="fas fa-egg" style="color: #ffeaa7;"></i>
+                    <span>蛋</span>
+                </div>-->
                         <div class="marker-type active" data-type="chipo" data-category="creature">
                             <i class="fas fa-paw" style="color: #ff6b9d;"></i>
                             <span>奇波</span>
@@ -1557,8 +1580,8 @@
                     <i class="fas fa-upload"></i> 导入数据
                 </button>
                 <input type="file" id="file-input" accept=".json,.geojson" onchange="importData(event)">
-                <button class="btn btn-secondary" onclick="clearAllMarkers()">
-                    <i class="fas fa-trash"></i> 清空所有
+                <button class="btn btn-secondary" onclick="document.getElementById('clear-data-modal').style.display='flex'" style="background: #e94560; color: white;">
+                    <i class="fas fa-trash"></i> 清空数据（选项）
                 </button>
             </div>
 
@@ -1619,6 +1642,9 @@
         <div id="map-container">
             <div id="map"></div>
             <div class="custom-zoom-control">
+                <button onclick="resetMapCenter()" style="margin-bottom: 8px; background: rgba(15, 52, 96, 0.8); border: 1px solid #00d9ff; color: #00d9ff; transition: all 0.2s;" onmouseover="this.style.background='#00d9ff'; this.style.color='#000';" onmouseout="this.style.background='rgba(15, 52, 96, 0.8)'; this.style.color='#00d9ff';" title="回到全貌">
+                    <i class="fas fa-compress-arrows-alt"></i>
+                </button>
                 <button id="zoom-in" onclick="zoomIn()">+</button>
                 <input type="range" id="zoom-slider" class="zoom-slider" min="-3" max="2" value="0" step="0.1">
                 <button id="zoom-out" onclick="zoomOut()">-</button>
@@ -1642,6 +1668,48 @@
         <i class="fas fa-sync-alt"></i>
     </button>
 
+    <div id="clear-data-modal" class="modal-overlay">
+        <div class="modal-content" style="width: 380px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle" style="color: #e94560;"></i> 清空数据选项</h2>
+                <button class="close-modal-btn" onclick="document.getElementById('clear-data-modal').style.display='none'"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 0.9em; color: #00d9ff; margin-bottom: 10px;">1. 选择作用范围 (单选)</h3>
+                <div style="display: flex; gap: 15px; background: #0f3460; padding: 12px; border-radius: 6px; border: 1px solid #1a4a7a;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #eee;">
+                        <input type="radio" name="clear-scope" value="current" checked style="accent-color: #00d9ff;">
+                        <span>仅当前地图</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #e94560;">
+                        <input type="radio" name="clear-scope" value="all" style="accent-color: #e94560;">
+                        <span>所有地图 (危险)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 0.9em; color: #00d9ff; margin-bottom: 10px;">2. 选择清空目标 (多选)</h3>
+                <div style="display: flex; gap: 15px; background: #0f3460; padding: 12px; border-radius: 6px; border: 1px solid #1a4a7a;">
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #eee;">
+                        <input type="checkbox" id="clear-target-markers" checked style="accent-color: #00d9ff; width: 16px; height: 16px;">
+                        <span><i class="fas fa-map-marker-alt"></i> 清空标点</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #eee;">
+                        <input type="checkbox" id="clear-target-routes" checked style="accent-color: #00d9ff; width: 16px; height: 16px;">
+                        <span><i class="fas fa-route"></i> 清空路线</span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button class="btn btn-secondary" onclick="document.getElementById('clear-data-modal').style.display='none'" style="margin:0; flex:1;">取消</button>
+                <button class="btn btn-primary" onclick="executeClearData()" style="margin:0; flex:1; background: #e94560;"><i class="fas fa-trash"></i> 确认清空</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="map-manager-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -1758,6 +1826,21 @@
             } else {
                 routeTools.style.display = 'none'; // 隐藏颜色面板
                 document.getElementById('route-draw-panel').style.display = 'none'; // 【新增】隐藏悬浮控制台
+
+                // === 【新增 v3.7】中途被关闭画笔（或被其他操作强行切断）时，无情清空未保存的路线！ ===
+                if (typeof currentRoutePoints !== 'undefined' && currentRoutePoints.length > 0) {
+                    if (currentRouteLine) map.removeLayer(currentRouteLine);
+                    if (currentRouteDecorator) map.removeLayer(currentRouteDecorator);
+                    if (currentRouteStartMarker) map.removeLayer(currentRouteStartMarker);
+
+                    currentRoutePoints = [];
+                    currentRouteLine = null;
+                    currentRouteDecorator = null;
+                    currentRouteStartMarker = null;
+
+                    showToast('未保存，本次绘线已自动清空喵！', 'error');
+                }
+                // =========================================================================
             }
             // === 核心黑科技修复：关闭画笔时，让所有隐形判定线“变空气”，允许鼠标穿透！ ===
             Object.values(allRoutes).forEach(route => {
@@ -1772,8 +1855,16 @@
             if (browseToggle) {
                 browseToggle.addEventListener('change', function () {
                     if (this.checked) {
-                        // 1. 互斥：开启浏览时，自动关闭路线画笔
+                        // === 【修改 v3.7】温柔版防呆拦截：开启浏览模式前问问主人喵！ ===
                         const routeToggle = document.getElementById('route-mode-toggle');
+                        if (routeToggle && routeToggle.checked && typeof currentRoutePoints !== 'undefined' && currentRoutePoints.length > 0) {
+                            if (!confirm('喵呜！您还有一条正在绘制的路线没有保存哦！\n开启浏览模式会导致当前未画完的路线丢失，确定要放弃绘制吗？')) {
+                                this.checked = false; // 主人反悔了，把开关拨回去
+                                return; // 拦截成功，强行打断施法！
+                            }
+                        }
+
+                        // 1. 互斥：开启浏览时，自动关闭路线画笔
                         if (routeToggle && routeToggle.checked) {
                             routeToggle.checked = false;
                             routeToggle.dispatchEvent(new Event('change')); // 触发路线收起、隐藏判定线的联动逻辑
@@ -2142,7 +2233,14 @@
             minZoom: -3,
             maxZoom: 2,
             zoomControl: false, // 禁用默认缩放控制
-            attributionControl: false // 方案1：通过配置参数隐藏右下角链接标签
+            attributionControl: false, // 方案1：通过配置参数隐藏右下角链接标签
+
+            // === 【新增 v3.7】打破矢量渲染枷锁的超视距画笔喵！ ===
+            // 默认 padding 只有 0.1，我们直接给它翻 20 倍变成 2！
+            // 这意味着引擎会向外多画出 2 个屏幕大小的隐形路线，彻底消灭拖拽断层！
+            // 并且我们强制启用 canvas 渲染器，它的多端点渲染性能比传统 SVG 强百倍，专治各种密集路线！
+            renderer: L.canvas({ padding: 2 })
+            // ===================================================
         });
 
         // 标记集群
@@ -2150,7 +2248,11 @@
         const markers = L.markerClusterGroup({
             showCoverageOnHover: true,
             zoomToBoundsOnClick: true,
-            spiderfyOnMaxZoom: true
+            spiderfyOnMaxZoom: true,
+            // === 【新增 v3.7】打破视野限制，防止扒拉地图时标签突然“蹦”出来喵！ ===
+            removeOutsideVisibleBounds: false, // 牺牲一点点内存，换取绝对丝滑的沉浸感！
+            chunkedLoading: true // 开启分块加载，保护显卡不被海量标签卡死
+            // ========================================================
         });
 
         // 根据聚合状态决定是否添加到地图
@@ -2357,12 +2459,40 @@
 
                     tileLayer = L.tileLayer(config.tileUrl, {
                         minZoom: leafletMinZoom,
-                        maxZoom: leafletMaxNativeZoom + 2, // 允许鼠标滚轮继续放大 2 级
-                        maxNativeZoom: leafletMaxNativeZoom, // 核心！超过此级别不再寻找不存在的碎图，而是直接拉伸最高清的大图！
+                        maxZoom: leafletMaxNativeZoom + 2,
+                        maxNativeZoom: leafletMaxNativeZoom,
                         tileSize: 256,
                         noWrap: true,
-                        bounds: [[0, 0], [config.height, config.width]] // 修复边界：纬度是高，经度是宽
+                        bounds: [[0, 0], [config.height, config.width]],
+                        updateWhenIdle: false,
+                        updateWhenZooming: true,
+                        updateInterval: 50,
+                        keepBuffer: 10
                     });
+
+                    // === 【新增 v3.7】强制锁死底层的最小缩放极值，拒绝滚轮无底线缩小喵！ ===
+                    // 直接把地图容器的下限，和咱们计算出的瓦片下限死死绑在一起！
+                    map.setMinZoom(leafletMinZoom);
+                    // ==========================================================
+
+                    // === 【终极版 v3.7】真·边缘超视距预加载 (EdgeBuffer 视网膜欺骗术) ===
+                    // 直接拦截底层视野计算器，骗它屏幕比实际大，强迫它提前下载视野外的瓦片喵！
+                    const originalGetBounds = tileLayer._getTiledPixelBounds;
+                    tileLayer._getTiledPixelBounds = function (center) {
+                        const bounds = originalGetBounds.call(this, center);
+
+                        // 256 是一张瓦片的像素大小。乘以 2 就是往外无死角扩充 2 圈！
+                        // 如果主人的电脑性能好，甚至可以把这里改成 256 * 3 或者 4，体验真正的绝对无缝！
+                        const expandPixels = 256 * 2;
+
+                        bounds.min.x -= expandPixels;
+                        bounds.min.y -= expandPixels;
+                        bounds.max.x += expandPixels;
+                        bounds.max.y += expandPixels;
+
+                        return bounds;
+                    };
+                    // ==========================================================
 
                     // 3. 【核心黑科技】拦截寻址逻辑，接管 Y 轴翻转，干掉 404 报错
                     tileLayer.getTileUrl = function (coords) {
@@ -2529,19 +2659,30 @@
 
         // 切换地图
         window.switchMap = function (mapId) {
+            // === 【修改 v3.7】温柔版防呆拦截：切地图前先问问主人要不要保存路线喵！ ===
+            const routeToggle = document.getElementById('route-mode-toggle');
+            if (routeToggle && routeToggle.checked && typeof currentRoutePoints !== 'undefined' && currentRoutePoints.length > 0) {
+                if (!confirm('喵呜！您还有一条正在绘制的路线没有保存哦！\n切换地图会导致当前未画完的路线丢失，确定要放弃绘制并切换吗？')) {
+                    // 主人反悔了，咱们把下拉菜单悄悄变回原来的地图
+                    document.getElementById('map-select').value = currentMapId;
+                    return; // 拦截成功，强行打断施法！
+                }
+            }
+
+            if (routeToggle && routeToggle.checked) {
+                routeToggle.checked = false;
+                routeToggle.dispatchEvent(new Event('change'));
+            }
+            // ========================================================================
             loadMap(mapId);
         };
 
         // === 修复：真正物理等比例缩放的引擎 ===
         window.updateAllRoutesThickness = function () {
-            // 严格按照底层瓦片缩放比例进行系数计算
             let scale = Math.pow(2, map.getZoom());
-
-            // 【核心修复】取消了下限锁定，允许线条变成极细的 0.1px！
-            // 这样无论地图缩小到什么程度，路线在地面上的“占地面积”看着永远是一样大的！
-            let currentLineWeight = Math.max(0.1, Math.min(30, 5 * scale));
+            let currentLineWeight = Math.max(0.5, Math.min(30, 5 * scale));
             let currentArrowSize = Math.max(2, Math.min(50, 12 * scale));
-            let currentArrowWeight = Math.max(0.1, Math.min(10, 2 * scale));
+            let currentArrowWeight = Math.max(0.5, Math.min(10, 2 * scale));
 
             // 1. 更新正在手动绘制的线
             if (currentRouteLine) {
@@ -2566,9 +2707,56 @@
             });
         };
 
-        // 监听地图缩放，每次滚轮滑动结束后自动执行变粗细逻辑！
-        map.on('zoomend', updateAllRoutesThickness);
+        // === 【终极版 v3.7】正向同频丝滑缩放引擎喵！（去掉愚蠢的反向补偿>_<） ===
+        // 1. 监听滚轮触发的 0.25秒 CSS 原生缩放动画，直接同步缩放指令！
+        map.on('zoomanim', function (e) {
+            let targetZoom = e.zoom;
+            // 我们期望标签最终达到的视觉倍数
+            let targetMarkerScale = Math.max(0.3, Math.min(1.5, Math.pow(1.5, targetZoom)));
 
+            // 老老实实地开启同频 CSS 动画 (跟 Leaflet 底层默认动画曲线严丝合缝)
+            document.documentElement.style.setProperty('--marker-transition', '0.25s cubic-bezier(0,0,0.25,1)');
+            document.documentElement.style.setProperty('--marker-scale', targetMarkerScale);
+        });
+
+        // === 【新增 v3.7】根据层数动态调节瓦片预加载数量的聪明大脑喵！ ===
+        map.on('zoomend', function () {
+            if (tileLayer) {
+                // 获取当前绝对缩放层级
+                let currentZoom = map.getZoom();
+
+                // 核心算法：层级越大（看得越近），需要预加载的周围瓦片圈数就越多！
+                // 限制在最小 2 圈，最大 8 圈的舒适区间内
+                let dynamicBuffer = Math.max(2, Math.min(8, Math.round((currentZoom + 3) * 1.5)));
+
+                tileLayer.options.keepBuffer = dynamicBuffer;
+                // 可以解除下面这行注释来观察引擎的聪明表现喵~
+                // console.log(`[引擎监控] 贴地飞行中，瓦片预加载缓冲已动态扩张为：${dynamicBuffer} 圈！`);
+            }
+        });
+        // =======================================================
+
+        // === 【终极版 v3.7】正向同频丝滑缩放引擎喵！（去掉愚蠢的反向补偿>_<） ===
+        // 2. 动画结束瞬间的状态光速交接
+        map.on('zoomend', function () {
+            let currentZoom = map.getZoom();
+            let finalScale = Math.max(0.3, Math.min(1.5, Math.pow(1.5, currentZoom)));
+
+            // 关闭动画，光速无缝替换！（因为此时地图底层的 paneScale 瞬间归零了）
+            document.documentElement.style.setProperty('--marker-transition', '0s');
+            document.documentElement.style.setProperty('--marker-scale', finalScale);
+
+            // 同步更新路线粗细
+            updateAllRoutesThickness();
+        });
+
+        // 3. 触控板无级缩放 (Pinch Zoom) 等实时事件的平滑处理
+        map.on('zoom', function () {
+            // 如果正在进行 0.25s 的滚轮动画，绝对不要干扰它，全权交给上面的逆向引擎！
+            if (map._animatingZoom) return;
+            updateAllRoutesThickness();
+        });
+        // =======================================================
 
 
         // 标记数据（按地图分离）
@@ -2868,10 +3056,10 @@
                                         </p>
                                         <textarea placeholder="添加备注..." id="note-${data.id}">${data.note || ''}</textarea>
                                         <div class="popup-actions">
-                                            <button class="btn-save" onclick="saveMarkerNote('${data.id}')">
+                                            <button class="btn-save" onclick="event.stopPropagation(); saveMarkerNote('${data.id}')">
                                                 <i class="fas fa-save"></i> 保存
                                             </button>
-                                            <button class="btn-delete" onclick="deleteMarker('${data.id}')">
+                                            <button class="btn-delete" onclick="event.stopPropagation(); deleteMarker('${data.id}')">
                                                 <i class="fas fa-trash"></i> 删除
                                             </button>
                                         </div>
@@ -2924,56 +3112,107 @@
             }
         };
 
-        // 清空所有标记
-        window.clearAllMarkers = function () {
-            if (confirm('确定要清空所有标记和路线吗？此操作不可恢复！')) {
-                // 清空集群中的标记
-                markers.clearLayers();
+        // === 【新增 v3.7】智能清空数据引擎 ===
+        window.executeClearData = function () {
+            const scope = document.querySelector('input[name="clear-scope"]:checked').value;
+            const clearMarkers = document.getElementById('clear-target-markers').checked;
+            const clearRoutes = document.getElementById('clear-target-routes').checked;
 
-                // 清空当前地图的标记数据
-                Object.keys(markerData).forEach(key => delete markerData[key]);
-
-                // 清空路线数据
-                if (typeof allRoutes !== 'undefined') {
-                    // 从地图上移除所有路线
-                    Object.values(allRoutes).forEach(route => {
-                        if (route.line) map.removeLayer(route.line);
-                        if (route.decorator) map.removeLayer(route.decorator);
-                    });
-                    // 清空内存中的路线数据
-                    for (let key in allRoutes) {
-                        delete allRoutes[key];
-                    }
-                    // 重置路线计数器
-                    routeCounter = 0;
-                }
-
-                // 清空内存中的所有地图数据
-                if (currentMapId) {
-                    allMarkersData[currentMapId] = {};
-                }
-
-                // 重置标记计数器
-                markerIdCounter = 0;
-
-                // 保存到 localStorage
-                saveToLocalStorage();
-                updateStats();
-                // 刷新路线列表
-                if (typeof renderRouteList === 'function') renderRouteList();
-                showToast('已清空所有标记和路线，即将重新加载地图...', 'success');
-                setTimeout(() => {
-                    location.reload(); // 1.5秒后自动刷新页面
-                }, 500);
+            // 产品经理的安全校验规则：不勾选绝对不给过！
+            if (!clearMarkers && !clearRoutes) {
+                showToast('喵呜！至少要勾选一项要清空的内容吧？什么都不选我怎么干活喵！', 'error');
+                return;
             }
+
+            const scopeText = scope === 'current' ? `【当前地图：${currentMapConfig.name}】` : '【所有地图的全部区域】';
+            let targetText = [];
+            if (clearMarkers) targetText.push('标点');
+            if (clearRoutes) targetText.push('路线');
+
+            // 二次确认，明确告知用户将发生什么
+            if (!confirm(`⚠️ 危险操作确认 ⚠️\n\n即将彻底清空 ${scopeText} 上的 ${targetText.join(' 和 ')} 数据。\n此操作不可逆，确定要执行吗喵？`)) {
+                return;
+            }
+
+            // 1. 处理【当前地图】的内存数据
+            if (clearMarkers) {
+                markers.clearLayers();
+                for (let key in markerData) delete markerData[key];
+                markerIdCounter = 0;
+            }
+
+            if (clearRoutes && typeof allRoutes !== 'undefined') {
+                Object.values(allRoutes).forEach(route => {
+                    if (route.line) map.removeLayer(route.line);
+                    if (route.decorator) map.removeLayer(route.decorator);
+                });
+                for (let key in allRoutes) delete allRoutes[key];
+                routeCounter = 0;
+            }
+
+            // 将当前地图被掏空的数据保存覆盖进本地缓存
+            saveCurrentMapMarkers();
+
+            // 2. 处理【所有地图】的跨界清除
+            if (scope === 'all') {
+                Object.keys(MAP_CONFIGS).forEach(mapId => {
+                    if (mapId === currentMapId) return; // 当前地图刚处理过，跳过
+
+                    const storageKey = MAP_CONFIGS[mapId].storageKey;
+                    try {
+                        const saved = localStorage.getItem(storageKey);
+                        if (saved) {
+                            let data = JSON.parse(saved);
+                            if (clearMarkers) {
+                                data.markers = {};
+                                data.counter = 0;
+                                if (allMarkersData[mapId]) allMarkersData[mapId] = {};
+                            }
+                            if (clearRoutes) {
+                                data.routes = {};
+                                data.routeCounter = 0;
+                            }
+                            // 重新写入覆盖掉旧缓存
+                            localStorage.setItem(storageKey, JSON.stringify(data));
+                        }
+                    } catch (e) { console.error('清理历史地图数据失败:', e); }
+                });
+            }
+
+            // 关掉面板并给予正反馈
+            document.getElementById('clear-data-modal').style.display = 'none';
+            showToast('数据已按您的吩咐精准清理完毕喵！', 'success');
+
+            // 为了保证界面绝对干净（解决非聚合模式下的残影），强制重载视觉层
+            setTimeout(() => {
+                location.reload();
+            }, 500);
         };
+        // ===========================================
 
         // ==================== 地图点击事件 ====================
         map.on('click', function (e) {
 
-            // === 新增：如果在路线绘制模式下，拦截点击去画线！ ===
+            // 先获取当前的交互模式状态
             const routeToggle = document.getElementById('route-mode-toggle');
-            if (routeToggle && routeToggle.checked) {
+            const isRouteMode = routeToggle && routeToggle.checked;
+            const isCurrentlyBrowseMode = document.getElementById('browse-mode-toggle').checked; // 修改了变量名防止冲突
+
+            // === 【修改 v3.7】：温和版宇宙边界安检口喵！ ===
+            if (e.latlng.lat < 0 || e.latlng.lat > currentMapConfig.width ||
+                e.latlng.lng < 0 || e.latlng.lng > currentMapConfig.height) {
+
+                // 只有当用户“真的想干活”（正在画线，或者关闭了浏览模式且选好了标记）时，点到外面才弹窗提示
+                if (isRouteMode || (!isCurrentlyBrowseMode && currentMarkerType)) {
+                    showToast('点到地图外面去啦，请在有效范围内操作哦~', 'error');
+                }
+                // 如果是纯浏览模式，或者是没选标记到处乱点，那就安静地拦截，绝不打扰！
+                return;
+            }
+            // ========================================================
+
+            // === 新增：如果在路线绘制模式下，拦截点击去画线！ ===
+            if (isRouteMode) {
                 currentRoutePoints.push(e.latlng);
 
                 // 清除旧的临时线、箭头和起点标记
@@ -3088,6 +3327,16 @@
         document.querySelectorAll('#marker-types .marker-type').forEach(el => {
             el.addEventListener('click', function (e) {
                 e.stopPropagation();  // 防止触发分类折叠
+
+                // === 【新增 v3.7】温柔版防呆拦截：选新标记前也问问主人喵！ ===
+                const routeToggle = document.getElementById('route-mode-toggle');
+                if (routeToggle && routeToggle.checked && typeof currentRoutePoints !== 'undefined' && currentRoutePoints.length > 0) {
+                    if (!confirm('喵呜！您还有一条正在绘制的路线没有保存哦！\n选择新标记会导致当前未画完的路线丢失，确定要放弃绘制吗？')) {
+                        return; // 主人反悔了，拦截点击
+                    }
+                }
+                // ============================================================
+
                 document.querySelectorAll('#marker-types .marker-type').forEach(e => e.classList.remove('active'));
                 this.classList.add('active');
                 currentMarkerType = this.dataset.type;
@@ -3101,7 +3350,7 @@
                 }
 
                 // === 新增：互斥 -> 选择标记时，自动关闭路线画笔模式 ===
-                const routeToggle = document.getElementById('route-mode-toggle');
+                // （喵呜：此处直接使用上方刚才声明过的 routeToggle 变量即可！）
                 if (routeToggle && routeToggle.checked) {
                     routeToggle.checked = false;
                     routeToggle.dispatchEvent(new Event('change')); // 触发路线面板收起逻辑
@@ -4050,13 +4299,22 @@
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
 
-                const contents = xmlDoc.querySelectorAll('Contents');
+                // === 【修改 v3.7】将其转换为数组，方便我们进行排序喵！ ===
+                let contents = Array.from(xmlDoc.querySelectorAll('Contents'));
 
                 if (contents.length === 0) {
                     filesDiv.innerHTML = '<div style="color:#888;padding:10px;">暂无备份文件</div>';
                     statusDiv.innerHTML = '';
                     return;
                 }
+
+                // === 【新增 v3.7】云端文件倒序排列，利用自带的 LastModified 时间戳，越新的排在越上面喵！ ===
+                contents.sort((a, b) => {
+                    const dateA = new Date(a.querySelector('LastModified')?.textContent || 0);
+                    const dateB = new Date(b.querySelector('LastModified')?.textContent || 0);
+                    return dateB - dateA; // 时间戳相减，降序排列
+                });
+                // ==========================================================
 
                 // 显示文件列表
                 let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
@@ -4843,6 +5101,19 @@
 
         // 监听地图缩放事件，更新滑动条
         map.on('zoomend', updateZoomSlider);
+
+        // === 【新增 v3.7】一键回正核心引擎 ===
+        window.resetMapCenter = function () {
+            if (typeof currentMapConfig !== 'undefined') {
+                // flyToBounds 会自动计算最佳全景缩放比例，并自带极度丝滑的飞行过渡动画喵！
+                map.flyToBounds([[0, 0], [currentMapConfig.height, currentMapConfig.width]], {
+                    duration: 0.6, // 0.6秒的飞行时间，优雅从容
+                    easeLinearity: 0.25
+                });
+                showToast('已为您切换回全局视野喵！', 'success');
+            }
+        };
+        // ===================================
 
         // ==================== 启动 ====================
         console.log('🚀 启动应用...');
