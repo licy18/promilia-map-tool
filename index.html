@@ -1275,40 +1275,40 @@
                     <i class="fas fa-chevron-down" style="color: #888;"></i>
                 </div>
                 <div class="category-content" data-category="puzzle" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
-                    <div class="marker-type" data-type="puzzle_fire" data-color="#ff4500" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #ff4500;"></i>
+                    <div class="marker-type" data-type="puzzle_fire" data-color="#ff6973" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #ff6973;"></i>
                         <span>解谜(火)</span>
                     </div>
-                    <div class="marker-type" data-type="puzzle_wind" data-color="#87ceeb" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #87ceeb;"></i>
+                    <div class="marker-type" data-type="puzzle_wind" data-color="#ff9639" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #ff9639;"></i>
                         <span>解谜(风)</span>
                     </div>
-                    <div class="marker-type" data-type="puzzle_earth" data-color="#8b4513" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #8b4513;"></i>
+                    <div class="marker-type" data-type="puzzle_earth" data-color="#efb600" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #efb600;"></i>
                         <span>解谜(地)</span>
                     </div>
-                    <div class="marker-type" data-type="puzzle_wood" data-color="#228b22" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #228b22;"></i>
+                    <div class="marker-type" data-type="puzzle_wood" data-color="#00cf94" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #00cf94;"></i>
                         <span>解谜(木)</span>
                     </div>
-                    <div class="marker-type" data-type="puzzle_ice" data-color="#00ffff" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #00ffff;"></i>
+                    <div class="marker-type" data-type="puzzle_ice" data-color="#00cfc6" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #00cfc6;"></i>
                         <span>解谜(冰)</span>
                     </div>
-                    <div class="marker-type" data-type="puzzle_water" data-color="#1e90ff" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #1e90ff;"></i>
+                    <div class="marker-type" data-type="puzzle_water" data-color="#00b6e7" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #00b6e7;"></i>
                         <span>解谜(水)</span>
                     </div>
-                    <div class="marker-type" data-type="puzzle_thunder" data-color="#ffff00" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #ffff00;"></i>
+                    <div class="marker-type" data-type="puzzle_thunder" data-color="#6b8aff" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #6b8aff;"></i>
                         <span>解谜(雷)</span>
                     </div>
-                    <div class="marker-type" data-type="puzzle_light" data-color="#ffd700" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #ffd700;"></i>
+                    <div class="marker-type" data-type="puzzle_light" data-color="#e7cb00" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #e7cb00;"></i>
                         <span>解谜(光)</span>
                     </div>
-                    <div class="marker-type" data-type="puzzle_dark" data-color="#4b0082" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #4b0082;"></i>
+                    <div class="marker-type" data-type="puzzle_dark" data-color="#a270fc" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #a270fc;"></i>
                         <span>解谜(暗)</span>
                     </div>
                 </div>
@@ -2513,6 +2513,9 @@
 
         // 当前选中的标记类型（默认不选择，避免误触）
         let currentMarkerType = null;
+        
+        // 批量选择模式
+        let batchSelectionMode = false;
 
         // 为所有标记类型初始化筛选状态（默认全部启用）
         if (!filterState.all) {
@@ -3783,7 +3786,7 @@
 
         // 创建弹窗内容
         function createPopupContent(data) {
-            const config = MARKER_CONFIGS[data.type];
+            const config = MARKER_CONFIGS[data.type] || { icon: 'fa-question', color: '#999', label: '未知标记' };
             const isCollected = isMarkerCollected(data.id);
             return `
                                     <div class="popup-content">
