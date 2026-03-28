@@ -7,7 +7,7 @@
 [![Made with 🐸](https://img.shields.io/badge/made%20with-%F0%9F%90%B8-green.svg?style=flat-square)](https://github.com/licy18/promilia-map-tool)
 
 **📦 GitHub:** https://github.com/licy18/promilia-map-tool  
-**🏷️ 最新版本:** v3.7.0 (2026-03-27)
+**🏷️ 最新版本:** v3.8.0 (2026-03-29)
 
 ---
 
@@ -59,19 +59,49 @@ python3 -m http.server 8000
 
 ## 📁 文件结构
 
+### v3.8.0+ 模块化结构
+
 ```
 promilia-map-tool/
-├── index.html          # 主程序（单文件，86KB）
+├── index.html              # 入口文件（~68KB）
+├── css/
+│   └── main.css            # 所有样式（~24KB）
+├── js/                     # JavaScript 模块（共 15 个文件）
+│   ├── constants.js        # 版本常量
+│   ├── config.js           # 标记类型、地图配置
+│   ├── state.js            # 全局状态变量
+│   ├── utils.js            # 工具函数（统计、数据迁移）
+│   ├── ui.js               # UI 交互（toast、缩放）
+│   ├── progress.js         # 收集进度统计
+│   ├── map.js              # 地图初始化、加载、切换
+│   ├── marker.js           # 标记增删改查
+│   ├── route.js            # 路线绘制、存储
+│   ├── filter.js           # 筛选功能、分类折叠
+│   ├── radar.js            # 区域雷达扫描
+│   ├── search.js           # 标记搜索
+│   ├── map-manager.js      # 自定义地图管理
+│   ├── cos.js              # 腾讯云 COS 云端存储
+│   └── main.js             # 入口初始化
+├── maps/                   # 地图资源目录
+│   ├── shalulu.png         # 夏露露村（5.9MB）
+│   ├── fulisi.png          # 弗利斯（9.1MB）
+│   └── xinaya-tiles/       # 新芽山谷单层瓦片（16 张）
+├── icons/                  # 自定义图标目录
+└── README.md               # 使用说明
+```
+
+### v3.7.x 及之前版本（单文件结构）
+
+```
+promilia-map-tool/
+├── index.html          # 主程序（单文件，~280KB）
 ├── README.md           # 使用说明
 ├── maps/               # 地图资源目录
-│   ├── shalulu.png     # 夏露露村（8.7MB）
-│   ├── fulisi.png      # 弗利斯（9.1MB）
-│   ├── xinaya-tiles/   # 新芽山谷单层瓦片（16 张，560KB）
-│   └── xinaya-tiles-multi/  # 新芽山谷多层瓦片（调试分支）
 ├── icons/              # 自定义图标目录
-│   └── ap/             # AP 专用图标（4 个）
 └── test-tiles.html     # 瓦片加载测试页面
 ```
+
+**注意：** v3.8.0 进行了模块化拆分，将原单文件 `index.html` 拆分为多个模块，保持纯前端特性不变，仍可直接双击打开使用。
 
 ---
 
@@ -257,6 +287,30 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 ## 📝 更新日志
+
+### v3.8.0 (2026-03-29) - 🔀 模块化拆分
+- 🔀 **重构：** 将单文件 `index.html` 拆分为多个模块
+  - `css/main.css` - 所有样式（~1600 行）
+  - `js/` - 15 个 JavaScript 模块（共~3000 行）
+    - `constants.js` - 版本常量
+    - `config.js` - 标记类型、地图配置
+    - `state.js` - 全局状态变量
+    - `utils.js` - 工具函数
+    - `ui.js` - UI 交互
+    - `progress.js` - 收集进度统计
+    - `map.js` - 地图初始化、加载
+    - `marker.js` - 标记增删改查
+    - `route.js` - 路线绘制
+    - `filter.js` - 筛选功能
+    - `radar.js` - 区域雷达
+    - `search.js` - 标记搜索
+    - `map-manager.js` - 地图管理
+    - `cos.js` - 云端存储
+    - `main.js` - 入口初始化
+- ✅ **保持：** 纯前端特性不变，仍可双击打开使用
+- ✅ **保持：** 无需构建工具，无需 Node.js 依赖
+- 📊 **变更：** +4613 行新增，-5051 行删除
+- 📦 **提交：** `refactor: 模块化拆分代码，保持纯前端特性`
 
 ### v3.7.0 (2026-03-27) - 🎨 渲染引擎升级与交互优化
 - 🎨 **渲染引擎升级**
