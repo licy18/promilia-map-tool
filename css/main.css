@@ -1,0 +1,1067 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 自定义缩放控件样式 */
+.custom-zoom-control {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    background: rgba(15, 52, 96, 0.95);
+    border: 1px solid #1a4a7a;
+    border-radius: 6px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 42px;
+}
+
+.custom-zoom-control button {
+    width: 28px;
+    height: 28px;
+    background: #16213e;
+    border: 1px solid #1a4a7a;
+    color: #00d9ff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    margin: 0 auto;
+}
+
+.custom-zoom-control button:hover {
+    background: #1a4a7a;
+    border-color: #00d9ff;
+    box-shadow: 0 0 8px rgba(0, 217, 255, 0.5);
+}
+
+.custom-zoom-control button:active {
+    transform: scale(0.95);
+}
+
+.zoom-slider {
+    width: 28px;
+    height: 80px;
+    /* === 【修改 v3.7】顺应时代，采用全新的垂直书写模式，消灭黄字警告！ === */
+    appearance: auto; /* 恢复默认外观 */
+    writing-mode: vertical-lr; /* 让滑动条垂直站立 */
+    direction: rtl; /* 修复滑动方向，让上是加，下是减 */
+    /* ======================================================= */
+    appearance: slider-vertical;
+    background: #16213e;
+    outline: none;
+    border-radius: 4px;
+    margin: 0 auto;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #00d9ff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #1a1a2e;
+    box-shadow: 0 0 4px rgba(0, 217, 255, 0.8);
+}
+
+.zoom-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #00d9ff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #1a1a2e;
+    box-shadow: 0 0 4px rgba(0, 217, 255, 0.8);
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+}
+
+/* 侧边栏 */
+#sidebar {
+    width: 320px;
+    background: #16213e;
+    padding: 20px;
+    overflow-y: auto;
+    border-right: 2px solid #0f3460;
+}
+
+    #sidebar h1 {
+        font-size: 1.5em;
+        margin-bottom: 10px;
+        color: #e94560;
+    }
+
+    #sidebar .subtitle {
+        font-size: 0.85em;
+        color: #888;
+        margin-bottom: 20px;
+    }
+
+/* 地图切换器 */
+.map-switcher {
+    margin-bottom: 20px;
+    background: #0f3460;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+    .map-switcher select {
+        width: 100%;
+        padding: 12px;
+        background: #16213e;
+        border: 2px solid transparent;
+        color: #eee;
+        font-size: 1em;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.3s ease;
+        border-radius: 6px;
+    }
+
+        .map-switcher select:focus {
+            background: #1a2a4a;
+            border-color: #00d9ff;
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2);
+        }
+
+        .map-switcher select:hover {
+            background: #1a2a4a;
+        }
+
+        .map-switcher select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+.map-info {
+    padding: 10px 12px;
+    background: #0a1a2a;
+    font-size: 0.8em;
+    color: #888;
+    border-top: 1px solid #1a4a7a;
+}
+
+    .map-info strong {
+        color: #00d9ff;
+    }
+
+.section {
+    margin-bottom: 25px;
+}
+
+    .section h2 {
+        font-size: 1.1em;
+        margin-bottom: 10px;
+        color: #00d9ff;
+        border-bottom: 1px solid #0f3460;
+        padding-bottom: 5px;
+    }
+
+/* 标记类型选择 */
+.marker-types {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.marker-type {
+    padding: 12px 8px;
+    background: #0f3460;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+    .marker-type:hover {
+        background: #1a4a7a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .marker-type.active {
+        border-color: #e94560;
+        background: #1a4a7a;
+        box-shadow: 0 0 0 2px rgba(233, 69, 96, 0.3);
+    }
+
+    .marker-type:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .marker-type i {
+        font-size: 1.5em;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .marker-type span {
+        font-size: 0.75em;
+    }
+
+/* 按钮 */
+.btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-primary {
+    background: #e94560;
+    color: white;
+}
+
+    .btn-primary:hover {
+        background: #ff6b6b;
+    }
+
+.btn-secondary {
+    background: #0f3460;
+    color: #eee;
+}
+
+    .btn-secondary:hover {
+        background: #1a4a7a;
+    }
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+    .btn-success:hover {
+        background: #34ce57;
+    }
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+    .btn-info:hover {
+        background: #138496;
+    }
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+    .btn-group .btn {
+        flex: 1;
+    }
+
+/* 统计信息 */
+.stats {
+    background: #0f3460;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #00d9ff;
+}
+
+.stat-label {
+    font-size: 0.75em;
+    color: #888;
+}
+
+/* 地图区域 */
+#map-container {
+    flex: 1;
+    position: relative;
+    background-color: #080812; /* 更深邃的深渊底色 */
+    /* === 【新增 v3.7】纯 CSS 绘制的全息战术网格喵！ === */
+    background-image: linear-gradient(rgba(0, 217, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 217, 255, 0.07) 1px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(15, 52, 96, 0.5) 0%, transparent 80%);
+    background-size: 40px 40px, 40px 40px, 100% 100%;
+    background-position: center center;
+    /* ============================================== */
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    /* 强制剥开 Leaflet 自带的灰白色底布，让我们的全息网格透出来喵！ */
+    background: transparent !important;
+}
+
+/* === 【终极版 v3.7】纯 CSS 标记动态等比例缩放（逆向补偿级丝滑版） === */
+.custom-marker > div,
+.custom-marker-image > div {
+    transform: scale(var(--marker-scale, 1));
+    transform-origin: center center;
+    /* 重点黑科技：将过渡动画时间绑定给 CSS 变量，由 JS 在底层精准指挥显卡！ */
+    transition: transform var(--marker-transition, 0s);
+}
+/* ================================================================= */
+
+/* 标记弹窗 */
+.leaflet-popup-content-wrapper {
+    background: #16213e;
+    color: #eee;
+    border-radius: 8px;
+}
+
+.leaflet-popup-tip {
+    background: #16213e;
+}
+
+.popup-content h3 {
+    margin-bottom: 10px;
+    color: #e94560;
+}
+
+.popup-content textarea,
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    min-height: 40px;
+    background: #0f3460;
+    border: 2px solid #1a4a7a;
+    color: #eee;
+    padding: 8px 12px;
+    border-radius: 6px;
+    resize: vertical;
+    margin: 10px 0;
+    font-family: inherit;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+.popup-content textarea:focus,
+input[type="text"]:focus,
+input[type="password"]:focus {
+    outline: none;
+    border-color: #00d9ff;
+    box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.2);
+    background: #1a2a4a;
+}
+
+.popup-content textarea:hover,
+input[type="text"]:hover,
+input[type="password"]:hover {
+    border-color: #00d9ff;
+}
+
+.popup-content textarea:disabled,
+input[type="text"]:disabled,
+input[type="password"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.popup-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+    .popup-actions button {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .popup-actions .btn-save {
+        background: #00d9ff;
+        color: #000;
+    }
+
+    .popup-actions .btn-delete {
+        background: #e94560;
+        color: white;
+    }
+
+/* 文件输入隐藏 */
+#file-input {
+    display: none;
+}
+
+/* === 地图管理弹窗 === */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 10, 21, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 10001;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #16213e;
+    border: 1px solid #00d9ff;
+    border-radius: 12px;
+    width: 420px;
+    max-width: 90%;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideInRight 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed #1a4a7a;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+    .modal-header h2 {
+        margin: 0;
+        color: #00d9ff;
+        font-size: 1.2em;
+    }
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 1.5em;
+    transition: 0.2s;
+}
+
+    .close-modal-btn:hover {
+        color: #e94560;
+        transform: rotate(90deg);
+    }
+
+.form-group {
+    margin-bottom: 12px;
+}
+
+    .form-group label {
+        display: block;
+        font-size: 0.85em;
+        color: #aaa;
+        margin-bottom: 5px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        background: #0f3460;
+        border: 1px solid #1a4a7a;
+        color: #eee;
+        border-radius: 6px;
+        outline: none;
+        transition: 0.3s;
+    }
+
+        .form-group input:focus {
+            border-color: #00d9ff;
+            box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.2);
+        }
+
+/* 提示信息 */
+#toast {
+    position: fixed;
+    bottom: 25px; /* 【重点1：位置上移】给底部的 B站按钮让出空间，绝不重叠！ */
+    right: 20px;
+    padding: 15px 25px;
+    background: #16213e !important; /* 【重点2：强制底色】强行恢复深邃的暗蓝底色！ */
+    color: #eee !important; /* 强制白字，保证绝对清晰 */
+    border-left: 4px solid #00d9ff;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important; /* 加上黑色阴影压住透明感 */
+    /* === 【修改 v3.7】根据自身宽度动态后退，彻底把大尾巴藏进屏幕外喵！ === */
+    transform: translateX(150%);
+    /* =================================================================== */
+    transition: transform 0.3s;
+    z-index: 99999; /* 【最高层级】确保提示信息始终显示在所有元素之上，包括地图管理弹窗 */
+}
+
+    #toast.show {
+        transform: translateX(0) translateY(0);
+        opacity: 1;
+    }
+
+    #toast.success {
+        border-color: #00ff88;
+        background: rgba(0, 255, 136, 0.1);
+    }
+
+    #toast.error {
+        border-color: #e94560;
+        background: rgba(233, 69, 96, 0.1);
+    }
+
+    #toast.info {
+        border-color: #00d9ff;
+        background: rgba(0, 217, 255, 0.1);
+    }
+
+/* 帮助提示 */
+.help-tip {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 10px;
+    padding: 10px;
+    background: #0f3460;
+    border-radius: 4px;
+}
+
+/* 开关控件 */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #34495e;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-radius: 26px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border-radius: 50%;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+input:checked + .slider {
+    background-color: #00d9ff;
+    box-shadow: inset 0 2px 4px rgba(0, 217, 255, 0.3);
+}
+
+    input:checked + .slider:before {
+        transform: translateX(24px) scale(1.1);
+    }
+
+input:focus + .slider {
+    box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.3);
+}
+
+/* 分类折叠 */
+.category-header {
+    user-select: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+    .category-header:hover {
+        background: #1a4a7a !important;
+        transform: translateX(4px);
+    }
+
+    .category-header:active {
+        transform: translateX(2px);
+    }
+
+    .category-header .fa-chevron-down {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .category-header.collapsed .fa-chevron-down {
+        transform: rotate(-90deg);
+    }
+
+.category-content {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    max-height: 500px;
+}
+
+    .category-content.collapsed {
+        max-height: 0 !important;
+        opacity: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+
+/* === 新增：地图管理悬浮按钮与弹窗 === */
+#map-manager-btn {
+    position: fixed;
+    bottom: 30px;
+    left: 340px; /* 避开左侧边栏 */
+    z-index: 9999;
+    background: rgba(15, 52, 96, 0.9);
+    border: 1px solid #00d9ff;
+    color: #00d9ff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    font-weight: bold;
+}
+
+    #map-manager-btn:hover {
+        background: #00d9ff;
+        color: #1a1a2e;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 217, 255, 0.4);
+    }
+
+@media (max-width: 768px) {
+    #map-manager-btn {
+        left: 20px;
+        bottom: 80px; /* 移动端避开底部链接 */
+    }
+}
+
+/* === 新增：悬浮刷新按钮 === */
+#refresh-btn {
+    position: fixed;
+    bottom: 80px; /* 放在提示框上方，避免重叠 */
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: #0f3460;
+    color: #00d9ff;
+    border: 2px solid #00d9ff;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.4s ease;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    /* 鼠标放上去时的效果 */
+    #refresh-btn:hover {
+        background: #00d9ff;
+        color: #1a1a2e;
+        transform: rotate(180deg); /* 悬停时旋转180度 */
+    }
+
+/* === 新增：路线颜色选择按钮 === */
+.route-color-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+    .route-color-btn:hover {
+        transform: scale(1.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .route-color-btn.active {
+        border-color: white;
+        box-shadow: 0 0 15px rgba(255,255,255,0.8);
+        transform: scale(1.1);
+    }
+
+    .route-color-btn:active {
+        transform: scale(0.95);
+    }
+
+/* === 新增：右上角雷达系统样式 === */
+#radar-toggle-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 160px; /* 【统一大小】固定宽度 */
+    box-sizing: border-box; /* 防止内边距撑破宽度 */
+    z-index: 9999;
+    background: rgba(15, 52, 96, 0.8);
+    border: 1px solid #00d9ff;
+    color: #00d9ff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    text-align: center; /* 【统一大小】文字居中 */
+}
+
+    #radar-toggle-btn:hover {
+        background: #00d9ff;
+        color: #1a1a2e;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 217, 255, 0.4);
+    }
+
+    #radar-toggle-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+#radar-panel {
+    position: absolute;
+    top: 120px;
+    right: 20px;
+    z-index: 9998;
+    width: 320px;
+    background: rgba(26, 26, 46, 0.95);
+    border: 1px solid #1a4a7a;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    display: none; /* 默认隐藏 */
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* === 新增：云端用户管理样式 === */
+#user-toggle-btn {
+    position: absolute;
+    top: 70px; /* 【布局调整】放在雷达按钮的正下方 */
+    right: 20px; /* 【布局调整】右侧对齐 */
+    width: 160px; /* 【统一大小】固定与雷达一致的宽度 */
+    box-sizing: border-box;
+    z-index: 9999;
+    background: rgba(15, 52, 96, 0.8);
+    border: 1px solid #e94560;
+    color: #eee;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 【统一大小】内容居中对齐 */
+    gap: 8px;
+}
+
+    #user-toggle-btn:hover {
+        background: #e94560;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+    }
+
+    #user-toggle-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+
+#user-panel {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* 【新增防爆框保障】即使以后加了超长的英文名，按钮也不会被撑爆变形 */
+#current-user-display {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#user-panel {
+    position: absolute;
+    top: 120px; /* 【布局调整】和雷达面板在同等高度展开 */
+    right: 20px; /* 【布局调整】右侧对齐 */
+    z-index: 9998;
+    width: 250px;
+    background: rgba(26, 26, 46, 0.95);
+    border: 1px solid #e94560;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+/* ================================ */
+
+/* 隐藏Leaflet默认的右下角链接标签 - 方案2：CSS样式 */
+.leaflet-control-attribution {
+    display: none !important;
+}
+
+/* B站链接标签样式 */
+#bilibili-link {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #ff6b9d;
+    border-radius: 0;
+    box-shadow: 0 -2px 6px rgba(255, 107, 157, 0.3);
+    text-decoration: none;
+    color: white;
+    font-size: 10px;
+    font-weight: 400;
+    transition: all 0.2s ease;
+    z-index: 9998;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 160px;
+}
+
+#bilibili-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 -3px 8px rgba(255, 107, 157, 0.5);
+    background: #ff5a8f;
+}
+
+.bilibili-icon {
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: white;
+    font-size: 10px;
+}
+
+.bilibili-text {
+    white-space: nowrap;
+    color: white;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+    #sidebar {
+        width: 280px;
+        padding: 15px;
+    }
+
+    #radar-panel {
+        width: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow: auto;
+    }
+
+    #app {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    #sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+        border-right: none;
+        border-bottom: 2px solid #0f3460;
+    }
+
+    #map-container {
+        flex: 1;
+        min-height: 50vh;
+    }
+
+    .marker-types,
+    .category-content {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .marker-type {
+        padding: 8px 6px;
+    }
+
+    .marker-type i {
+        font-size: 1.2em;
+    }
+
+    .marker-type span {
+        font-size: 0.7em;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    #radar-toggle-btn,
+    #user-toggle-btn {
+        width: 140px;
+        padding: 8px 12px;
+        font-size: 0.85em;
+    }
+
+    #radar-panel {
+        width: 260px;
+        top: 100px;
+    }
+
+    #user-panel {
+        width: 240px;
+        top: 100px;
+    }
+
+    #refresh-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+        bottom: 70px;
+    }
+
+    #bilibili-link {
+        padding: 3px 6px;
+        font-size: 8px;
+    }
+
+    .bilibili-icon {
+        width: 10px;
+        height: 10px;
+        font-size: 7px;
+    }
+}
+
+@media (max-width: 480px) {
+    #sidebar {
+        padding: 10px;
+    }
+
+    #sidebar h1 {
+        font-size: 1.2em;
+    }
+
+    .marker-types,
+    .category-content {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .section h2 {
+        font-size: 1em;
+    }
+
+    .btn {
+        padding: 10px;
+        font-size: 0.85em;
+    }
+
+    #radar-toggle-btn,
+    #user-toggle-btn {
+        width: 120px;
+        padding: 6px 10px;
+        font-size: 0.75em;
+    }
+
+    #radar-panel {
+        width: 240px;
+        top: 90px;
+    }
+
+    #user-panel {
+        width: 220px;
+        top: 90px;
+    }
+}

@@ -1,0 +1,444 @@
+/**
+ * 标记增删改查、图标创建、弹窗、收集
+ */
+
+// 创建自定义标记图标
+function createMarkerIcon(type, markerId) {
+    const config = MARKER_CONFIGS[type];
+    const isCollected = markerId ? isMarkerCollected(markerId) : false;
+    const opacity = isCollected ? '0.5' : '1';
+
+    // 处理未知标记类型
+    if (!config) {
+        const html = `
+            <div style="
+                width: 40px;
+                height: 40px;
+                background: #999;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                opacity: ${opacity};
+            ">
+                <i class="fas fa-question" style="color: white; font-size: 18px;"></i>
+            </div>
+        `;
+
+        return L.divIcon({
+            html: html,
+            className: 'custom-marker',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
+            popupAnchor: [0, -20]
+        });
+    }
+
+    // 如果配置了图片图标（AP 专用标记）
+    if (config.useImage && config.imagePath) {
+        const html = `
+            <div style="
+                width: 40px;
+                height: 40px;
+                background: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid ${config.color};
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                overflow: hidden;
+                opacity: ${opacity};
+            ">
+                <img src="${config.imagePath}" style="width: 28px; height: 28px; object-fit: contain;" alt="${config.label}" />
+            </div>
+        `;
+
+        return L.divIcon({
+            html: html,
+            className: 'custom-marker-image',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
+            popupAnchor: [0, -20]
+        });
+    }
+
+    // 默认使用 FontAwesome 图标
+    const html = `
+        <div style="
+            width: 40px;
+            height: 40px;
+            background: ${config.color};
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            opacity: ${opacity};
+        ">
+            <i class="fas ${config.icon}" style="color: white; font-size: 18px;"></i>
+        </div>
+    `;
+
+    return L.divIcon({
+        html: html,
+        className: 'custom-marker',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -20]
+    });
+}
+
+// 创建弹窗内容
+function createPopupContent(data) {
+    const config = MARKER_CONFIGS[data.type] || { icon: 'fa-question', color: '#999', label: '未知标记' };
+    const isCollected = isMarkerCollected(data.id);
+    return `
+        <div class="popup-content">
+            <h3><i class="fas ${config.icon}" style="color: ${config.color};"></i> ${config.label} ${isCollected ? '<i class="fas fa-check-circle" style="color: #00ff88; margin-left: 5px;"></i>' : ''}</h3>
+            <p style="font-size: 0.85em; color: #888;">
+                坐标：${data.lat.toFixed(1)}, ${data.lng.toFixed(1)}
+            </p>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin: 10px 0;">
+                <span style="font-size: 0.85em;">已收集</span>
+                <label class="switch">
+                    <input type="checkbox" ${isCollected ? 'checked' : ''} onchange="event.stopPropagation(); toggleMarkerCollect('${data.id}')">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <textarea placeholder="添加备注..." id="note-${data.id}">${data.note || ''}</textarea>
+            <div class="popup-actions">
+                <button class="btn-save" onclick="event.stopPropagation(); saveMarkerNote('${data.id}')">
+                    <i class="fas fa-save"></i> 保存
+                </button>
+                <button class="btn-delete" onclick="event.stopPropagation(); deleteMarker('${data.id}')">
+                    <i class="fas fa-trash"></i> 删除
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// 添加标记
+function addMarker(latlng, type = currentMarkerType) {
+    const id = 'marker_' + Date.now() + '_' + markerIdCounter++;
+    const marker = L.marker(latlng, {
+        icon: createMarkerIcon(type, id)
+    });
+
+    const data = {
+        id: id,
+        type: type,
+        lat: latlng.lat,
+        lng: latlng.lng,
+        note: '',
+        createdAt: new Date().toISOString(),
+        popup: null  // 保存弹窗引用
+    };
+
+    markerData[id] = data;
+
+    // 绑定弹窗并保存引用
+    const popup = marker.bindPopup(createPopupContent(data));
+    data.popup = popup.getPopup();
+
+    // 根据聚合状态决定添加到集群还是直接添加到地图
+    if (clusterEnabled) {
+        markers.addLayer(marker);
+    } else {
+        map.addLayer(marker);
+    }
+
+    // 自动保存
+    saveToLocalStorage();
+    updateStats();
+
+    console.log(`✅ 添加标记：${id} (${type})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
+    return marker;
+}
+
+// 保存标记备注
+window.saveMarkerNote = function (id) {
+    const note = document.getElementById(`note-${id}`).value;
+    if (markerData[id]) {
+        markerData[id].note = note;
+        saveToLocalStorage();
+
+        // 更新弹窗中的备注显示
+        const popup = markerData[id].popup;
+        if (popup) {
+            popup.setContent(createPopupContent(markerData[id]));
+        }
+
+        showToast('备注已保存', 'success');
+    }
+};
+
+// 删除标记
+window.deleteMarker = function (id) {
+    if (markerData[id]) {
+        delete markerData[id];
+
+        // 从集群或地图中移除标记（根据聚合状态）
+        if (clusterEnabled) {
+            // 从集群中移除
+            markers.eachLayer(layer => {
+                if (layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                    markers.removeLayer(layer);
+                }
+            });
+        } else {
+            // 从地图中直接移除
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                    map.removeLayer(layer);
+                }
+            });
+        }
+
+        saveToLocalStorage();
+        updateStats();
+        showToast('标记已删除', 'success');
+    }
+};
+
+// 切换标记收集状态
+window.toggleMarkerCollect = function (id) {
+    console.log('[toggleMarkerCollect] 切换标记收集状态:', id);
+    const isCollected = toggleMarkerCollected(id);
+    const statusText = isCollected ? '已标记为已收集' : '已取消收集';
+
+    console.log('[toggleMarkerCollect] 当前收集状态:', isCollected, 'collectedMarkers:', collectedMarkers);
+
+    // 更新标记弹窗
+    if (markerData[id]) {
+        if (clusterEnabled) {
+            markers.eachLayer(layer => {
+                if (layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                    layer.setPopupContent(createPopupContent(markerData[id]));
+                    layer.setIcon(createMarkerIcon(markerData[id].type, id));
+                }
+            });
+        } else {
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                    layer.setPopupContent(createPopupContent(markerData[id]));
+                    layer.setIcon(createMarkerIcon(markerData[id].type, id));
+                }
+            });
+        }
+    }
+
+    // 更新分类统计面板
+    console.log('[toggleMarkerCollect] 调用updateStats()');
+    updateStats();
+
+    showToast(`标记${statusText}`, 'success');
+};
+
+// 加载指定地图的标记
+function loadMarkersForMap(mapId) {
+    console.log(`📍 加载地图标记：${mapId}`);
+
+    // 清空当前标记
+    markers.clearLayers();
+    Object.keys(markerData).forEach(key => delete markerData[key]);
+
+    // 从 localStorage 加载（每次都从 localStorage 加载，确保数据最新）
+    const storageKey = mapConfigs[mapId].storageKey;
+    let markersToLoad = {};
+
+    try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            let data = JSON.parse(saved);
+            // 数据迁移
+            data = migrateData(data);
+            markerIdCounter = data.counter || 0;
+            routeCounter = data.routeCounter || 0;
+            markersToLoad = data.markers || {};
+            console.log(`  ✅ 从 localStorage 加载：${Object.keys(markersToLoad).length} 个标记 (版本: ${data.version})`);
+        } else {
+            console.log(`  ℹ️ 无存储数据，初始化空数据`);
+        }
+    } catch (e) {
+        console.error(`❌ 加载标记失败 (${mapId}):`, e);
+    }
+
+    // 保存到内存和当前 markerData
+    allMarkersData[mapId] = markersToLoad;
+    Object.assign(markerData, markersToLoad);
+
+    // 添加到地图（根据聚合状态决定添加到集群还是直接添加到地图）
+    Object.values(markerData).forEach(marker => {
+        // 检查筛选状态
+        if (!filterState[marker.type]) {
+            return;
+        }
+
+        const m = L.marker([marker.lat, marker.lng], {
+            icon: createMarkerIcon(marker.type, marker.id)
+        });
+        const popup = m.bindPopup(createPopupContent(marker));
+        marker.popup = popup.getPopup();  // 重新建立 popup 引用
+
+        if (clusterEnabled) {
+            markers.addLayer(m);
+        } else {
+            map.addLayer(m);
+        }
+    });
+
+    // 确保集群已添加到地图
+    if (clusterEnabled && !map.hasLayer(markers)) {
+        map.addLayer(markers);
+    }
+
+    console.log(`✅ 加载完成：${Object.keys(markerData).length} 个标记 (${mapId})，聚合：${clusterEnabled ? '启用' : '禁用'}`);
+    updateStats();
+
+    // === 新增：加载并重新在地图上画出路线 ===
+    // 1. 先把地图上旧的路线全拔掉
+    Object.values(allRoutes).forEach(r => {
+        if (r.line) map.removeLayer(r.line);
+        if (r.decorator) map.removeLayer(r.decorator);
+    });
+    // 2. 清空内存数据
+    allRoutes = {};
+
+    try {
+        const storageKey = mapConfigs[mapId].storageKey;
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            const data = JSON.parse(saved);
+            if (data.routeCounter) routeCounter = data.routeCounter;
+            const loadedRoutes = data.routes || {};
+
+            // 3. 遍历读取的数据，重新在地图上作画！
+            Object.values(loadedRoutes).forEach(routeData => {
+                const line = L.polyline(routeData.points, {
+                    color: routeData.color,
+                    weight: 6,
+                    opacity: 1.0
+                });
+
+                const decorator = L.polylineDecorator(line, {
+                    patterns: [
+                        { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: routeData.color } }) }
+                    ]
+                });
+
+                if (routeData.visible) {
+                    line.addTo(map);
+                    decorator.addTo(map);
+                }
+
+                allRoutes[routeData.id] = {
+                    id: routeData.id,
+                    name: routeData.name,
+                    color: routeData.color,
+                    visible: routeData.visible,
+                    line: line,
+                    decorator: decorator
+                };
+            });
+        }
+    } catch (e) { console.error('加载路线失败:', e); }
+
+    // 4. 刷新侧边栏的路线列表
+    if (typeof renderRouteList === 'function') renderRouteList();
+    // 【新增：地图加载完路线后，立刻计算正确的物理粗细】
+    if (typeof updateAllRoutesThickness === 'function') updateAllRoutesThickness();
+}
+
+// 保存当前地图的标记
+function saveCurrentMapMarkers() {
+    const storageKey = mapConfigs[currentMapId].storageKey;
+    try {
+        // 创建不含 popup 引用的数据副本（popup 是 DOM 对象，不能被 JSON 序列化）
+        const markersToSave = {};
+        Object.keys(markerData).forEach(key => {
+            const { popup, ...markerDataWithoutPopup } = markerData[key];
+            markersToSave[key] = markerDataWithoutPopup;
+        });
+
+        // === 新增：提取路线的纯数据以便保存 ===
+        const routesToSave = {};
+        Object.keys(allRoutes).forEach(key => {
+            const r = allRoutes[key];
+            routesToSave[key] = {
+                id: r.id,
+                name: r.name,
+                color: r.color,
+                visible: r.visible,
+                points: r.line.getLatLngs() // 核心：只提取所有坐标点！
+            };
+        });
+        // ===================================
+
+        const data = {
+            version: DATA_VERSION,
+            markers: markersToSave,
+            routes: routesToSave, // === 新增：把路线数据塞进保险箱 ===
+            counter: markerIdCounter,
+            routeCounter: routeCounter,
+            savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        allMarkersData[currentMapId] = markersToSave;
+        updateLastSaved();
+        console.log(`💾 已保存 ${currentMapId} 的 ${Object.keys(markersToSave).length} 个标记`);
+    } catch (e) {
+        console.error('❌ 保存失败:', e);
+        showToast('保存失败：存储空间不足', 'error');
+    }
+}
+
+// 保存到 localStorage 别名
+const saveToLocalStorage = saveCurrentMapMarkers;
+
+// 更新标记可见性（支持聚合/非聚合模式）
+function updateMarkerVisibility() {
+    if (clusterEnabled) {
+        // === 聚合模式：从集群中移除再重新添加 ===
+        markers.eachLayer(layer => {
+            if (layer instanceof L.Marker) {
+                markers.removeLayer(layer);
+            }
+        });
+
+        // 根据筛选状态重新添加到集群
+        Object.values(markerData).forEach(data => {
+            if (filterState[data.type]) {
+                const marker = L.marker([data.lat, data.lng], {
+                    icon: createMarkerIcon(data.type, data.id)
+                });
+                marker.bindPopup(createPopupContent(data));
+                data.popup = marker.getPopup(); // <=== 【新增修复：交接遥控器】
+                markers.addLayer(marker);
+            }
+        });
+    } else {
+        // === 非聚合模式：从地图中移除再重新添加 ===
+        map.eachLayer(layer => {
+            if (layer instanceof L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+
+        // 根据筛选状态重新添加到地图
+        Object.values(markerData).forEach(data => {
+            if (filterState[data.type]) {
+                const marker = L.marker([data.lat, data.lng], {
+                    icon: createMarkerIcon(data.type, data.id)
+                });
+                marker.bindPopup(createPopupContent(data));
+                data.popup = marker.getPopup(); // <=== 【新增修复：交接遥控器】
+                map.addLayer(marker);
+            }
+        });
+    }
+}
