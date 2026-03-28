@@ -1201,6 +1201,8 @@
                 </div>
             </div>
 
+
+
             <!-- 标记类型（分类折叠） -->
             <div class="section" id="marker-types">
                 <h2><i class="fas fa-map-marker-alt"></i> 标记类型</h2>
@@ -1549,6 +1551,26 @@
                         <button class="btn btn-primary" onclick="searchMarkers()" style="margin: 0; padding: 8px 12px; width: auto;" title="搜索"><i class="fas fa-search"></i></button>
                     </div>
                     <div id="search-results" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; padding-right: 5px;">
+                    </div>
+                </div>
+
+                <!-- 收集进度 -->
+                <div class="section">
+                    <h2><i class="fas fa-trophy"></i> 收集进度</h2>
+                    <div style="background: #0f3460; padding: 15px; border-radius: 8px;">
+                        <div id="collection-progress"></div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #1a4a7a;">
+                            <div style="color: #00d9ff; font-size: 0.75em; font-weight: bold; margin-bottom: 8px;">📋 类型进度</div>
+                            <div id="type-progress"></div>
+                        </div>
+                        <div style="margin-top: 15px; display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="batchCollectAll()" style="flex: 1;">
+                                <i class="fas fa-check"></i> 全部收集
+                            </button>
+                            <button class="btn btn-secondary" onclick="batchUncollectAll()" style="flex: 1; background: #e94560;">
+                                <i class="fas fa-times"></i> 全部取消
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2224,6 +2246,250 @@
         // 标记聚合状态（Issue #1）
         let clusterEnabled = localStorage.getItem('promilia-cluster-enabled') !== 'false';  // 默认启用
 
+        // ==================== 标记收集与进度跟踪 ====================
+        // 收集状态存储
+        const getCollectedMarkers = () => {
+            const stored = localStorage.getItem('promilia-collected-markers');
+            return stored ? JSON.parse(stored) : {};
+        };
+
+        let collectedMarkers = getCollectedMarkers();
+
+        const saveCollectedMarkers = () => {
+            localStorage.setItem('promilia-collected-markers', JSON.stringify(collectedMarkers));
+        };
+
+        // 检查标记是否已收集
+        const isMarkerCollected = (markerId) => {
+            return collectedMarkers[markerId] === true;
+        };
+
+        // 切换标记收集状态
+        const toggleMarkerCollected = (markerId) => {
+            collectedMarkers[markerId] = !isMarkerCollected(markerId);
+            saveCollectedMarkers();
+            updateProgressStats();
+            
+            // 更新标记点图标以反映收集状态
+            if (clusterEnabled) {
+                markers.eachLayer(layer => {
+                    const popup = layer.getPopup();
+                    if (popup) {
+                        const content = popup.getContent();
+                        if (content.includes(markerId)) {
+                            if (markerData[markerId]) {
+                                layer.setIcon(createMarkerIcon(markerData[markerId].type, markerId));
+                            }
+                        }
+                    }
+                });
+            } else {
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        const popup = layer.getPopup();
+                        if (popup) {
+                            const content = popup.getContent();
+                            if (content.includes(markerId)) {
+                                if (markerData[markerId]) {
+                                    layer.setIcon(createMarkerIcon(markerData[markerId].type, markerId));
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // 注意：updateStats() 在 window.toggleMarkerCollect 中调用
+            return collectedMarkers[markerId];
+        };
+
+        // 批量收集/取消收集标记
+        const batchToggleCollected = (markerIds, collect) => {
+            markerIds.forEach(id => {
+                collectedMarkers[id] = collect;
+            });
+            saveCollectedMarkers();
+            updateProgressStats();
+            // 注意：updateStats() 在调用此函数后单独调用
+            
+            // 更新地图上所有标记的弹窗内容和图标
+            if (clusterEnabled) {
+                markers.eachLayer(layer => {
+                    const popup = layer.getPopup();
+                    if (popup) {
+                        const content = popup.getContent();
+                        markerIds.forEach(id => {
+                            if (content.includes(id)) {
+                                if (markerData[id]) {
+                                    layer.setPopupContent(createPopupContent(markerData[id]));
+                                    layer.setIcon(createMarkerIcon(markerData[id].type, id));
+                                }
+                            }
+                        });
+                    }
+                });
+            } else {
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        const popup = layer.getPopup();
+                        if (popup) {
+                            const content = popup.getContent();
+                            markerIds.forEach(id => {
+                                if (content.includes(id)) {
+                                    if (markerData[id]) {
+                                        layer.setPopupContent(createPopupContent(markerData[id]));
+                                        layer.setIcon(createMarkerIcon(markerData[id].type, id));
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        };
+
+        // 清除所有收集状态
+        const clearCollectedMarkers = () => {
+            collectedMarkers = {};
+            saveCollectedMarkers();
+            updateProgressStats();
+            // 注意：updateStats() 在调用此函数后单独调用
+            
+            // 更新地图上所有标记的图标
+            if (clusterEnabled) {
+                markers.eachLayer(layer => {
+                    const popup = layer.getPopup();
+                    if (popup) {
+                        const content = popup.getContent();
+                        // 提取标记ID
+                        const match = content.match(/data-marker-id="([^"]+)"/);
+                        if (match && match[1]) {
+                            const markerId = match[1];
+                            if (markerData[markerId]) {
+                                layer.setIcon(createMarkerIcon(markerData[markerId].type, markerId));
+                                layer.setPopupContent(createPopupContent(markerData[markerId]));
+                            }
+                        }
+                    }
+                });
+            } else {
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        const popup = layer.getPopup();
+                        if (popup) {
+                            const content = popup.getContent();
+                            // 提取标记ID
+                            const match = content.match(/data-marker-id="([^"]+)"/);
+                            if (match && match[1]) {
+                                const markerId = match[1];
+                                if (markerData[markerId]) {
+                                    layer.setIcon(createMarkerIcon(markerData[markerId].type, markerId));
+                                    layer.setPopupContent(createPopupContent(markerData[markerId]));
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        // 批量收集所有标记
+        window.batchCollectAll = function() {
+            const allMarkers = getAllMarkers();
+            const markerIds = allMarkers.map(marker => marker.id);
+            batchToggleCollected(markerIds, true);
+            updateStats(); // 更新分类统计面板
+            showToast('已标记所有标记为已收集', 'success');
+        };
+
+        // 批量取消所有收集
+        window.batchUncollectAll = function() {
+            const allMarkers = getAllMarkers();
+            const markerIds = allMarkers.map(marker => marker.id);
+            batchToggleCollected(markerIds, false);
+            updateStats(); // 更新分类统计面板
+            showToast('已取消所有标记的收集状态', 'success');
+        };
+
+        // 计算收集进度
+        const calculateProgress = () => {
+            const allMarkers = getAllMarkers();
+            const total = allMarkers.length;
+            const collected = allMarkers.filter(marker => isMarkerCollected(marker.id)).length;
+            const percentage = total > 0 ? Math.round((collected / total) * 100) : 0;
+            return { total, collected, percentage };
+        };
+
+        // 按类型计算收集进度
+        const calculateTypeProgress = (type) => {
+            const allMarkers = getAllMarkers();
+            const typeMarkers = allMarkers.filter(marker => marker.type === type);
+            const total = typeMarkers.length;
+            const collected = typeMarkers.filter(marker => isMarkerCollected(marker.id)).length;
+            const percentage = total > 0 ? Math.round((collected / total) * 100) : 0;
+            return { total, collected, percentage };
+        };
+
+        // 获取所有标记
+        const getAllMarkers = () => {
+            const storageKey = currentMapConfig.storageKey;
+            const savedData = localStorage.getItem(storageKey);
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    // data.markers 是对象，需要转换为数组
+                    const markersObj = data.markers || {};
+                    return Object.values(markersObj);
+                } catch (e) {
+                    console.error('加载标记数据失败:', e);
+                    return [];
+                }
+            }
+            return [];
+        };
+
+        // 更新进度统计显示
+        const updateProgressStats = () => {
+            const progress = calculateProgress();
+            const progressElement = document.getElementById('collection-progress');
+            if (progressElement) {
+                progressElement.innerHTML = `
+                    <div style="margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 4px;">
+                            <span>收集进度</span>
+                            <span>${progress.collected}/${progress.total} (${progress.percentage}%)</span>
+                        </div>
+                        <div style="height: 6px; background: #0f3460; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; width: ${progress.percentage}%; background: #00d9ff; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 更新按类型的进度
+            const typeProgressElement = document.getElementById('type-progress');
+            if (typeProgressElement) {
+                let html = '';
+                Object.keys(MARKER_CONFIGS).forEach(type => {
+                    const typeProgress = calculateTypeProgress(type);
+                    if (typeProgress.total > 0) {
+                        html += `
+                            <div style="margin-bottom: 6px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin-bottom: 2px;">
+                                    <span>${MARKER_CONFIGS[type].label}</span>
+                                    <span>${typeProgress.collected}/${typeProgress.total}</span>
+                                </div>
+                                <div style="height: 4px; background: #0f3460; border-radius: 2px; overflow: hidden;">
+                                    <div style="height: 100%; width: ${typeProgress.percentage}%; background: ${MARKER_CONFIGS[type].color}; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                typeProgressElement.innerHTML = html;
+            }
+        };
+
         // ==================== 地图初始化 ====================
         console.log('📍 初始化地图...');
 
@@ -2635,6 +2901,7 @@
             // 加载标记
             loadMarkersForMap(mapId);
             updateStats();
+            updateProgressStats();
 
             // 应用筛选状态
             updateFilterUI();
@@ -2802,7 +3069,7 @@
                 }
 
                 const m = L.marker([marker.lat, marker.lng], {
-                    icon: createMarkerIcon(marker.type)
+                    icon: createMarkerIcon(marker.type, marker.id)
                 });
                 const popup = m.bindPopup(createPopupContent(marker));
                 marker.popup = popup.getPopup();  // 重新建立 popup 引用
@@ -2923,8 +3190,10 @@
         }
 
         // 创建自定义标记图标
-        function createMarkerIcon(type) {
+        function createMarkerIcon(type, markerId) {
             const config = MARKER_CONFIGS[type];
+            const isCollected = markerId ? isMarkerCollected(markerId) : false;
+            const opacity = isCollected ? '0.5' : '1';
 
             // 处理未知标记类型
             if (!config) {
@@ -2939,6 +3208,7 @@
                                             justify-content: center;
                                             border: 3px solid white;
                                             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                                            opacity: ${opacity};
                                         ">
                                             <i class="fas fa-question" style="color: white; font-size: 18px;"></i>
                                         </div>
@@ -2967,6 +3237,7 @@
                                             border: 3px solid ${config.color};
                                             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
                                             overflow: hidden;
+                                            opacity: ${opacity};
                                         ">
                                             <img src="${config.imagePath}" style="width: 28px; height: 28px; object-fit: contain;" alt="${config.label}" />
                                         </div>
@@ -2993,6 +3264,7 @@
                                         justify-content: center;
                                         border: 3px solid white;
                                         box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                                        opacity: ${opacity};
                                     ">
                                         <i class="fas ${config.icon}" style="color: white; font-size: 18px;"></i>
                                     </div>
@@ -3011,7 +3283,7 @@
         function addMarker(latlng, type = currentMarkerType) {
             const id = 'marker_' + Date.now() + '_' + markerIdCounter++;
             const marker = L.marker(latlng, {
-                icon: createMarkerIcon(type)
+                icon: createMarkerIcon(type, id)
             });
 
             const data = {
@@ -3048,12 +3320,20 @@
         // 创建弹窗内容
         function createPopupContent(data) {
             const config = MARKER_CONFIGS[data.type];
+            const isCollected = isMarkerCollected(data.id);
             return `
                                     <div class="popup-content">
-                                        <h3><i class="fas ${config.icon}" style="color: ${config.color};"></i> ${config.label}</h3>
+                                        <h3><i class="fas ${config.icon}" style="color: ${config.color};"></i> ${config.label} ${isCollected ? '<i class="fas fa-check-circle" style="color: #00ff88; margin-left: 5px;"></i>' : ''}</h3>
                                         <p style="font-size: 0.85em; color: #888;">
                                             坐标：${data.lat.toFixed(1)}, ${data.lng.toFixed(1)}
                                         </p>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin: 10px 0;">
+                                            <span style="font-size: 0.85em;">已收集</span>
+                                            <label class="switch">
+                                                <input type="checkbox" ${isCollected ? 'checked' : ''} onchange="event.stopPropagation(); toggleMarkerCollect('${data.id}')">
+                                                <span class="slider"></span>
+                                            </label>
+                                        </div>
                                         <textarea placeholder="添加备注..." id="note-${data.id}">${data.note || ''}</textarea>
                                         <div class="popup-actions">
                                             <button class="btn-save" onclick="event.stopPropagation(); saveMarkerNote('${data.id}')">
@@ -3110,6 +3390,38 @@
                 updateStats();
                 showToast('标记已删除', 'success');
             }
+        };
+
+        // 切换标记收集状态
+        window.toggleMarkerCollect = function (id) {
+            console.log('[toggleMarkerCollect] 切换标记收集状态:', id);
+            const isCollected = toggleMarkerCollected(id);
+            const statusText = isCollected ? '已标记为已收集' : '已取消收集';
+            
+            console.log('[toggleMarkerCollect] 当前收集状态:', isCollected, 'collectedMarkers:', collectedMarkers);
+            
+            // 更新标记弹窗
+            if (markerData[id]) {
+                if (clusterEnabled) {
+                    markers.eachLayer(layer => {
+                        if (layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                            layer.setPopupContent(createPopupContent(markerData[id]));
+                        }
+                    });
+                } else {
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                            layer.setPopupContent(createPopupContent(markerData[id]));
+                        }
+                    });
+                }
+            }
+            
+            // 更新分类统计面板
+            console.log('[toggleMarkerCollect] 调用updateStats()');
+            updateStats();
+            
+            showToast(`标记${statusText}`, 'success');
         };
 
         // === 【新增 v3.7】智能清空数据引擎 ===
@@ -3430,7 +3742,7 @@
                 Object.values(markerData).forEach(data => {
                     if (filterState[data.type]) {
                         const marker = L.marker([data.lat, data.lng], {
-                            icon: createMarkerIcon(data.type)
+                            icon: createMarkerIcon(data.type, data.id)
                         });
                         marker.bindPopup(createPopupContent(data));
                         data.popup = marker.getPopup(); // <=== 【新增修复：交接遥控器】
@@ -3449,7 +3761,7 @@
                 Object.values(markerData).forEach(data => {
                     if (filterState[data.type]) {
                         const marker = L.marker([data.lat, data.lng], {
-                            icon: createMarkerIcon(data.type)
+                            icon: createMarkerIcon(data.type, data.id)
                         });
                         marker.bindPopup(createPopupContent(data));
                         data.popup = marker.getPopup(); // <=== 【新增修复：交接遥控器】
@@ -3676,7 +3988,7 @@
                         data.markers.forEach(marker => {
                             markerData[marker.id] = marker;
                             const m = L.marker([marker.lat, marker.lng], {
-                                icon: createMarkerIcon(marker.type)
+                                icon: createMarkerIcon(marker.type, marker.id)
                             });
                             m.bindPopup(createPopupContent(marker));
                             marker.popup = m.getPopup(); // <=== 【新增修复】
@@ -3741,26 +4053,36 @@
             document.getElementById('total-markers').textContent = total;
             document.getElementById('current-map-count').textContent = total;
 
-            // 按分类统计
+            // 按分类统计（总数和已收集数）
             const counts = {
-                chest: 0,      // 宝箱类
-                explore: 0,    // 探索类 (puzzle, quest, flower, teleport)
-                creature: 0,   // 生物类 (umi, egg, chipo, chipo_battle, chipo_egg)
-                other: 0       // 其他 (enemy, star, fish, custom)
+                chest: { total: 0, collected: 0 },      // 宝箱类
+                explore: { total: 0, collected: 0 },    // 探索类
+                creature: { total: 0, collected: 0 },   // 生物类
+                other: { total: 0, collected: 0 }       // 其他
             };
 
             Object.values(markerData).forEach(m => {
                 const config = MARKER_CONFIGS[m.type];
                 if (config && config.category) {
-                    counts[config.category]++;
+                    counts[config.category].total++;
+                    if (isMarkerCollected(m.id)) {
+                        counts[config.category].collected++;
+                    }
                 }
             });
 
-            // 更新分类统计显示
-            document.getElementById('count-chest').textContent = counts.chest;
-            document.getElementById('count-explore').textContent = counts.explore;
-            document.getElementById('count-creature').textContent = counts.creature;
-            document.getElementById('count-other').textContent = counts.other;
+            // 更新分类统计显示（格式：已收集/总数）
+            const chestEl = document.getElementById('count-chest');
+            const exploreEl = document.getElementById('count-explore');
+            const creatureEl = document.getElementById('count-creature');
+            const otherEl = document.getElementById('count-other');
+            
+            if (chestEl) chestEl.textContent = `${counts.chest.collected}/${counts.chest.total}`;
+            if (exploreEl) exploreEl.textContent = `${counts.explore.collected}/${counts.explore.total}`;
+            if (creatureEl) creatureEl.textContent = `${counts.creature.collected}/${counts.creature.total}`;
+            if (otherEl) otherEl.textContent = `${counts.other.collected}/${counts.other.total}`;
+            
+            console.log('[updateStats] 分类统计已更新:', counts);
         }
 
         function updateLastSaved() {
