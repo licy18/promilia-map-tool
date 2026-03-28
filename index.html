@@ -1186,8 +1186,16 @@
                             <span id="count-chest">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #a55eea;">🧩 解谜:</span>
+                            <span id="count-puzzle">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
                             <span style="color: #3498db;">🧭 探索:</span>
                             <span id="count-explore">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
+                            <span style="color: #ff6b9d;">🐾 奇波:</span>
+                            <span id="count-chipo">0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin: 3px 0;">
                             <span style="color: #ff6b9d;">🐾 生物:</span>
@@ -1258,6 +1266,53 @@
                     </div>
                 </div>
 
+                <!-- 解谜类 -->
+                <div class="category-header" data-category="puzzle" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
+                        <span style="color: #eee; font-weight: bold;">解谜</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="puzzle" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type" data-type="puzzle_fire" data-color="#ff4500" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #ff4500;"></i>
+                        <span>解谜(火)</span>
+                    </div>
+                    <div class="marker-type" data-type="puzzle_wind" data-color="#87ceeb" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #87ceeb;"></i>
+                        <span>解谜(风)</span>
+                    </div>
+                    <div class="marker-type" data-type="puzzle_earth" data-color="#8b4513" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #8b4513;"></i>
+                        <span>解谜(地)</span>
+                    </div>
+                    <div class="marker-type" data-type="puzzle_wood" data-color="#228b22" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #228b22;"></i>
+                        <span>解谜(木)</span>
+                    </div>
+                    <div class="marker-type" data-type="puzzle_ice" data-color="#00ffff" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #00ffff;"></i>
+                        <span>解谜(冰)</span>
+                    </div>
+                    <div class="marker-type" data-type="puzzle_water" data-color="#1e90ff" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #1e90ff;"></i>
+                        <span>解谜(水)</span>
+                    </div>
+                    <div class="marker-type" data-type="puzzle_thunder" data-color="#ffff00" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #ffff00;"></i>
+                        <span>解谜(雷)</span>
+                    </div>
+                    <div class="marker-type" data-type="puzzle_light" data-color="#ffd700" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #ffd700;"></i>
+                        <span>解谜(光)</span>
+                    </div>
+                    <div class="marker-type" data-type="puzzle_dark" data-color="#4b0082" data-icon="fa-puzzle-piece">
+                        <i class="fas fa-puzzle-piece" style="color: #4b0082;"></i>
+                        <span>解谜(暗)</span>
+                    </div>
+                </div>
+
                 <!-- 探索类 -->
                 <div class="category-header" data-category="explore" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -1267,10 +1322,6 @@
                     <i class="fas fa-chevron-down" style="color: #888;"></i>
                 </div>
                 <div class="category-content" data-category="explore" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
-                    <div class="marker-type" data-type="puzzle" data-color="#a55eea" data-icon="fa-puzzle-piece">
-                        <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
-                        <span>解谜</span>
-                    </div>
                     <div class="marker-type" data-type="quest" data-color="#3498db" data-icon="fa-scroll">
                         <i class="fas fa-scroll" style="color: #3498db;"></i>
                         <span>任务</span>
@@ -1283,6 +1334,65 @@
                         <i class="fas fa-door-open" style="color: #9b59b6;"></i>
                         <span>传送</span>
                     </div>
+                    <div class="marker-type" data-type="umi" data-color="#2d3436" data-icon="fa-cat">
+                        <i class="fas fa-cat" style="color: #2d3436;"></i>
+                        <span>乌咪</span>
+                    </div>
+                    <div class="marker-type" data-type="umi_challenge" data-color="#e94560" data-icon="fa-cat">
+                        <i class="fas fa-cat" style="color: #e94560;"></i>
+                        <span>乌咪-挑战</span>
+                    </div>
+                    <div class="marker-type" data-type="challenge" data-color="#ffd700" data-icon="fa-trophy">
+                        <i class="fas fa-trophy" style="color: #ffd700;"></i>
+                        <span>挑战</span>
+                    </div>
+                </div>
+
+                <!-- 奇波类 -->
+                <div class="category-header" data-category="chipo" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                        <span style="color: #eee; font-weight: bold;">奇波</span>
+                    </div>
+                    <i class="fas fa-chevron-down" style="color: #888;"></i>
+                </div>
+                <div class="category-content" data-category="chipo" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
+                    <div class="marker-type" data-type="chipo_fire" data-color="#ff6973" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #ff6973;"></i>
+                        <span>奇波(火)</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_wind" data-color="#ff9639" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #ff9639;"></i>
+                        <span>奇波(风)</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_earth" data-color="#efb600" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #efb600;"></i>
+                        <span>奇波(地)</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_wood" data-color="#00cf94" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #00cf94;"></i>
+                        <span>奇波(木)</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_ice" data-color="#00cfc6" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #00cfc6;"></i>
+                        <span>奇波(冰)</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_water" data-color="#00b6e7" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #00b6e7;"></i>
+                        <span>奇波(水)</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_thunder" data-color="#6b8aff" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #6b8aff;"></i>
+                        <span>奇波(雷)</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_light" data-color="#e7cb00" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #e7cb00;"></i>
+                        <span>奇波(光)</span>
+                    </div>
+                    <div class="marker-type" data-type="chipo_dark" data-color="#a270fc" data-icon="fa-paw">
+                        <i class="fas fa-paw" style="color: #a270fc;"></i>
+                        <span>奇波(暗)</span>
+                    </div>
                 </div>
 
                 <!-- 生物类 -->
@@ -1294,25 +1404,21 @@
                     <i class="fas fa-chevron-down" style="color: #888;"></i>
                 </div>
                 <div class="category-content" data-category="creature" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
-                    <div class="marker-type" data-type="umi" data-color="#2d3436" data-icon="fa-cat">
-                        <i class="fas fa-cat" style="color: #2d3436;"></i>
-                        <span>乌咪</span>
-                    </div>
                     <!--<div class="marker-type" data-type="egg" data-color="#ffeaa7" data-icon="fa-egg">
                 <i class="fas fa-egg" style="color: #ffeaa7;"></i>
                 <span>蛋</span>
             </div> -->
-                    <div class="marker-type" data-type="chipo" data-color="#ff6b9d" data-icon="fa-paw">
-                        <i class="fas fa-paw" style="color: #ff6b9d;"></i>
-                        <span>奇波</span>
+                    <div class="marker-type" data-type="chipo_egg" data-color="#ffd700" data-icon="fa-egg">
+                        <i class="fas fa-egg" style="color: #ffd700;"></i>
+                        <span>奇波蛋</span>
+                    </div>
+                    <div class="marker-type" data-type="mating" data-color="#ff69b4" data-icon="fa-heart">
+                        <i class="fas fa-heart" style="color: #ff69b4;"></i>
+                        <span>交配点</span>
                     </div>
                     <div class="marker-type" data-type="chipo_battle" data-color="#ff4500" data-icon="fa-fist-raised">
                         <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
                         <span>奇波对决</span>
-                    </div>
-                    <div class="marker-type" data-type="chipo_egg" data-color="#ffd700" data-icon="fa-egg">
-                        <i class="fas fa-egg" style="color: #ffd700;"></i>
-                        <span>奇波蛋</span>
                     </div>
                 </div>
 
@@ -1438,6 +1544,53 @@
                         </div>
                     </div>
 
+                    <!-- 解谜类筛选 -->
+                    <div class="category-header" data-category="puzzle-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
+                            <span style="color: #eee; font-weight: bold;">解谜</span>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color: #888;"></i>
+                    </div>
+                    <div class="category-content" data-category="puzzle-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                        <div class="marker-type active" data-type="puzzle_fire" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #ff6973;"></i>
+                            <span>火</span>
+                        </div>
+                        <div class="marker-type active" data-type="puzzle_wind" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #ff9639;"></i>
+                            <span>风</span>
+                        </div>
+                        <div class="marker-type active" data-type="puzzle_earth" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #efb600;"></i>
+                            <span>地</span>
+                        </div>
+                        <div class="marker-type active" data-type="puzzle_wood" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #00cf94;"></i>
+                            <span>木</span>
+                        </div>
+                        <div class="marker-type active" data-type="puzzle_ice" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #00cfc6;"></i>
+                            <span>冰</span>
+                        </div>
+                        <div class="marker-type active" data-type="puzzle_water" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #00b6e7;"></i>
+                            <span>水</span>
+                        </div>
+                        <div class="marker-type active" data-type="puzzle_thunder" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #6b8aff;"></i>
+                            <span>雷</span>
+                        </div>
+                        <div class="marker-type active" data-type="puzzle_light" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #e7cb00;"></i>
+                            <span>光</span>
+                        </div>
+                        <div class="marker-type active" data-type="puzzle_dark" data-category="puzzle">
+                            <i class="fas fa-puzzle-piece" style="color: #a270fc;"></i>
+                            <span>暗</span>
+                        </div>
+                    </div>
+
                     <!-- 探索类筛选 -->
                     <div class="category-header" data-category="explore-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -1447,10 +1600,6 @@
                         <i class="fas fa-chevron-down" style="color: #888;"></i>
                     </div>
                     <div class="category-content" data-category="explore-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
-                        <div class="marker-type active" data-type="puzzle" data-category="explore">
-                            <i class="fas fa-puzzle-piece" style="color: #a55eea;"></i>
-                            <span>解谜</span>
-                        </div>
                         <div class="marker-type active" data-type="quest" data-category="explore">
                             <i class="fas fa-scroll" style="color: #3498db;"></i>
                             <span>任务</span>
@@ -1463,6 +1612,65 @@
                             <i class="fas fa-door-open" style="color: #9b59b6;"></i>
                             <span>传送</span>
                         </div>
+                        <div class="marker-type active" data-type="umi" data-category="explore">
+                            <i class="fas fa-cat" style="color: #2d3436;"></i>
+                            <span>乌咪</span>
+                        </div>
+                        <div class="marker-type active" data-type="umi_challenge" data-category="explore">
+                            <i class="fas fa-cat" style="color: #e94560;"></i>
+                            <span>乌咪-挑战</span>
+                        </div>
+                        <div class="marker-type active" data-type="challenge" data-category="explore">
+                            <i class="fas fa-trophy" style="color: #ffd700;"></i>
+                            <span>挑战</span>
+                        </div>
+                    </div>
+
+                    <!-- 奇波类筛选 -->
+                    <div class="category-header" data-category="chipo-filter" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-paw" style="color: #ff6b9d;"></i>
+                            <span style="color: #eee; font-weight: bold;">奇波</span>
+                        </div>
+                        <i class="fas fa-chevron-down" style="color: #888;"></i>
+                    </div>
+                    <div class="category-content" data-category="chipo-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
+                        <div class="marker-type active" data-type="chipo_fire" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #ff6973;"></i>
+                            <span>火</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_wind" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #ff9639;"></i>
+                            <span>风</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_earth" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #efb600;"></i>
+                            <span>地</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_wood" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #00cf94;"></i>
+                            <span>木</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_ice" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #00cfc6;"></i>
+                            <span>冰</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_water" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #00b6e7;"></i>
+                            <span>水</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_thunder" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #6b8aff;"></i>
+                            <span>雷</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_light" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #e7cb00;"></i>
+                            <span>光</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_dark" data-category="chipo">
+                            <i class="fas fa-paw" style="color: #a270fc;"></i>
+                            <span>暗</span>
+                        </div>
                     </div>
 
                     <!-- 生物类筛选 -->
@@ -1474,25 +1682,21 @@
                         <i class="fas fa-chevron-down" style="color: #888;"></i>
                     </div>
                     <div class="category-content" data-category="creature-filter" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;">
-                        <div class="marker-type active" data-type="umi" data-category="creature">
-                            <i class="fas fa-cat" style="color: #2d3436;"></i>
-                            <span>乌咪</span>
-                        </div>
                         <!--<div class="marker-type active" data-type="egg" data-category="creature">
                     <i class="fas fa-egg" style="color: #ffeaa7;"></i>
                     <span>蛋</span>
                 </div>-->
-                        <div class="marker-type active" data-type="chipo" data-category="creature">
-                            <i class="fas fa-paw" style="color: #ff6b9d;"></i>
-                            <span>奇波</span>
-                        </div>
-                        <div class="marker-type active" data-type="chipo_battle" data-category="creature">
-                            <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
-                            <span>对决</span>
-                        </div>
                         <div class="marker-type active" data-type="chipo_egg" data-category="creature">
                             <i class="fas fa-egg" style="color: #ffd700;"></i>
                             <span>奇波蛋</span>
+                        </div>
+                        <div class="marker-type active" data-type="mating" data-category="creature">
+                            <i class="fas fa-heart" style="color: #ff69b4;"></i>
+                            <span>交配点</span>
+                        </div>
+                        <div class="marker-type active" data-type="chipo_battle" data-category="creature">
+                            <i class="fas fa-fist-raised" style="color: #ff4500;"></i>
+                            <span>奇波对决</span>
                         </div>
                     </div>
 
@@ -1563,6 +1767,10 @@
                             <div style="color: #00d9ff; font-size: 0.75em; font-weight: bold; margin-bottom: 8px;">📋 类型进度</div>
                             <div id="type-progress"></div>
                         </div>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #1a4a7a;">
+                            <div style="color: #00d9ff; font-size: 0.75em; font-weight: bold; margin-bottom: 8px;">📊 分类进度</div>
+                            <div id="category-progress"></div>
+                        </div>
                         <div style="margin-top: 15px; display: flex; gap: 8px;">
                             <button class="btn btn-secondary" onclick="batchCollectAll()" style="flex: 1;">
                                 <i class="fas fa-check"></i> 全部收集
@@ -1576,6 +1784,29 @@
             </div>
 
             <!-- 关闭 filter-types -->
+            <!-- 批量收集 -->
+            <div class="section">
+                <h2><i class="fas fa-bulk"></i> 批量收集</h2>
+                <div style="background: #0f3460; padding: 15px; border-radius: 8px;">
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 0.9em; color: #00d9ff;">
+                            选择标记类型：
+                        </label>
+                        <select id="batch-type-select" style="width: 100%; padding: 8px; border: 1px solid #16213e; border-radius: 4px; background: #16213e; color: #fff;">
+                            <option value="all">全部类型</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-success" onclick="batchCollectByType()" style="flex: 1;">
+                            <i class="fas fa-check"></i> 全部收集
+                        </button>
+                        <button class="btn btn-danger" onclick="batchUncollectByType()" style="flex: 1; background: #e94560;">
+                            <i class="fas fa-times"></i> 全部取消
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- 操作按钮 -->
             <div class="section">
                 <h2><i class="fas fa-tools"></i> 操作</h2>
@@ -1810,14 +2041,127 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
-
+    
     <script>
+        // ==================== 状态管理 ====================
+        // 地图相关状态
+        let currentMapId = localStorage.getItem('promilia-current-map') || 'shalulu';
+        let mapConfigs = {};
+        let mapViews = {};
+        
+        // 标记相关状态
+        let markerData = {};
+        let allMarkersData = {};
+        let markerIdCounter = 0;
+        
+        // 收集状态
+        let collectedMarkers = JSON.parse(localStorage.getItem('promilia-collected-markers') || '{}');
+        
+        // 路线相关状态
+        let allRoutes = {};
+        let routeCounter = 0;
+        let currentRouteColor = '#FF3333';
+        let currentRoutePoints = [];
+        let currentRouteLine = null;
+        let currentRouteDecorator = null;
+        let currentRouteStartMarker = null;
+        
+        // 筛选状态
+        let filterState = JSON.parse(localStorage.getItem('promilia-filter-state') || '{}');
+        let categoryExpanded = JSON.parse(localStorage.getItem('promilia-category-expanded') || '{}');
+        let clusterEnabled = localStorage.getItem('promilia-cluster-enabled') !== 'false';
+        
+        // 预计算和缓存
+        let precomputedStats = {};
+        let lastPrecomputed = 0;
+        
+        // 数据版本管理
+        const dataVersion = 1;
+        
+        // 保存收集状态
+        const saveCollectedMarkers = () => {
+            localStorage.setItem('promilia-collected-markers', JSON.stringify(collectedMarkers));
+        };
+        
+        // 数据迁移
+        const migrateData = (data) => {
+            const dataVersion = data.version || 0;
+            
+            // 版本 0 到版本 1 的迁移
+            if (dataVersion < 1) {
+                // 确保 routes 字段存在
+                if (!data.routes) {
+                    data.routes = {};
+                }
+                // 确保 routeCounter 字段存在
+                if (!data.routeCounter) {
+                    data.routeCounter = 0;
+                }
+                data.version = 1;
+            }
+            
+            return data;
+        };
+        
+        // 预计算统计信息
+        const precomputeStats = () => {
+            const stats = {
+                total: Object.keys(markerData).length,
+                collected: 0,
+                byType: {},
+                byCategory: {}
+            };
+            
+            // 初始化类型和分类统计
+            Object.keys(MARKER_CONFIGS).forEach(type => {
+                stats.byType[type] = { total: 0, collected: 0 };
+                const category = MARKER_CONFIGS[type].category;
+                if (!stats.byCategory[category]) {
+                    stats.byCategory[category] = { total: 0, collected: 0 };
+                }
+            });
+            
+            // 计算统计信息
+            Object.values(markerData).forEach(marker => {
+                const isCollected = collectedMarkers[marker.id] === true;
+                if (isCollected) {
+                    stats.collected++;
+                }
+                
+                // 按类型统计
+                if (stats.byType[marker.type]) {
+                    stats.byType[marker.type].total++;
+                    if (isCollected) {
+                        stats.byType[marker.type].collected++;
+                    }
+                }
+                
+                // 按分类统计
+                const category = MARKER_CONFIGS[marker.type]?.category;
+                if (category && stats.byCategory[category]) {
+                    stats.byCategory[category].total++;
+                    if (isCollected) {
+                        stats.byCategory[category].collected++;
+                    }
+                }
+            });
+            
+            precomputedStats = stats;
+            lastPrecomputed = Date.now();
+        };
+        
+        // 获取预计算的统计信息
+        const getStats = () => {
+            // 如果预计算数据不存在或超过5秒，重新计算
+            if (!precomputedStats.total || (Date.now() - lastPrecomputed) > 5000) {
+                precomputeStats();
+            }
+            return precomputedStats;
+        };
+
         // ==================== 初始化 ====================
         console.log('🗺️ 普罗米利亚地图标记工具 v3.4.14');
         console.log('🔄 初始化中...');
-
-        // === 新增：路线模式的基础变量与界面交互 ===
-        let currentRouteColor = '#FF3333'; // 默认是亮红色
 
         // 监听路线开关
         const routeToggle = document.getElementById('route-mode-toggle');
@@ -1924,12 +2268,6 @@
         // ==========================================
 
         // === 新增：路线绘制的核心变量与按钮逻辑 ===
-        let currentRoutePoints = [];
-        let currentRouteLine = null;
-        let currentRouteDecorator = null;
-        let currentRouteStartMarker = null; // 新增：起点的圆点反馈
-        let allRoutes = {};
-        let routeCounter = 0;
 
         // === 新增：撤销与完成逻辑 ===
         window.undoLastRoutePoint = function () {
@@ -2121,17 +2459,40 @@
             chest_dark: { icon: 'fa-box', color: '#4b0082', label: '暗黑箱', category: 'chest' },
 
             // === 探索类 ===
-            puzzle: { icon: 'fa-puzzle-piece', color: '#a55eea', label: '解谜', category: 'explore' },
             quest: { icon: 'fa-scroll', color: '#3498db', label: '任务', category: 'explore' },
             flower: { icon: 'fa-fan', color: '#e91e63', label: '采集', category: 'explore' },
             teleport: { icon: 'fa-door-open', color: '#9b59b6', label: '传送', category: 'explore' },
+            umi: { icon: 'fa-cat', color: '#2d3436', label: '乌咪', category: 'explore' },
+            umi_challenge: { icon: 'fa-cat', color: '#e94560', label: '乌咪-挑战', category: 'explore' },
+            challenge: { icon: 'fa-trophy', color: '#ffd700', label: '挑战', category: 'explore' },
 
             // === 生物类 ===
-            umi: { icon: 'fa-cat', color: '#2d3436', label: '乌咪', category: 'creature' },
             egg: { icon: 'fa-egg', color: '#ffeaa7', label: '蛋', category: 'creature' },
-            chipo: { icon: 'fa-paw', color: '#ff6b9d', label: '奇波', category: 'creature' },
-            chipo_battle: { icon: 'fa-fist-raised', color: '#ff4500', label: '奇波对决', category: 'creature' },
             chipo_egg: { icon: 'fa-egg', color: '#ffd700', label: '奇波蛋', category: 'creature' },
+            chipo_battle: { icon: 'fa-fist-raised', color: '#ff4500', label: '奇波对决', category: 'creature' },
+            mating: { icon: 'fa-heart', color: '#ff69b4', label: '交配点', category: 'creature' },
+
+            // === 奇波类 ===
+            chipo_fire: { icon: 'fa-paw', color: '#ff6973', label: '奇波(火)', category: 'chipo' },
+            chipo_wind: { icon: 'fa-paw', color: '#ff9639', label: '奇波(风)', category: 'chipo' },
+            chipo_earth: { icon: 'fa-paw', color: '#efb600', label: '奇波(地)', category: 'chipo' },
+            chipo_wood: { icon: 'fa-paw', color: '#00cf94', label: '奇波(木)', category: 'chipo' },
+            chipo_ice: { icon: 'fa-paw', color: '#00cfc6', label: '奇波(冰)', category: 'chipo' },
+            chipo_water: { icon: 'fa-paw', color: '#00b6e7', label: '奇波(水)', category: 'chipo' },
+            chipo_thunder: { icon: 'fa-paw', color: '#6b8aff', label: '奇波(雷)', category: 'chipo' },
+            chipo_light: { icon: 'fa-paw', color: '#e7cb00', label: '奇波(光)', category: 'chipo' },
+            chipo_dark: { icon: 'fa-paw', color: '#a270fc', label: '奇波(暗)', category: 'chipo' },
+
+            // === 解谜类 ===
+            puzzle_fire: { icon: 'fa-puzzle-piece', color: '#ff6973', label: '解谜(火)', category: 'puzzle' },
+            puzzle_wind: { icon: 'fa-puzzle-piece', color: '#ff9639', label: '解谜(风)', category: 'puzzle' },
+            puzzle_earth: { icon: 'fa-puzzle-piece', color: '#efb600', label: '解谜(地)', category: 'puzzle' },
+            puzzle_wood: { icon: 'fa-puzzle-piece', color: '#00cf94', label: '解谜(木)', category: 'puzzle' },
+            puzzle_ice: { icon: 'fa-puzzle-piece', color: '#00cfc6', label: '解谜(冰)', category: 'puzzle' },
+            puzzle_water: { icon: 'fa-puzzle-piece', color: '#00b6e7', label: '解谜(水)', category: 'puzzle' },
+            puzzle_thunder: { icon: 'fa-puzzle-piece', color: '#6b8aff', label: '解谜(雷)', category: 'puzzle' },
+            puzzle_light: { icon: 'fa-puzzle-piece', color: '#e7cb00', label: '解谜(光)', category: 'puzzle' },
+            puzzle_dark: { icon: 'fa-puzzle-piece', color: '#a270fc', label: '解谜(暗)', category: 'puzzle' },
 
             // === 其他 ===
             enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人', category: 'other' },
@@ -2143,7 +2504,9 @@
         // 分类配置（用于折叠显示）
         const CATEGORY_CONFIGS = {
             chest: { label: '宝箱', icon: 'fa-gift', color: '#f39c12' },
+            puzzle: { label: '解谜', icon: 'fa-puzzle-piece', color: '#a55eea' },
             explore: { label: '探索', icon: 'fa-compass', color: '#3498db' },
+            chipo: { label: '奇波', icon: 'fa-paw', color: '#ff6b9d' },
             creature: { label: '生物', icon: 'fa-paw', color: '#ff6b9d' },
             other: { label: '其他', icon: 'fa-ellipsis-h', color: '#95a5a6' }
         };
@@ -2151,33 +2514,37 @@
         // 当前选中的标记类型（默认不选择，避免误触）
         let currentMarkerType = null;
 
-        // 筛选状态（按分类）
-        const filterState = {
-            // 分类展开状态
-            chest: true,
-            explore: true,
-            creature: true,
-            other: true,
-            // 具体类型
-            all: true
-        };
-
         // 为所有标记类型初始化筛选状态（默认全部启用）
+        if (!filterState.all) {
+            filterState.all = true;
+        }
         Object.keys(MARKER_CONFIGS).forEach(type => {
-            filterState[type] = true;
+            if (filterState[type] === undefined) {
+                filterState[type] = true;
+            }
         });
 
         // 分类展开状态（用于 UI）- 默认全折叠，优先从本地读取记忆
-        let categoryExpanded = JSON.parse(localStorage.getItem('promilia-category-expanded')) || {
+        const defaultCategoryExpanded = {
             'chest': false,
             'explore': false,
             'creature': false,
+            'chipo': false,
+            'puzzle': false,
             'other': false,
             'chest-filter': false,
             'explore-filter': false,
             'creature-filter': false,
+            'chipo-filter': false,
+            'puzzle-filter': false,
             'other-filter': false
         };
+        // 合并默认值和本地存储值
+        Object.keys(defaultCategoryExpanded).forEach(key => {
+            if (categoryExpanded[key] === undefined) {
+                categoryExpanded[key] = defaultCategoryExpanded[key];
+            }
+        });
 
         // 隐藏的标记层（用于筛选）
         const hiddenMarkers = new Map();
@@ -2209,56 +2576,32 @@
             MAP_CONFIGS = { ...BASE_MAP_CONFIGS };
         }
 
+        // 初始化地图配置
+        mapConfigs = MAP_CONFIGS;
+
         // 动态渲染侧边栏的下拉菜单
         function renderMapSelectUI() {
             const selectEl = document.getElementById('map-select');
             if (!selectEl) return;
             let html = '';
-            Object.keys(MAP_CONFIGS).forEach(key => {
-                const config = MAP_CONFIGS[key];
+            Object.keys(mapConfigs).forEach(key => {
+                const config = mapConfigs[key];
                 html += `<option value="${key}">🗺️ ${config.name}</option>`;
             });
             selectEl.innerHTML = html;
         }
 
-        let currentMapId = localStorage.getItem('promilia-current-map') || 'shalulu';
-
         // 确保当前读取的 ID 在配置中存在（防崩溃保护）
-        if (!MAP_CONFIGS[currentMapId]) currentMapId = Object.keys(MAP_CONFIGS)[0]; // 如果当前地图不存在，随便抓第一个活着的
+        if (!mapConfigs[currentMapId]) currentMapId = Object.keys(mapConfigs)[0]; // 如果当前地图不存在，随便抓第一个活着的
 
         // 初始化渲染下拉框
         renderMapSelectUI();
-        let currentMapConfig = MAP_CONFIGS[currentMapId];
+        let currentMapConfig = mapConfigs[currentMapId];
         let mapOverlay = null;
         let tileOverlays = [];
         let tileLayer = null;
 
-        // 当前筛选状态（保存到 localStorage）
-        let savedFilterState = localStorage.getItem('promilia-filter-state');
-        if (savedFilterState) {
-            try {
-                Object.assign(filterState, JSON.parse(savedFilterState));
-            } catch (e) {
-                console.error('❌ 加载筛选状态失败:', e);
-            }
-        }
-
-        // 标记聚合状态（Issue #1）
-        let clusterEnabled = localStorage.getItem('promilia-cluster-enabled') !== 'false';  // 默认启用
-
         // ==================== 标记收集与进度跟踪 ====================
-        // 收集状态存储
-        const getCollectedMarkers = () => {
-            const stored = localStorage.getItem('promilia-collected-markers');
-            return stored ? JSON.parse(stored) : {};
-        };
-
-        let collectedMarkers = getCollectedMarkers();
-
-        const saveCollectedMarkers = () => {
-            localStorage.setItem('promilia-collected-markers', JSON.stringify(collectedMarkers));
-        };
-
         // 检查标记是否已收集
         const isMarkerCollected = (markerId) => {
             return collectedMarkers[markerId] === true;
@@ -2266,8 +2609,9 @@
 
         // 切换标记收集状态
         const toggleMarkerCollected = (markerId) => {
-            collectedMarkers[markerId] = !isMarkerCollected(markerId);
+            collectedMarkers[markerId] = !collectedMarkers[markerId];
             saveCollectedMarkers();
+            precomputeStats();
             updateProgressStats();
             
             // 更新标记点图标以反映收集状态
@@ -2309,6 +2653,7 @@
                 collectedMarkers[id] = collect;
             });
             saveCollectedMarkers();
+            precomputeStats();
             updateProgressStats();
             // 注意：updateStats() 在调用此函数后单独调用
             
@@ -2352,6 +2697,7 @@
         const clearCollectedMarkers = () => {
             collectedMarkers = {};
             saveCollectedMarkers();
+            precomputeStats();
             updateProgressStats();
             // 注意：updateStats() 在调用此函数后单独调用
             
@@ -2411,21 +2757,121 @@
             showToast('已取消所有标记的收集状态', 'success');
         };
 
-        // 计算收集进度
+        // 批量收集相关函数
+        
+        // 初始化标记类型下拉列表
+        function initBatchTypeSelect() {
+            const selectEl = document.getElementById('batch-type-select');
+            if (!selectEl) return;
+            
+            // 清空现有选项（保留"全部类型"）
+            while (selectEl.options.length > 1) {
+                selectEl.remove(1);
+            }
+            
+            // 按分类组织标记类型
+            const categories = {};
+            Object.keys(MARKER_CONFIGS).forEach(type => {
+                const config = MARKER_CONFIGS[type];
+                const category = config.category || 'other';
+                if (!categories[category]) {
+                    categories[category] = [];
+                }
+                categories[category].push({ type, name: config.name });
+            });
+            
+            // 添加分类和类型选项
+            Object.keys(categories).forEach(category => {
+                // 添加分类分隔符
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = category;
+                selectEl.appendChild(optgroup);
+                
+                // 添加该分类下的所有类型
+                categories[category].forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.type;
+                    option.textContent = item.name;
+                    optgroup.appendChild(option);
+                });
+            });
+        }
+
+        // 按类型批量收集标记
+        window.batchCollectByType = function() {
+            const selectEl = document.getElementById('batch-type-select');
+            if (!selectEl) return;
+            
+            const selectedType = selectEl.value;
+            const markerIds = [];
+            
+            // 收集指定类型的标记
+            Object.values(markerData).forEach(marker => {
+                if (selectedType === 'all' || marker.type === selectedType) {
+                    markerIds.push(marker.id);
+                }
+            });
+            
+            if (markerIds.length === 0) {
+                showToast('没有找到指定类型的标记', 'error');
+                return;
+            }
+            
+            batchToggleCollected(markerIds, true);
+            updateStats();
+            showToast(`已收集 ${markerIds.length} 个标记`, 'success');
+        };
+
+        // 按类型批量取消收集标记
+        window.batchUncollectByType = function() {
+            const selectEl = document.getElementById('batch-type-select');
+            if (!selectEl) return;
+            
+            const selectedType = selectEl.value;
+            const markerIds = [];
+            
+            // 收集指定类型的标记
+            Object.values(markerData).forEach(marker => {
+                if (selectedType === 'all' || marker.type === selectedType) {
+                    markerIds.push(marker.id);
+                }
+            });
+            
+            if (markerIds.length === 0) {
+                showToast('没有找到指定类型的标记', 'error');
+                return;
+            }
+            
+            batchToggleCollected(markerIds, false);
+            updateStats();
+            showToast(`已取消 ${markerIds.length} 个标记的收集状态`, 'success');
+        };
+
+        // 计算收集进度（使用预计算数据）
         const calculateProgress = () => {
-            const allMarkers = getAllMarkers();
-            const total = allMarkers.length;
-            const collected = allMarkers.filter(marker => isMarkerCollected(marker.id)).length;
+            const stats = getStats();
+            const total = stats.total;
+            const collected = stats.collected;
             const percentage = total > 0 ? Math.round((collected / total) * 100) : 0;
             return { total, collected, percentage };
         };
 
-        // 按类型计算收集进度
+        // 按类型计算收集进度（使用预计算数据）
         const calculateTypeProgress = (type) => {
-            const allMarkers = getAllMarkers();
-            const typeMarkers = allMarkers.filter(marker => marker.type === type);
-            const total = typeMarkers.length;
-            const collected = typeMarkers.filter(marker => isMarkerCollected(marker.id)).length;
+            const stats = getStats();
+            const typeStats = stats.byType[type] || { total: 0, collected: 0 };
+            const total = typeStats.total;
+            const collected = typeStats.collected;
+            const percentage = total > 0 ? Math.round((collected / total) * 100) : 0;
+            return { total, collected, percentage };
+        };
+
+        // 按分类计算收集进度（使用预计算数据）
+        const calculateCategoryProgress = (category) => {
+            const stats = getStats();
+            const categoryStats = stats.byCategory[category] || { total: 0, collected: 0 };
+            const total = categoryStats.total;
+            const collected = categoryStats.collected;
             const percentage = total > 0 ? Math.round((collected / total) * 100) : 0;
             return { total, collected, percentage };
         };
@@ -2487,6 +2933,29 @@
                     }
                 });
                 typeProgressElement.innerHTML = html;
+            }
+
+            // 更新按分类的进度
+            const categoryProgressElement = document.getElementById('category-progress');
+            if (categoryProgressElement) {
+                let html = '';
+                Object.keys(CATEGORY_CONFIGS).forEach(category => {
+                    const categoryProgress = calculateCategoryProgress(category);
+                    if (categoryProgress.total > 0) {
+                        html += `
+                            <div style="margin-bottom: 6px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.75em; margin-bottom: 2px;">
+                                    <span>${CATEGORY_CONFIGS[category].label}</span>
+                                    <span>${categoryProgress.collected}/${categoryProgress.total}</span>
+                                </div>
+                                <div style="height: 4px; background: #0f3460; border-radius: 2px; overflow: hidden;">
+                                    <div style="height: 100%; width: ${categoryProgress.percentage}%; background: ${CATEGORY_CONFIGS[category].color}; transition: width 0.3s ease;"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                categoryProgressElement.innerHTML = html;
             }
         };
 
@@ -2583,7 +3052,6 @@
         }
 
         // 保存当前视图状态（按地图）
-        const mapViews = {};
 
         // 加载/切换地图
         function loadMap(mapId, keepZoom = false) {
@@ -3027,29 +3495,28 @@
 
 
         // 标记数据（按地图分离）
-        let markerIdCounter = 0;
-        const markerData = {}; // 当前地图的标记数据
-        const allMarkersData = {}; // 所有地图的标记数据 { mapId: { markerId: data } }
 
         // 加载指定地图的标记
         function loadMarkersForMap(mapId) {
             console.log(`📍 加载地图标记：${mapId}`);
-
+            
             // 清空当前标记
             markers.clearLayers();
             Object.keys(markerData).forEach(key => delete markerData[key]);
 
             // 从 localStorage 加载（每次都从 localStorage 加载，确保数据最新）
-            const storageKey = MAP_CONFIGS[mapId].storageKey;
+            const storageKey = mapConfigs[mapId].storageKey;
             let markersToLoad = {};
 
             try {
                 const saved = localStorage.getItem(storageKey);
                 if (saved) {
-                    const data = JSON.parse(saved);
+                    let data = JSON.parse(saved);
+                    // 数据迁移
+                    data = migrateData(data);
                     markerIdCounter = data.counter || 0;
                     markersToLoad = data.markers || {};
-                    console.log(`  ✅ 从 localStorage 加载：${Object.keys(markersToLoad).length} 个标记`);
+                    console.log(`  ✅ 从 localStorage 加载：${Object.keys(markersToLoad).length} 个标记 (版本: ${data.version})`);
                 } else {
                     console.log(`  ℹ️ 无存储数据，初始化空数据`);
                 }
@@ -3090,64 +3557,62 @@
             updateStats();
 
             // === 新增：加载并重新在地图上画出路线 ===
-            if (typeof allRoutes !== 'undefined') {
-                // 1. 先把地图上旧的路线全拔掉
-                Object.values(allRoutes).forEach(r => {
-                    if (r.line) map.removeLayer(r.line);
-                    if (r.decorator) map.removeLayer(r.decorator);
-                });
-                // 2. 清空内存数据
-                for (let k in allRoutes) delete allRoutes[k];
+            // 1. 先把地图上旧的路线全拔掉
+            Object.values(allRoutes).forEach(r => {
+                if (r.line) map.removeLayer(r.line);
+                if (r.decorator) map.removeLayer(r.decorator);
+            });
+            // 2. 清空内存数据
+            allRoutes = {};
 
-                try {
-                    const storageKey = MAP_CONFIGS[mapId].storageKey;
-                    const saved = localStorage.getItem(storageKey);
-                    if (saved) {
-                        const data = JSON.parse(saved);
-                        if (data.routeCounter) routeCounter = data.routeCounter;
-                        const loadedRoutes = data.routes || {};
+            try {
+                const storageKey = mapConfigs[mapId].storageKey;
+                const saved = localStorage.getItem(storageKey);
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    if (data.routeCounter) routeCounter = data.routeCounter;
+                    const loadedRoutes = data.routes || {};
 
-                        // 3. 遍历读取的数据，重新在地图上作画！
-                        Object.values(loadedRoutes).forEach(routeData => {
-                            const line = L.polyline(routeData.points, {
-                                color: routeData.color,
-                                weight: 6,
-                                opacity: 1.0
-                            });
-
-                            const decorator = L.polylineDecorator(line, {
-                                patterns: [
-                                    { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: routeData.color } }) }
-                                ]
-                            });
-
-                            if (routeData.visible) {
-                                line.addTo(map);
-                                decorator.addTo(map);
-                            }
-
-                            allRoutes[routeData.id] = {
-                                id: routeData.id,
-                                name: routeData.name,
-                                color: routeData.color,
-                                visible: routeData.visible,
-                                line: line,
-                                decorator: decorator
-                            };
+                    // 3. 遍历读取的数据，重新在地图上作画！
+                    Object.values(loadedRoutes).forEach(routeData => {
+                        const line = L.polyline(routeData.points, {
+                            color: routeData.color,
+                            weight: 6,
+                            opacity: 1.0
                         });
-                    }
-                } catch (e) { console.error('加载路线失败:', e); }
 
-                // 4. 刷新侧边栏的路线列表
-                if (typeof renderRouteList === 'function') renderRouteList();
-                // 【新增：地图加载完路线后，立刻计算正确的物理粗细】
-                if (typeof updateAllRoutesThickness === 'function') updateAllRoutesThickness();
-            }
+                        const decorator = L.polylineDecorator(line, {
+                            patterns: [
+                                { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: routeData.color } }) }
+                            ]
+                        });
+
+                        if (routeData.visible) {
+                            line.addTo(map);
+                            decorator.addTo(map);
+                        }
+
+                        allRoutes[routeData.id] = {
+                            id: routeData.id,
+                            name: routeData.name,
+                            color: routeData.color,
+                            visible: routeData.visible,
+                            line: line,
+                            decorator: decorator
+                        };
+                    });
+                }
+            } catch (e) { console.error('加载路线失败:', e); }
+
+            // 4. 刷新侧边栏的路线列表
+            if (typeof renderRouteList === 'function') renderRouteList();
+            // 【新增：地图加载完路线后，立刻计算正确的物理粗细】
+            if (typeof updateAllRoutesThickness === 'function') updateAllRoutesThickness();
         }
 
         // 保存当前地图的标记
         function saveCurrentMapMarkers() {
-            const storageKey = currentMapConfig.storageKey;
+            const storageKey = mapConfigs[currentMapId].storageKey;
             try {
                 // 创建不含 popup 引用的数据副本（popup 是 DOM 对象，不能被 JSON 序列化）
                 const markersToSave = {};
@@ -3158,29 +3623,28 @@
 
                 // === 新增：提取路线的纯数据以便保存 ===
                 const routesToSave = {};
-                if (typeof allRoutes !== 'undefined') {
-                    Object.keys(allRoutes).forEach(key => {
-                        const r = allRoutes[key];
-                        routesToSave[key] = {
-                            id: r.id,
-                            name: r.name,
-                            color: r.color,
-                            visible: r.visible,
-                            points: r.line.getLatLngs() // 核心：只提取所有坐标点！
-                        };
-                    });
-                }
+                Object.keys(allRoutes).forEach(key => {
+                    const r = allRoutes[key];
+                    routesToSave[key] = {
+                        id: r.id,
+                        name: r.name,
+                        color: r.color,
+                        visible: r.visible,
+                        points: r.line.getLatLngs() // 核心：只提取所有坐标点！
+                    };
+                });
                 // ===================================
 
                 const data = {
+                    version: dataVersion,
                     markers: markersToSave,
                     routes: routesToSave, // === 新增：把路线数据塞进保险箱 ===
                     counter: markerIdCounter,
-                    routeCounter: typeof routeCounter !== 'undefined' ? routeCounter : 0,
+                    routeCounter: routeCounter,
                     savedAt: new Date().toISOString()
                 };
                 localStorage.setItem(storageKey, JSON.stringify(data));
-                allMarkersData[currentMapId] = JSON.parse(JSON.stringify(markersToSave));
+                allMarkersData[currentMapId] = markersToSave;
                 updateLastSaved();
                 console.log(`💾 已保存 ${currentMapId} 的 ${Object.keys(markersToSave).length} 个标记`);
             } catch (e) {
@@ -3504,6 +3968,36 @@
 
         // ==================== 地图点击事件 ====================
         map.on('click', function (e) {
+
+            // 批量选择模式处理
+            if (batchSelectionMode) {
+                // 查找被点击的标记
+                let target = e.originalEvent.target;
+                let markerId = null;
+                
+                // 向上遍历DOM树，查找包含标记ID的元素
+                while (target && !markerId) {
+                    if (target.innerHTML && target.innerHTML.includes('data-marker-id=')) {
+                        const match = target.innerHTML.match(/data-marker-id="([^"]+)"/);
+                        if (match && match[1]) {
+                            markerId = match[1];
+                        }
+                    }
+                    target = target.parentElement;
+                }
+                
+                if (markerId) {
+                    // 切换选择状态
+                    if (selectedMarkers.has(markerId)) {
+                        selectedMarkers.delete(markerId);
+                    } else {
+                        selectedMarkers.add(markerId);
+                    }
+                    updateBatchSelectionCount();
+                    updateMarkerSelectionStyles();
+                }
+                return;
+            }
 
             // 先获取当前的交互模式状态
             const routeToggle = document.getElementById('route-mode-toggle');
@@ -4056,7 +4550,9 @@
             // 按分类统计（总数和已收集数）
             const counts = {
                 chest: { total: 0, collected: 0 },      // 宝箱类
+                puzzle: { total: 0, collected: 0 },      // 解谜类
                 explore: { total: 0, collected: 0 },    // 探索类
+                chipo: { total: 0, collected: 0 },      // 奇波类
                 creature: { total: 0, collected: 0 },   // 生物类
                 other: { total: 0, collected: 0 }       // 其他
             };
@@ -4073,12 +4569,16 @@
 
             // 更新分类统计显示（格式：已收集/总数）
             const chestEl = document.getElementById('count-chest');
+            const puzzleEl = document.getElementById('count-puzzle');
             const exploreEl = document.getElementById('count-explore');
+            const chipoEl = document.getElementById('count-chipo');
             const creatureEl = document.getElementById('count-creature');
             const otherEl = document.getElementById('count-other');
             
             if (chestEl) chestEl.textContent = `${counts.chest.collected}/${counts.chest.total}`;
+            if (puzzleEl) puzzleEl.textContent = `${counts.puzzle.collected}/${counts.puzzle.total}`;
             if (exploreEl) exploreEl.textContent = `${counts.explore.collected}/${counts.explore.total}`;
+            if (chipoEl) chipoEl.textContent = `${counts.chipo.collected}/${counts.chipo.total}`;
             if (creatureEl) creatureEl.textContent = `${counts.creature.collected}/${counts.creature.total}`;
             if (otherEl) otherEl.textContent = `${counts.other.collected}/${counts.other.total}`;
             
@@ -5448,6 +5948,9 @@
 
         // 初始化 COS 秘钥面板状态
         initCosConfigUI();
+
+        // 初始化批量收集类型选择
+        initBatchTypeSelect();
 
         // 初始化地图（使用保存的地图 ID，保持缩放）
         loadMap(currentMapId, true);
