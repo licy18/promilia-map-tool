@@ -2,70 +2,86 @@
  * 路线绘制、撤销、渲染、存储
  */
 
-// 监听路线开关
-const routeToggle = document.getElementById('route-mode-toggle');
-const routeTools = document.getElementById('route-tools');
+// 获取路线开关元素（全局可访问）
+function getRouteToggle() {
+    return document.getElementById('route-mode-toggle');
+}
 
-routeToggle.addEventListener('change', function () {
-    const isRouteMode = this.checked;
+// 初始化路线相关事件（在 main.js 中调用）
+function initRouteEvents() {
+    // 监听路线开关
+    const routeToggle = getRouteToggle();
+    const routeTools = document.getElementById('route-tools');
 
-    if (isRouteMode) {
-        // === 修改 1：互斥逻辑 -> 打开路线模式时，强制关闭浏览模式 ===
-        const browseToggle = document.getElementById('browse-mode-toggle');
-        if (browseToggle && browseToggle.checked) {
-            browseToggle.checked = false;
-        }
-        // === 修改 2：清除选中的宝箱标记，确保不会乱点 ===
-        document.querySelectorAll('#marker-types .marker-type').forEach(e => e.classList.remove('active'));
-        currentMarkerType = null;
-
-        const tipEl = document.getElementById('marker-tip');
-        if (tipEl) {
-            tipEl.textContent = '当前为路线绘制模式';
-            tipEl.style.color = '#FF3333';
-        }
-
-        routeTools.style.display = 'block'; // 显示颜色面板
-        document.getElementById('route-draw-panel').style.display = 'flex'; // 【新增】显示悬浮控制台
-        showToast('已进入路线绘制模式', 'success');
-    } else {
-        routeTools.style.display = 'none'; // 隐藏颜色面板
-        document.getElementById('route-draw-panel').style.display = 'none'; // 【新增】隐藏悬浮控制台
-
-        // === 【新增 v3.7】中途被关闭画笔（或被其他操作强行切断）时，无情清空未保存的路线！ ===
-        if (typeof currentRoutePoints !== 'undefined' && currentRoutePoints.length > 0) {
-            if (currentRouteLine) map.removeLayer(currentRouteLine);
-            if (currentRouteDecorator) map.removeLayer(currentRouteDecorator);
-            if (currentRouteStartMarker) map.removeLayer(currentRouteStartMarker);
-
-            currentRoutePoints = [];
-            currentRouteLine = null;
-            currentRouteDecorator = null;
-            currentRouteStartMarker = null;
-
-            showToast('未保存，本次绘线已自动清空喵！', 'error');
-        }
-        // =========================================================================
+    if (!routeToggle) {
+        console.warn('⚠️ 路线开关元素未找到');
+        return;
     }
-    // === 核心黑科技修复：关闭画笔时，让所有隐形判定线"变空气"，允许鼠标穿透！ ===
-    Object.values(allRoutes).forEach(route => {
-        if (route.hitArea && route.hitArea.getElement()) {
-            route.hitArea.getElement().style.pointerEvents = isRouteMode ? 'visiblePainted' : 'none';
-        }
-    });
-});
 
-// 监听颜色选择
-document.querySelectorAll('.route-color-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        // 移除所有按钮的 active 状态
-        document.querySelectorAll('.route-color-btn').forEach(b => b.classList.remove('active'));
-        // 给当前点的按钮加上 active
-        this.classList.add('active');
-        // 保存选中的颜色
-        currentRouteColor = this.dataset.color;
+    routeToggle.addEventListener('change', function () {
+        const isRouteMode = this.checked;
+
+        if (isRouteMode) {
+            // === 修改 1：互斥逻辑 -> 打开路线模式时，强制关闭浏览模式 ===
+            const browseToggle = document.getElementById('browse-mode-toggle');
+            if (browseToggle && browseToggle.checked) {
+                browseToggle.checked = false;
+            }
+            // === 修改 2：清除选中的宝箱标记，确保不会乱点 ===
+            document.querySelectorAll('#marker-types .marker-type').forEach(e => e.classList.remove('active'));
+            currentMarkerType = null;
+
+            const tipEl = document.getElementById('marker-tip');
+            if (tipEl) {
+                tipEl.textContent = '当前为路线绘制模式';
+                tipEl.style.color = '#FF3333';
+            }
+
+            if (routeTools) routeTools.style.display = 'block'; // 显示颜色面板
+            const routeDrawPanel = document.getElementById('route-draw-panel');
+            if (routeDrawPanel) routeDrawPanel.style.display = 'flex'; // 【新增】显示悬浮控制台
+            showToast('已进入路线绘制模式', 'success');
+        } else {
+            if (routeTools) routeTools.style.display = 'none'; // 隐藏颜色面板
+            const routeDrawPanel = document.getElementById('route-draw-panel');
+            if (routeDrawPanel) routeDrawPanel.style.display = 'none'; // 【新增】隐藏悬浮控制台
+
+            // === 【新增 v3.7】中途被关闭画笔（或被其他操作强行切断）时，无情清空未保存的路线！ ===
+            if (typeof currentRoutePoints !== 'undefined' && currentRoutePoints.length > 0) {
+                if (currentRouteLine) map.removeLayer(currentRouteLine);
+                if (currentRouteDecorator) map.removeLayer(currentRouteDecorator);
+                if (currentRouteStartMarker) map.removeLayer(currentRouteStartMarker);
+
+                currentRoutePoints = [];
+                currentRouteLine = null;
+                currentRouteDecorator = null;
+                currentRouteStartMarker = null;
+
+                showToast('未保存，本次绘线已自动清空喵！', 'error');
+            }
+            // =========================================================================
+        }
+        // === 核心黑科技修复：关闭画笔时，让所有隐形判定线"变空气"，允许鼠标穿透！ ===
+        Object.values(allRoutes).forEach(route => {
+            if (route.hitArea && route.hitArea.getElement()) {
+                route.hitArea.getElement().style.pointerEvents = isRouteMode ? 'visiblePainted' : 'none';
+            }
+        });
     });
-});
+
+    // 监听颜色选择
+    document.querySelectorAll('.route-color-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            // 移除所有按钮的 active 状态
+            document.querySelectorAll('.route-color-btn').forEach(b => b.classList.remove('active'));
+            // 给当前点的按钮加上 active
+            this.classList.add('active');
+            // 保存选中的颜色
+            currentRouteColor = this.dataset.color;
+            console.log('🎨 选择路线颜色：', currentRouteColor);
+        });
+    });
+}
 
 // === 新增：路线绘制的核心变量与按钮逻辑 ===
 
@@ -147,7 +163,8 @@ window.finishRouteDrawing = function () {
     showToast(`路线 [${routeName}] 保存成功！`, 'success');
 
     // 顺便把画笔开关关掉，自动收起面板，体验丝滑
-    if (routeToggle.checked) {
+    const routeToggle = getRouteToggle();
+    if (routeToggle && routeToggle.checked) {
         routeToggle.checked = false;
         routeToggle.dispatchEvent(new Event('change'));
     }
@@ -167,7 +184,8 @@ window.cancelRouteDrawing = function () {
     showToast('已清空当前画笔', 'info');
 
     // 取消画线时，也顺便把侧边栏开关关掉
-    if (routeToggle.checked) {
+    const routeToggle = getRouteToggle();
+    if (routeToggle && routeToggle.checked) {
         routeToggle.checked = false;
         routeToggle.dispatchEvent(new Event('change'));
     }
@@ -242,81 +260,84 @@ window.deleteRoute = function (id) {
     }
 };
 
-// 地图点击事件 - 路线绘制处理
-map.on('click', function (e) {
-    // 先获取当前的交互模式状态
-    const routeToggle = document.getElementById('route-mode-toggle');
-    const isRouteMode = routeToggle && routeToggle.checked;
-    const isCurrentlyBrowseMode = document.getElementById('browse-mode-toggle').checked;
+// 绑定地图点击事件（在 main.js 初始化后调用）
+function bindRouteEvents() {
+    // 地图点击事件 - 路线绘制处理
+    map.on('click', function (e) {
+        // 先获取当前的交互模式状态
+        const routeToggle = document.getElementById('route-mode-toggle');
+        const isRouteMode = routeToggle && routeToggle.checked;
+        const isCurrentlyBrowseMode = document.getElementById('browse-mode-toggle').checked;
 
-    // === 【修改 v3.7】：温和版宇宙边界安检口喵！ ===
-    if (e.latlng.lat < 0 || e.latlng.lat > currentMapConfig.width ||
-        e.latlng.lng < 0 || e.latlng.lng > currentMapConfig.height) {
+        // === 【修改 v3.7】：温和版宇宙边界安检口喵！ ===
+        if (e.latlng.lat < 0 || e.latlng.lat > currentMapConfig.width ||
+            e.latlng.lng < 0 || e.latlng.lng > currentMapConfig.height) {
 
-        // 只有当用户"真的想干活"（正在画线，或者关闭了浏览模式且选好了标记）时，点到外面才弹窗提示
-        if (isRouteMode || (!isCurrentlyBrowseMode && currentMarkerType)) {
-            showToast('点到地图外面去啦，请在有效范围内操作哦~', 'error');
+            // 只有当用户"真的想干活"（正在画线，或者关闭了浏览模式且选好了标记）时，点到外面才弹窗提示
+            if (isRouteMode || (!isCurrentlyBrowseMode && currentMarkerType)) {
+                showToast('点到地图外面去啦，请在有效范围内操作哦~', 'error');
+            }
+            // 如果是纯浏览模式，或者是没选标记到处乱点，那就安静地拦截，绝不打扰！
+            return;
         }
-        // 如果是纯浏览模式，或者是没选标记到处乱点，那就安静地拦截，绝不打扰！
-        return;
-    }
-    // ========================================================
+        // ========================================================
 
-    // === 新增：如果在路线绘制模式下，拦截点击去画线！ ===
-    if (isRouteMode) {
-        currentRoutePoints.push(e.latlng);
+        // === 新增：如果在路线绘制模式下，拦截点击去画线！ ===
+        if (isRouteMode) {
+            currentRoutePoints.push(e.latlng);
 
-        // 清除旧的临时线、箭头和起点标记
-        if (currentRouteLine) map.removeLayer(currentRouteLine);
-        if (currentRouteDecorator) map.removeLayer(currentRouteDecorator);
-        if (currentRouteStartMarker) map.removeLayer(currentRouteStartMarker);
+            // 清除旧的临时线、箭头和起点标记
+            if (currentRouteLine) map.removeLayer(currentRouteLine);
+            if (currentRouteDecorator) map.removeLayer(currentRouteDecorator);
+            if (currentRouteStartMarker) map.removeLayer(currentRouteStartMarker);
 
-        // 如果只有一个点，画一个圆点作为起点反馈！
-        if (currentRoutePoints.length === 1) {
-            currentRouteStartMarker = L.circleMarker(currentRoutePoints[0], {
-                radius: 6,
-                color: '#fff',
-                weight: 2,
-                fillColor: currentRouteColor,
-                fillOpacity: 1
-            }).addTo(map);
+            // 如果只有一个点，画一个圆点作为起点反馈！
+            if (currentRoutePoints.length === 1) {
+                currentRouteStartMarker = L.circleMarker(currentRoutePoints[0], {
+                    radius: 6,
+                    color: '#fff',
+                    weight: 2,
+                    fillColor: currentRouteColor,
+                    fillOpacity: 1
+                }).addTo(map);
+            }
+            // 如果有两个及以上的点，画线和箭头
+            else {
+                currentRouteLine = L.polyline(currentRoutePoints, {
+                    color: currentRouteColor,
+                    weight: 6,
+                    opacity: 1.0
+                }).addTo(map);
+
+                currentRouteDecorator = L.polylineDecorator(currentRouteLine, {
+                    patterns: [
+                        { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: currentRouteColor } }) }
+                    ]
+                }).addTo(map);
+            }
+
+            // 【新增：刚画下去就立刻应用当前缩放比例的粗细】
+            if (typeof updateAllRoutesThickness === 'function') updateAllRoutesThickness();
+            return; // 拦截成功！
         }
-        // 如果有两个及以上的点，画线和箭头
-        else {
-            currentRouteLine = L.polyline(currentRoutePoints, {
-                color: currentRouteColor,
-                weight: 6,
-                opacity: 1.0
-            }).addTo(map);
+        // ====================================================
 
-            currentRouteDecorator = L.polylineDecorator(currentRouteLine, {
-                patterns: [
-                    { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: currentRouteColor } }) }
-                ]
-            }).addTo(map);
+        // 1. 先检查浏览模式开关是否打开
+        const isBrowseMode = document.getElementById('browse-mode-toggle').checked;
+        if (isBrowseMode) {
+            showToast('当前为浏览模式，请先关闭开关或选择一个标记', 'info');
+            return; // 直接退出，不添加标记
         }
 
-        // 【新增：刚画下去就立刻应用当前缩放比例的粗细】
-        if (typeof updateAllRoutesThickness === 'function') updateAllRoutesThickness();
-        return; // 拦截成功！
-    }
-    // ====================================================
-
-    // 1. 先检查浏览模式开关是否打开
-    const isBrowseMode = document.getElementById('browse-mode-toggle').checked;
-    if (isBrowseMode) {
-        showToast('当前为浏览模式，请先关闭开关或选择一个标记', 'info');
-        return; // 直接退出，不添加标记
-    }
-
-    // 2. 如果开关关了，但没选标记类型
-    if (!currentMarkerType) {
-        showToast('请先选择一个标记类型', 'info');
-        const markerSection = document.getElementById('marker-types');
-        markerSection.style.transition = 'opacity 0.3s';
-        markerSection.style.opacity = 0.5;
-        setTimeout(() => { markerSection.style.opacity = '1'; }, 300);
-        return;
-    }
-    addMarker(e.latlng, currentMarkerType);
-});
+        // 2. 如果开关关了，但没选标记类型
+        if (!currentMarkerType) {
+            showToast('请先选择一个标记类型', 'info');
+            const markerSection = document.getElementById('marker-types');
+            markerSection.style.transition = 'opacity 0.3s';
+            markerSection.style.opacity = 0.5;
+            setTimeout(() => { markerSection.style.opacity = '1'; }, 300);
+            return;
+        }
+        addMarker(e.latlng, currentMarkerType);
+    });
+}

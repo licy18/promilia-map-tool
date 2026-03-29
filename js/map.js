@@ -385,73 +385,76 @@ window.switchMap = function (mapId) {
     loadMap(mapId);
 };
 
-// === 【终极版 v3.7】正向同频丝滑缩放引擎喵！（去掉愚蠢的反向补偿>_<） ===
-// 1. 监听滚轮触发的 0.25秒 CSS 原生缩放动画，直接同步缩放指令！
-map.on('zoomanim', function (e) {
-    let targetZoom = e.zoom;
-    // 我们期望标签最终达到的视觉倍数
-    let targetMarkerScale = Math.max(0.3, Math.min(1.5, Math.pow(1.5, targetZoom)));
+// 绑定地图事件（在 main.js 初始化地图后调用）
+function bindMapEvents() {
+    // === 【终极版 v3.7】正向同频丝滑缩放引擎喵！（去掉愚蠢的反向补偿>_<） ===
+    // 1. 监听滚轮触发的 0.25秒 CSS 原生缩放动画，直接同步缩放指令！
+    map.on('zoomanim', function (e) {
+        let targetZoom = e.zoom;
+        // 我们期望标签最终达到的视觉倍数
+        let targetMarkerScale = Math.max(0.3, Math.min(1.5, Math.pow(1.5, targetZoom)));
 
-    // 老老实实地开启同频 CSS 动画 (跟 Leaflet 底层默认动画曲线严丝合缝)
-    document.documentElement.style.setProperty('--marker-transition', '0.25s cubic-bezier(0,0,0.25,1)');
-    document.documentElement.style.setProperty('--marker-scale', targetMarkerScale);
-});
+        // 老老实实地开启同频 CSS 动画 (跟 Leaflet 底层默认动画曲线严丝合缝)
+        document.documentElement.style.setProperty('--marker-transition', '0.25s cubic-bezier(0,0,0.25,1)');
+        document.documentElement.style.setProperty('--marker-scale', targetMarkerScale);
+    });
 
-// === 【新增 v3.7】根据层数动态调节瓦片预加载数量的聪明大脑喵！ ===
-map.on('zoomend', function () {
-    if (tileLayer) {
-        // 获取当前绝对缩放层级
+    // === 【新增 v3.7】根据层数动态调节瓦片预加载数量的聪明大脑喵！ ===
+    map.on('zoomend', function () {
+        if (tileLayer) {
+            // 获取当前绝对缩放层级
+            let currentZoom = map.getZoom();
+
+            // 核心算法：层级越大（看得越近），需要预加载的周围瓦片圈数就越多！
+            // 限制在最小 2 圈，最大 8 圈的舒适区间内
+            let dynamicBuffer = Math.max(2, Math.min(8, Math.round((currentZoom + 3) * 1.5)));
+
+            tileLayer.options.keepBuffer = dynamicBuffer;
+            // 可以解除下面这行注释来观察引擎的聪明表现喵~
+            // console.log(`[引擎监控] 贴地飞行中，瓦片预加载缓冲已动态扩张为：${dynamicBuffer} 圈！`);
+        }
+    });
+    // =======================================================
+
+    // === 【终极版 v3.7】正向同频丝滑缩放引擎喵！（去掉愚蠢的反向补偿>_<） ===
+    // 2. 动画结束瞬间的状态光速交接
+    map.on('zoomend', function () {
         let currentZoom = map.getZoom();
+        let finalScale = Math.max(0.3, Math.min(1.5, Math.pow(1.5, currentZoom)));
 
-        // 核心算法：层级越大（看得越近），需要预加载的周围瓦片圈数就越多！
-        // 限制在最小 2 圈，最大 8 圈的舒适区间内
-        let dynamicBuffer = Math.max(2, Math.min(8, Math.round((currentZoom + 3) * 1.5)));
+        // 关闭动画，光速无缝替换！（因为此时地图底层的 paneScale 瞬间归零了）
+        document.documentElement.style.setProperty('--marker-transition', '0s');
+        document.documentElement.style.setProperty('--marker-scale', finalScale);
 
-        tileLayer.options.keepBuffer = dynamicBuffer;
-        // 可以解除下面这行注释来观察引擎的聪明表现喵~
-        // console.log(`[引擎监控] 贴地飞行中，瓦片预加载缓冲已动态扩张为：${dynamicBuffer} 圈！`);
-    }
-});
-// =======================================================
+        // 同步更新路线粗细
+        updateAllRoutesThickness();
+    });
 
-// === 【终极版 v3.7】正向同频丝滑缩放引擎喵！（去掉愚蠢的反向补偿>_<） ===
-// 2. 动画结束瞬间的状态光速交接
-map.on('zoomend', function () {
-    let currentZoom = map.getZoom();
-    let finalScale = Math.max(0.3, Math.min(1.5, Math.pow(1.5, currentZoom)));
+    // 3. 触控板无级缩放 (Pinch Zoom) 等实时事件的平滑处理
+    map.on('zoom', function () {
+        // 如果正在进行 0.25s 的滚轮动画，绝对不要干扰它，全权交给上面的逆向引擎！
+        if (map._animatingZoom) return;
+        updateAllRoutesThickness();
+    });
+    // =======================================================
 
-    // 关闭动画，光速无缝替换！（因为此时地图底层的 paneScale 瞬间归零了）
-    document.documentElement.style.setProperty('--marker-transition', '0s');
-    document.documentElement.style.setProperty('--marker-scale', finalScale);
-
-    // 同步更新路线粗细
-    updateAllRoutesThickness();
-});
-
-// 3. 触控板无级缩放 (Pinch Zoom) 等实时事件的平滑处理
-map.on('zoom', function () {
-    // 如果正在进行 0.25s 的滚轮动画，绝对不要干扰它，全权交给上面的逆向引擎！
-    if (map._animatingZoom) return;
-    updateAllRoutesThickness();
-});
-// =======================================================
-
-// 保存地图视图（缩放级别和中心点）- 按地图保存
-let saveViewTimeout;
-map.on('moveend zoomend', function () {
-    clearTimeout(saveViewTimeout);
-    saveViewTimeout = setTimeout(() => {
-        const view = {
-            center: map.getCenter(),
-            zoom: map.getZoom()
-        };
-        // 保存到当前地图的视图
-        mapViews[currentMapId] = view;
-        // 同时保存到 localStorage（兼容旧版）
-        localStorage.setItem('promilia-map-view', JSON.stringify(view));
-        console.log(`💾 视图已保存：${currentMapId} (zoom=${view.zoom})`);
-    }, 500);
-});
+    // 保存地图视图（缩放级别和中心点）- 按地图保存
+    let saveViewTimeout;
+    map.on('moveend zoomend', function () {
+        clearTimeout(saveViewTimeout);
+        saveViewTimeout = setTimeout(() => {
+            const view = {
+                center: map.getCenter(),
+                zoom: map.getZoom()
+            };
+            // 保存到当前地图的视图
+            mapViews[currentMapId] = view;
+            // 同时保存到 localStorage（兼容旧版）
+            localStorage.setItem('promilia-map-view', JSON.stringify(view));
+            console.log(`💾 视图已保存：${currentMapId} (zoom=${view.zoom})`);
+        }, 500);
+    });
+}
 
 // 恢复地图视图（从 localStorage）
 function restoreView() {

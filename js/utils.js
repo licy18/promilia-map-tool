@@ -96,6 +96,9 @@ const batchToggleCollected = (markerIds, collect) => {
     saveCollectedMarkers();
     precomputeStats();
     updateProgressStats();
+    
+    // 刷新地图上所有标记的显示
+    refreshAllMarkers();
 };
 
 // 清除所有收集状态
@@ -104,6 +107,37 @@ const clearCollectedMarkers = () => {
     saveCollectedMarkers();
     precomputeStats();
     updateProgressStats();
+    
+    // 刷新地图上所有标记的显示
+    refreshAllMarkers();
+};
+
+// 刷新地图上所有标记的图标和弹出框
+const refreshAllMarkers = () => {
+    // 遍历所有标记数据
+    Object.values(markerData).forEach(marker => {
+        const id = marker.id;
+        if (clusterEnabled) {
+            markers.eachLayer(layer => {
+                if (layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                    layer.setPopupContent(createPopupContent(marker));
+                    layer.setIcon(createMarkerIcon(marker.type, id));
+                }
+            });
+        } else {
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(id)) {
+                    layer.setPopupContent(createPopupContent(marker));
+                    layer.setIcon(createMarkerIcon(marker.type, id));
+                }
+            });
+        }
+    });
+    
+    // 更新统计
+    if (typeof updateStats === 'function') {
+        updateStats();
+    }
 };
 
 // 计算收集进度（使用预计算数据）

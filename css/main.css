@@ -63,7 +63,6 @@ body {
     writing-mode: vertical-lr; /* 让滑动条垂直站立 */
     direction: rtl; /* 修复滑动方向，让上是加，下是减 */
     /* ======================================================= */
-    appearance: slider-vertical;
     background: #16213e;
     outline: none;
     border-radius: 4px;

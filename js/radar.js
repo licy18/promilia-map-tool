@@ -3,16 +3,26 @@
  */
 
 // === 新增：区域统计雷达核心引擎 ===
-let radarLayerGroup = L.featureGroup().addTo(map); // 装雷达网格的专属图层
+let radarLayerGroup = null; // 延迟初始化
 let radarRegionsMap = {}; // 【新增】用于存放区域 ID 与多边形实例的映射，实现点击定位
 const EPSILON = 0.0005; // 【黑科技】：压线判定的容差宽度（地图坐标单位）
 
+// 初始化雷达图层（在 main.js 中调用）
+function initRadarLayer() {
+    if (!radarLayerGroup && map) {
+        radarLayerGroup = L.featureGroup().addTo(map);
+    }
+}
+
 // 1. 面板开关逻辑
-document.getElementById('radar-toggle-btn').addEventListener('click', function () {
-    const panel = document.getElementById('radar-panel');
-    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
-    if (panel.style.display === 'flex') initRadarFilters(); // 每次打开刷新过滤选项
-});
+const radarToggleBtn = document.getElementById('radar-toggle-btn');
+if (radarToggleBtn) {
+    radarToggleBtn.addEventListener('click', function () {
+        const panel = document.getElementById('radar-panel');
+        panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+        if (panel.style.display === 'flex') initRadarFilters(); // 每次打开刷新过滤选项
+    });
+}
 
 // 2. 初始化目标勾选项
 function initRadarFilters() {
@@ -42,14 +52,16 @@ let radarDrawStart = null;
 let radarTempRect = null;
 
 window.clearRadar = function () {
-    radarLayerGroup.clearLayers();
-    document.getElementById('radar-report').innerHTML = '等待扫描...';
+    if (radarLayerGroup) radarLayerGroup.clearLayers();
+    const reportEl = document.getElementById('radar-report');
+    if (reportEl) reportEl.innerHTML = '等待扫描...';
 
     // 安全兜底：如果在划线中途点清理，恢复地图物理状态
     isDrawingRadar = false;
-    map.dragging.enable();
-    document.getElementById('map-container').style.cursor = '';
-    if (radarTempRect) {
+    if (map && map.dragging) map.dragging.enable();
+    const mapContainer = document.getElementById('map-container');
+    if (mapContainer) mapContainer.style.cursor = '';
+    if (radarTempRect && map) {
         map.removeLayer(radarTempRect);
         radarTempRect = null;
     }
@@ -66,43 +78,47 @@ window.enableRadarDraw = function () {
     }
 
     isDrawingRadar = true;
-    map.dragging.disable(); // 禁用地图拖拽，把左键让给画笔
-    document.getElementById('map-container').style.cursor = 'crosshair'; // 变成十字瞄准星
+    if (map && map.dragging) map.dragging.disable(); // 禁用地图拖拽，把左键让给画笔
+    const mapContainer = document.getElementById('map-container');
+    if (mapContainer) mapContainer.style.cursor = 'crosshair'; // 变成十字瞄准星
     showToast('请在地图上【按住鼠标左键拖拽】划定扫描区域', 'info');
 };
 
-// 监听鼠标在地图上的拖拽
-map.on('mousedown', function (e) {
-    if (!isDrawingRadar) return;
-    radarDrawStart = e.latlng;
-});
+// 绑定雷达事件（在 main.js 初始化后调用）
+function bindRadarEvents() {
+    // 监听鼠标在地图上的拖拽
+    map.on('mousedown', function (e) {
+        if (!isDrawingRadar) return;
+        radarDrawStart = e.latlng;
+    });
 
-map.on('mousemove', function (e) {
-    if (!isDrawingRadar || !radarDrawStart) return;
-    if (radarTempRect) map.removeLayer(radarTempRect);
-    radarTempRect = L.rectangle([radarDrawStart, e.latlng], {
-        color: '#00d9ff', weight: 2, fillOpacity: 0.2, dashArray: '5, 5'
-    }).addTo(map); // 画出酷炫的虚线瞄准框
-});
+    map.on('mousemove', function (e) {
+        if (!isDrawingRadar || !radarDrawStart) return;
+        if (radarTempRect) map.removeLayer(radarTempRect);
+        radarTempRect = L.rectangle([radarDrawStart, e.latlng], {
+            color: '#00d9ff', weight: 2, fillOpacity: 0.2, dashArray: '5, 5'
+        }).addTo(map); // 画出酷炫的虚线瞄准框
+    });
 
-map.on('mouseup', function (e) {
-    if (!isDrawingRadar || !radarDrawStart) return;
+    map.on('mouseup', function (e) {
+        if (!isDrawingRadar || !radarDrawStart) return;
 
-    const finalBounds = L.latLngBounds(radarDrawStart, e.latlng);
+        const finalBounds = L.latLngBounds(radarDrawStart, e.latlng);
 
-    // 划完后立刻恢复地图的拖拽功能
-    isDrawingRadar = false;
-    map.dragging.enable();
-    document.getElementById('map-container').style.cursor = '';
-    radarDrawStart = null;
-    if (radarTempRect) map.removeLayer(radarTempRect);
+        // 划完后立刻恢复地图的拖拽功能
+        isDrawingRadar = false;
+        map.dragging.enable();
+        document.getElementById('map-container').style.cursor = '';
+        radarDrawStart = null;
+        if (radarTempRect) map.removeLayer(radarTempRect);
 
-    // 如果只是误点了一下（没划出面积），就不触发
-    if (finalBounds.getNorth() === finalBounds.getSouth()) return;
+        // 如果只是误点了一下（没划出面积），就不触发
+        if (finalBounds.getNorth() === finalBounds.getSouth()) return;
 
-    // 触发雷达！模式设为纯矩形，分 1 块，把用户划的边界传进去！
-    runRadar('grid', 1, finalBounds);
-});
+        // 触发雷达！模式设为纯矩形，分 1 块，把用户划的边界传进去！
+        runRadar('grid', 1, finalBounds);
+    });
+}
 
 // 5. 核心扫描启动器 (新增 customBounds 参数接收手划区域)
 window.runRadar = function (mode, count, customBounds = null) {
@@ -167,7 +183,8 @@ window.runRadar = function (mode, count, customBounds = null) {
             weight: 2,
             fillOpacity: 0.1,
             regionId: regionId // 注入自定义属性
-        }).addTo(radarLayerGroup);
+        });
+        if (radarLayerGroup) polygon.addTo(radarLayerGroup);
 
         radarRegionsMap[regionId] = polygon; // 存入索引
 
@@ -176,10 +193,11 @@ window.runRadar = function (mode, count, customBounds = null) {
         polyCoords.forEach(p => { centerLat += p[0]; centerLng += p[1]; });
         centerLat /= polyCoords.length; centerLng /= polyCoords.length;
 
-        L.marker([centerLat, centerLng], {
+        const labelMarker = L.marker([centerLat, centerLng], {
             icon: L.divIcon({ className: 'radar-label-icon', html: regionId, iconSize: [40, 40] }),
             interactive: false
-        }).addTo(radarLayerGroup);
+        });
+        if (radarLayerGroup) labelMarker.addTo(radarLayerGroup);
 
         let stats = {};
         let total = 0;
@@ -242,7 +260,7 @@ window.runRadar = function (mode, count, customBounds = null) {
 // 【新增】雷达点击定位与复制报告工具函数
 window.focusRadarRegion = function (id) {
     const poly = radarRegionsMap[id];
-    if (poly) {
+    if (poly && map) {
         map.fitBounds(poly.getBounds(), { padding: [100, 100], maxZoom: 1, animate: true });
         const originalStyle = { fillOpacity: 0.1, color: '#ff3333' };
         poly.setStyle({ fillOpacity: 0.7, color: '#00d9ff' });

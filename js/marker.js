@@ -208,10 +208,17 @@ window.deleteMarker = function (id) {
 // 切换标记收集状态
 window.toggleMarkerCollect = function (id) {
     console.log('[toggleMarkerCollect] 切换标记收集状态:', id);
-    const isCollected = toggleMarkerCollected(id);
+    // 直接切换收集状态
+    collectedMarkers[id] = !collectedMarkers[id];
+    const isCollected = collectedMarkers[id];
     const statusText = isCollected ? '已标记为已收集' : '已取消收集';
 
     console.log('[toggleMarkerCollect] 当前收集状态:', isCollected, 'collectedMarkers:', collectedMarkers);
+
+    // 保存收集状态
+    if (typeof saveCollectedMarkers === 'function') {
+        saveCollectedMarkers();
+    }
 
     // 更新标记弹窗
     if (markerData[id]) {

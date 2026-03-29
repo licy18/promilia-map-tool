@@ -160,12 +160,21 @@ initBatchTypeSelect();
 // 初始化地图（使用保存的地图 ID，保持缩放）
 loadMap(currentMapId, true);
 
+// 绑定地图事件（必须在 map 初始化后调用）
+if (typeof bindMapEvents === 'function') bindMapEvents();
+if (typeof bindRouteEvents === 'function') bindRouteEvents();
+if (typeof bindRadarEvents === 'function') bindRadarEvents();
+if (typeof initRouteEvents === 'function') initRouteEvents();
+if (typeof initRadarLayer === 'function') initRadarLayer();
+
 // 初始化滑动条值
 setTimeout(updateZoomSlider, 500);
 
 // 绑定缩放按钮事件
-document.getElementById('zoom-in').addEventListener('click', zoomIn);
-document.getElementById('zoom-out').addEventListener('click', zoomOut);
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
+if (zoomInBtn) zoomInBtn.addEventListener('click', zoomIn);
+if (zoomOutBtn) zoomOutBtn.addEventListener('click', zoomOut);
 
 // 智能清空数据处理
 window.executeClearData = function () {
