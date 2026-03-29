@@ -176,6 +176,39 @@ const zoomOutBtn = document.getElementById('zoom-out');
 if (zoomInBtn) zoomInBtn.addEventListener('click', zoomIn);
 if (zoomOutBtn) zoomOutBtn.addEventListener('click', zoomOut);
 
+// 绑定缩放滑动条事件
+const zoomSlider = document.getElementById('zoom-slider');
+if (zoomSlider) {
+    zoomSlider.addEventListener('input', function() {
+        const zoomValue = parseFloat(this.value);
+        map.setZoom(zoomValue);
+    });
+}
+
+// 缩放控制函数
+window.zoomIn = function() {
+    map.zoomIn();
+    updateZoomSlider();
+};
+
+window.zoomOut = function() {
+    map.zoomOut();
+    updateZoomSlider();
+};
+
+window.resetMapCenter = function() {
+    const bounds = currentMapConfig.bounds || [[0, 0], [currentMapConfig.height, currentMapConfig.width]];
+    map.fitBounds(bounds);
+    updateZoomSlider();
+};
+
+function updateZoomSlider() {
+    const zoomSlider = document.getElementById('zoom-slider');
+    if (zoomSlider) {
+        zoomSlider.value = map.getZoom();
+    }
+}
+
 // 智能清空数据处理
 window.executeClearData = function () {
     const scope = document.querySelector('input[name="clear-scope"]:checked').value;
@@ -259,6 +292,195 @@ document.getElementById('user-toggle-btn').addEventListener('click', function() 
     const panel = document.getElementById('user-panel');
     panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
 });
+
+// === 新增：追踪器集成 ===
+let trackerMarker = null;
+let trackerWebSocket = null;
+let trackerEnabled = false;
+
+// 创建追踪标记
+function createTrackerMarker(lat, lng) {
+    if (trackerMarker) {
+        map.removeLayer(trackerMarker);
+    }
+    
+    const icon = L.divIcon({
+        html: `
+            <div style="
+                width: 30px;
+                height: 30px;
+                background: #ff3333;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 3px solid white;
+                box-shadow: 0 0 15px rgba(255, 51, 51, 0.8);
+                animation: pulse 1.5s infinite;
+            ">
+                <i class="fas fa-user" style="color: white; font-size: 14px;"></i>
+            </div>
+            <style>
+                @keyframes pulse {
+                    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); }
+                    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); }
+                    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); }
+                }
+            </style>
+        `,
+        className: 'tracker-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+    
+    trackerMarker = L.marker([lat, lng], {
+        icon: icon,
+        zIndexOffset: 1000 // 确保在最上层
+    }).addTo(map);
+    
+    trackerMarker.bindPopup('<b>追踪位置</b><br>实时更新中...');
+}
+
+// 更新追踪器状态显示
+function updateTrackerStatus(status, color = '#f39c12') {
+    const statusEl = document.getElementById('tracker-status');
+    if (statusEl) {
+        statusEl.textContent = status;
+        statusEl.style.color = color;
+    }
+}
+
+// 连接追踪器 WebSocket
+function connectTracker() {
+    if (trackerWebSocket) {
+        try {
+            trackerWebSocket.close();
+        } catch (e) {}
+    }
+    
+    try {
+        trackerWebSocket = new WebSocket('ws://localhost:8765');
+        
+        trackerWebSocket.onopen = function() {
+            console.log('🔌 追踪器已连接');
+            showToast('追踪器已连接', 'success');
+            updateTrackerStatus('已连接', '#2ecc71');
+        };
+        
+        trackerWebSocket.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('📍 收到数据:', data);
+                
+                if (data.type === 'connection') {
+                    // 处理连接状态消息
+                    if (data.status === 'connected') {
+                        updateTrackerStatus('已连接', '#2ecc71');
+                    }
+                } else if (data.type === 'location' && data.data) {
+                    // 处理位置数据
+                    const location = data.data;
+                    if (location.lat && location.lng) {
+                        createTrackerMarker(location.lat, location.lng);
+                    }
+                } else if (data.lat && data.lng) {
+                    // 兼容旧格式
+                    createTrackerMarker(data.lat, data.lng);
+                }
+            } catch (e) {
+                console.error('解析位置数据失败:', e);
+            }
+        };
+        
+        trackerWebSocket.onerror = function(error) {
+            console.error('🔌 追踪器连接错误:', error);
+            updateTrackerStatus('连接错误', '#e74c3c');
+        };
+        
+        trackerWebSocket.onclose = function() {
+            console.log('🔌 追踪器连接已关闭');
+            updateTrackerStatus('未连接', '#f39c12');
+            if (trackerEnabled) {
+                // 自动重连
+                setTimeout(connectTracker, 3000);
+            }
+        };
+    } catch (e) {
+        console.error('🔌 无法连接追踪器:', e);
+        showToast('无法连接追踪器，请确保追踪程序正在运行', 'error');
+        updateTrackerStatus('连接失败', '#e74c3c');
+    }
+}
+
+// 切换追踪器
+window.toggleTracker = function() {
+    const toggle = document.getElementById('tracker-toggle');
+    if (!toggle) return;
+    
+    trackerEnabled = toggle.checked;
+    
+    // 保存状态到 localStorage
+    localStorage.setItem('promilia-tracker-enabled', trackerEnabled);
+    
+    if (trackerEnabled) {
+        connectTracker();
+        showToast('已开启追踪模式', 'success');
+    } else {
+        if (trackerWebSocket) {
+            trackerWebSocket.close();
+            trackerWebSocket = null;
+        }
+        if (trackerMarker) {
+            map.removeLayer(trackerMarker);
+            trackerMarker = null;
+        }
+        showToast('已关闭追踪模式', 'info');
+    }
+};
+
+// 初始化追踪器 UI
+function initTrackerUI() {
+    // 检查是否已存在追踪器开关
+    if (!document.getElementById('tracker-toggle')) {
+        // 在侧边栏添加追踪器开关
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            const trackerSection = document.createElement('div');
+            trackerSection.innerHTML = `
+                <div style="margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="color: #00d9ff; font-weight: bold;">📍 位置追踪</span>
+                        <label class="switch">
+                            <input type="checkbox" id="tracker-toggle" onchange="toggleTracker()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div style="font-size: 0.8em; color: #888; line-height: 1.3;">
+                        <p>连接到 Python 追踪程序，实时显示游戏内位置</p>
+                        <p style="margin-top: 5px;">状态: <span id="tracker-status" style="color: #f39c12;">未连接</span></p>
+                    </div>
+                </div>
+            `;
+            sidebar.appendChild(trackerSection);
+        }
+    }
+    
+    // 恢复追踪器状态
+    const savedEnabled = localStorage.getItem('promilia-tracker-enabled');
+    if (savedEnabled !== null) {
+        trackerEnabled = savedEnabled === 'true';
+        const toggle = document.getElementById('tracker-toggle');
+        if (toggle) {
+            toggle.checked = trackerEnabled;
+            if (trackerEnabled) {
+                connectTracker();
+            }
+        }
+    }
+}
+
+// 初始化追踪器
+initTrackerUI();
 
 console.log('✅ 普罗米利亚地图标记工具启动完成');
 showToast('普罗米利亚地图工具已就绪', 'success');

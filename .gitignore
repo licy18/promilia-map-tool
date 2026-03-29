@@ -12,6 +12,10 @@ venv/
 env/
 ENV/
 
+# 视频文件
+*.mp4
+*.mkv
+
 # 日志
 *.log
 
@@ -26,3 +30,6 @@ maps/**/*.png
 
 # Node
 node_modules/
+
+# 其他文件
+old.html
