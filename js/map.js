@@ -454,6 +454,19 @@ function bindMapEvents() {
             console.log(`💾 视图已保存：${currentMapId} (zoom=${view.zoom})`);
         }, 500);
     });
+
+    // 地图空白区域右键点击事件
+    map.on('contextmenu', function(e) {
+        e.originalEvent.preventDefault();
+        // 检查点击位置是否有标记
+        const containerPoint = map.latLngToContainerPoint(e.latlng);
+        const target = document.elementFromPoint(containerPoint.x, containerPoint.y);
+        
+        // 如果点击的是地图空白区域（不是标记或其他控件）
+        if (target && target.closest('#map') && !target.closest('.leaflet-marker-icon') && !target.closest('.leaflet-popup') && !target.closest('.custom-zoom-control') && !target.closest('#map-manager-btn') && !target.closest('#radar-toggle-btn') && !target.closest('#user-toggle-btn')) {
+            showMapContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, e.latlng);
+        }
+    });
 }
 
 // 恢复地图视图（从 localStorage）

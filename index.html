@@ -963,6 +963,26 @@
         <div class="bilibili-text">点击获取最新版本</div>
     </a>
 
+    <!-- 右键菜单 -->
+    <div id="context-menu" style="display: none; position: fixed; z-index: 10000; background: #16213e; border: 1px solid #1a4a7a; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+        <div class="context-menu-item" data-action="toggle-collect">
+            <i class="fas fa-check-circle"></i> <span id="collect-status">已收集</span>
+        </div>
+        <div class="context-menu-item" data-action="move">
+            <i class="fas fa-arrows"></i> 移动
+        </div>
+        <div class="context-menu-item" data-action="delete">
+            <i class="fas fa-trash"></i> 删除
+        </div>
+    </div>
+
+    <!-- 空白区域右键菜单 -->
+    <div id="map-context-menu" style="display: none; position: fixed; z-index: 10000; background: #16213e; border: 1px solid #1a4a7a; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+        <div class="map-context-menu-content">
+            <!-- 菜单内容将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>

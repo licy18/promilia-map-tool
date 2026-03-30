@@ -877,6 +877,144 @@ input:focus + .slider {
     flex-direction: column;
     gap: 10px;
 }
+
+/* 右键菜单样式 */
+#context-menu {
+    min-width: 150px;
+}
+
+.context-menu-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #0f3460;
+}
+
+.context-menu-item:last-child {
+    border-bottom: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.context-menu-item:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.context-menu-item:hover {
+    background: #1a4a7a;
+    color: #00d9ff;
+}
+
+.context-menu-item i {
+    width: 16px;
+    text-align: center;
+}
+
+.context-menu-item[data-action="delete"]:hover {
+    background: #e94560;
+    color: white;
+}
+
+/* 空白区域右键菜单样式 */
+#map-context-menu {
+    min-width: 180px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.map-context-menu-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.map-context-category {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #0f3460;
+}
+
+.map-context-category:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.map-context-category:hover {
+    background: #1a4a7a;
+    color: #00d9ff;
+}
+
+.map-context-category i {
+    width: 16px;
+    text-align: center;
+    margin-right: 8px;
+}
+
+.map-context-category .category-arrow {
+    transition: transform 0.3s ease;
+}
+
+.map-context-category.expanded .category-arrow {
+    transform: rotate(90deg);
+}
+
+.map-context-submenu {
+    display: none;
+    background: #0f3460;
+    border-left: 3px solid #1a4a7a;
+    animation: slideDown 0.2s ease-out;
+}
+
+.map-context-submenu.show {
+    display: block;
+}
+
+.map-context-subitem {
+    padding: 8px 15px 8px 35px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.map-context-subitem:hover {
+    background: #1a4a7a;
+    color: #00d9ff;
+}
+
+.map-context-subitem i {
+    width: 14px;
+    text-align: center;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+    }
+    to {
+        opacity: 1;
+        max-height: 300px;
+        overflow: visible;
+    }
+}
 /* ================================ */
 
 /* 隐藏Leaflet默认的右下角链接标签 - 方案2：CSS样式 */

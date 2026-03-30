@@ -126,7 +126,8 @@ function createPopupContent(data) {
 function addMarker(latlng, type = currentMarkerType) {
     const id = 'marker_' + Date.now() + '_' + markerIdCounter++;
     const marker = L.marker(latlng, {
-        icon: createMarkerIcon(type, id)
+        icon: createMarkerIcon(type, id),
+        draggable: false // 初始设置为不可拖动
     });
 
     const data = {
@@ -144,6 +145,12 @@ function addMarker(latlng, type = currentMarkerType) {
     // 绑定弹窗并保存引用
     const popup = marker.bindPopup(createPopupContent(data));
     data.popup = popup.getPopup();
+
+    // 绑定右键点击事件
+    marker.on('contextmenu', function(e) {
+        e.originalEvent.preventDefault();
+        showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, id);
+    });
 
     // 根据聚合状态决定添加到集群还是直接添加到地图
     if (clusterEnabled) {
@@ -287,10 +294,17 @@ function loadMarkersForMap(mapId) {
         }
 
         const m = L.marker([marker.lat, marker.lng], {
-            icon: createMarkerIcon(marker.type, marker.id)
+            icon: createMarkerIcon(marker.type, marker.id),
+            draggable: false // 初始设置为不可拖动
         });
         const popup = m.bindPopup(createPopupContent(marker));
         marker.popup = popup.getPopup();  // 重新建立 popup 引用
+
+        // 绑定右键点击事件
+        m.on('contextmenu', function(e) {
+            e.originalEvent.preventDefault();
+            showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, marker.id);
+        });
 
         if (clusterEnabled) {
             markers.addLayer(m);
@@ -421,10 +435,18 @@ function updateMarkerVisibility() {
         Object.values(markerData).forEach(data => {
             if (filterState[data.type]) {
                 const marker = L.marker([data.lat, data.lng], {
-                    icon: createMarkerIcon(data.type, data.id)
+                    icon: createMarkerIcon(data.type, data.id),
+                    draggable: false // 初始设置为不可拖动
                 });
                 marker.bindPopup(createPopupContent(data));
                 data.popup = marker.getPopup(); // <=== 【新增修复：交接遥控器】
+                
+                // 绑定右键点击事件
+                marker.on('contextmenu', function(e) {
+                    e.originalEvent.preventDefault();
+                    showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, data.id);
+                });
+                
                 markers.addLayer(marker);
             }
         });
@@ -440,12 +462,285 @@ function updateMarkerVisibility() {
         Object.values(markerData).forEach(data => {
             if (filterState[data.type]) {
                 const marker = L.marker([data.lat, data.lng], {
-                    icon: createMarkerIcon(data.type, data.id)
+                    icon: createMarkerIcon(data.type, data.id),
+                    draggable: false // 初始设置为不可拖动
                 });
                 marker.bindPopup(createPopupContent(data));
                 data.popup = marker.getPopup(); // <=== 【新增修复：交接遥控器】
+                
+                // 绑定右键点击事件
+                marker.on('contextmenu', function(e) {
+                    e.originalEvent.preventDefault();
+                    showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, data.id);
+                });
+                
                 map.addLayer(marker);
             }
         });
+    }
+}
+
+// 全局变量，用于存储当前右键点击的标记ID
+let currentContextMarkerId = null;
+
+// 显示右键菜单
+function showContextMenu(x, y, markerId) {
+    const contextMenu = document.getElementById('context-menu');
+    const collectStatus = document.getElementById('collect-status');
+    
+    // 存储当前标记ID
+    currentContextMarkerId = markerId;
+    
+    // 更新已收集状态
+    const isCollected = isMarkerCollected(markerId);
+    collectStatus.textContent = isCollected ? '未收集' : '已收集';
+    
+    // 定位菜单
+    contextMenu.style.left = x + 'px';
+    contextMenu.style.top = y + 'px';
+    contextMenu.style.display = 'block';
+    
+    // 点击其他区域关闭菜单
+    setTimeout(() => {
+        document.addEventListener('click', hideContextMenu);
+    }, 10);
+}
+
+// 隐藏右键菜单
+function hideContextMenu() {
+    const contextMenu = document.getElementById('context-menu');
+    contextMenu.style.display = 'none';
+    currentContextMarkerId = null;
+    
+    // 移除点击事件监听器
+    document.removeEventListener('click', hideContextMenu);
+}
+
+// 处理菜单点击事件
+function handleContextMenuAction(action) {
+    if (!currentContextMarkerId) return;
+    
+    switch (action) {
+        case 'toggle-collect':
+            toggleMarkerCollect(currentContextMarkerId);
+            break;
+        case 'move':
+            startMoveMarker(currentContextMarkerId);
+            break;
+        case 'delete':
+            deleteMarker(currentContextMarkerId);
+            break;
+    }
+    
+    hideContextMenu();
+}
+
+// 开始移动标记
+function startMoveMarker(markerId) {
+    // 找到对应的标记
+    let targetMarker = null;
+    
+    if (clusterEnabled) {
+        markers.eachLayer(layer => {
+            if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(markerId)) {
+                targetMarker = layer;
+            }
+        });
+    } else {
+        map.eachLayer(layer => {
+            if (layer instanceof L.Marker && layer.getPopup() && layer.getPopup().getContent().includes(markerId)) {
+                targetMarker = layer;
+            }
+        });
+    }
+    
+    if (targetMarker) {
+        // 设置为可拖动
+        targetMarker.dragging.enable();
+        
+        // 绑定拖动结束事件
+        targetMarker.on('dragend', function(e) {
+            const newLatLng = e.target.getLatLng();
+            updateMarkerPosition(markerId, newLatLng);
+            // 拖动结束后禁用拖动
+            targetMarker.dragging.disable();
+        });
+        
+        showToast('请拖动标记到新位置', 'info');
+    }
+}
+
+// 更新标记位置
+function updateMarkerPosition(markerId, latlng) {
+    if (markerData[markerId]) {
+        markerData[markerId].lat = latlng.lat;
+        markerData[markerId].lng = latlng.lng;
+        saveToLocalStorage();
+        showToast('标记位置已更新', 'success');
+        
+        // 更新弹窗内容
+        const popup = markerData[markerId].popup;
+        if (popup) {
+            popup.setContent(createPopupContent(markerData[markerId]));
+        }
+    }
+}
+
+// 初始化右键菜单事件
+function initContextMenu() {
+    const contextMenu = document.getElementById('context-menu');
+    if (contextMenu) {
+        contextMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const action = e.target.closest('.context-menu-item')?.dataset.action;
+            if (action) {
+                handleContextMenuAction(action);
+            }
+        });
+    }
+}
+
+// 页面加载完成后初始化右键菜单
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', initContextMenu);
+    window.addEventListener('DOMContentLoaded', initMapContextMenu);
+}
+
+// 全局变量，用于存储当前右键点击的地图位置
+let currentMapContextLatLng = null;
+
+// 初始化空白区域右键菜单
+function initMapContextMenu() {
+    const mapContextMenu = document.getElementById('map-context-menu');
+    if (mapContextMenu) {
+        // 点击菜单外部关闭菜单
+        document.addEventListener('click', function(e) {
+            if (!mapContextMenu.contains(e.target) && mapContextMenu.style.display === 'block') {
+                hideMapContextMenu();
+            }
+        });
+    }
+}
+
+// 显示空白区域右键菜单
+function showMapContextMenu(x, y, latlng) {
+    const mapContextMenu = document.getElementById('map-context-menu');
+    const menuContent = mapContextMenu.querySelector('.map-context-menu-content');
+    
+    // 存储当前点击位置
+    currentMapContextLatLng = latlng;
+    
+    // 生成菜单内容
+    generateMapContextMenu(menuContent);
+    
+    // 定位菜单并检测边界
+    positionMapContextMenu(mapContextMenu, x, y);
+    
+    // 显示菜单
+    mapContextMenu.style.display = 'block';
+}
+
+// 隐藏空白区域右键菜单
+function hideMapContextMenu() {
+    const mapContextMenu = document.getElementById('map-context-menu');
+    if (mapContextMenu) {
+        mapContextMenu.style.display = 'none';
+        currentMapContextLatLng = null;
+    }
+}
+
+// 生成空白区域右键菜单内容
+function generateMapContextMenu(menuContent) {
+    // 清空菜单内容
+    menuContent.innerHTML = '';
+    
+    // 按分类组织标记类型
+    const markersByCategory = {};
+    for (const [type, config] of Object.entries(MARKER_CONFIGS)) {
+        const category = config.category;
+        if (!markersByCategory[category]) {
+            markersByCategory[category] = [];
+        }
+        markersByCategory[category].push({ type, config });
+    }
+    
+    // 生成菜单
+    for (const [categoryId, markers] of Object.entries(markersByCategory)) {
+        const categoryConfig = CATEGORY_CONFIGS[categoryId];
+        if (!categoryConfig) continue;
+        
+        // 创建分类项
+        const categoryItem = document.createElement('div');
+        categoryItem.className = 'map-context-category';
+        categoryItem.innerHTML = `
+            <div style="display: flex; align-items: center;">
+                <i class="fas ${categoryConfig.icon}" style="color: ${categoryConfig.color};"></i>
+                <span>${categoryConfig.label}</span>
+            </div>
+            <i class="fas fa-chevron-right category-arrow"></i>
+        `;
+        
+        // 创建子菜单
+        const submenu = document.createElement('div');
+        submenu.className = 'map-context-submenu';
+        
+        // 生成子菜单项
+        markers.forEach(({ type, config }) => {
+            const subitem = document.createElement('div');
+            subitem.className = 'map-context-subitem';
+            subitem.dataset.type = type;
+            subitem.innerHTML = `
+                <i class="fas ${config.icon}" style="color: ${config.color};"></i>
+                <span>${config.label}</span>
+            `;
+            
+            // 绑定点击事件
+            subitem.addEventListener('click', function() {
+                addMarkerAtPosition(type);
+                hideMapContextMenu();
+            });
+            
+            submenu.appendChild(subitem);
+        });
+        
+        // 绑定分类项点击事件
+        categoryItem.addEventListener('click', function() {
+            this.classList.toggle('expanded');
+            submenu.classList.toggle('show');
+        });
+        
+        menuContent.appendChild(categoryItem);
+        menuContent.appendChild(submenu);
+    }
+}
+
+// 定位空白区域右键菜单并检测边界
+function positionMapContextMenu(menu, x, y) {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const menuWidth = menu.offsetWidth || 200;
+    const menuHeight = menu.offsetHeight || 300;
+    
+    // 调整菜单位置，确保不超出窗口边界
+    let adjustedX = x;
+    let adjustedY = y;
+    
+    if (x + menuWidth > windowWidth) {
+        adjustedX = windowWidth - menuWidth - 10;
+    }
+    
+    if (y + menuHeight > windowHeight) {
+        adjustedY = windowHeight - menuHeight - 10;
+    }
+    
+    menu.style.left = adjustedX + 'px';
+    menu.style.top = adjustedY + 'px';
+}
+
+// 在指定位置添加标记
+function addMarkerAtPosition(type) {
+    if (currentMapContextLatLng) {
+        addMarker(currentMapContextLatLng, type);
+        showToast(`已添加 ${MARKER_CONFIGS[type].label} 标记`, 'success');
     }
 }
