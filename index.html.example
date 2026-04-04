@@ -486,19 +486,19 @@
                     </div>
                     <div class="marker-type" data-type="chest_wood" data-color="#8b4513" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #8b4513;"></i>
-                        <span>木宝箱</span>
+                        <span>木质宝箱</span>
                     </div>
                     <div class="marker-type" data-type="chest_iron" data-color="#708090" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #708090;"></i>
-                        <span>铁宝箱</span>
+                        <span>宝箱（敌人守护）</span>
                     </div>
                     <div class="marker-type" data-type="chest_silver" data-color="#c0c0c0" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #c0c0c0;"></i>
-                        <span>银宝箱</span>
+                        <span>宝箱（钥匙开启）</span>
                     </div>
                     <div class="marker-type" data-type="chest_gold" data-color="#ffd700" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #ffd700;"></i>
-                        <span>金宝箱</span>
+                        <span>金质宝箱</span>
                     </div>
                     <div class="marker-type" data-type="chest_holy" data-color="#e6e6fa" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #e6e6fa;"></i>
@@ -588,6 +588,10 @@
                     <div class="marker-type" data-type="fish" data-color="#1e90ff" data-icon="fa-fish">
                         <i class="fas fa-fish" style="color: #1e90ff;"></i>
                         <span>钓鱼点</span>
+                    </div>
+                    <div class="marker-type" data-type="book" data-color="#8e44ad" data-icon="fa-book">
+                        <i class="fas fa-book" style="color: #8e44ad;"></i>
+                        <span>书籍档案</span>
                     </div>
                     <div class="marker-type" data-type="custom" data-color="#2ecc71" data-icon="fa-star">
                         <i class="fas fa-star" style="color: #2ecc71;"></i>
@@ -730,6 +734,10 @@
                         <i class="fas fa-fish" style="color: #1e90ff;"></i>
                         <span>钓鱼</span>
                     </div>
+                    <div class="marker-type active" data-type="book" data-category="other">
+                        <i class="fas fa-book" style="color: #8e44ad;"></i>
+                        <span>书籍</span>
+                    </div>
                     <div class="marker-type active" data-type="custom" data-category="other">
                         <i class="fas fa-star" style="color: #2ecc71;"></i>
                         <span>自定义</span>
@@ -762,10 +770,10 @@
             <div class="section">
                 <h2><i class="fas fa-tools"></i> 操作</h2>
                 <button class="btn btn-primary" onclick="exportData()">
-                    <i class="fas fa-download"></i> 导出数据
+                    <i class="fas fa-download"></i> 全图导出
                 </button>
                 <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">
-                    <i class="fas fa-upload"></i> 导入数据
+                    <i class="fas fa-upload"></i> 全图导入
                 </button>
                 <input type="file" id="file-input" accept=".json,.geojson" onchange="importData(event)">
                 <button class="btn btn-secondary" onclick="clearAllMarkers()">
@@ -778,9 +786,6 @@
                 <h2><i class="fas fa-cloud"></i> 云端存储</h2>
                 <button class="btn btn-success" onclick="uploadToCOS()">
                     <i class="fas fa-cloud-upload-alt"></i> 上传到云端
-                </button>
-                <button class="btn btn-info" onclick="loadFromCOS()">
-                    <i class="fas fa-folder-open"></i> 从文件加载
                 </button>
                 <button class="btn btn-secondary" onclick="loadFromCOSUrl()" style="margin-top: 8px; width: 100%;">
                     <i class="fas fa-link"></i> 从链接加载
@@ -824,10 +829,10 @@
         const MARKER_CONFIGS = {
             // === 宝箱类 ===
             chest: { icon: 'fa-gift', color: '#f39c12', label: '宝箱', category: 'chest' },
-            chest_wood: { icon: 'fa-box', color: '#8b4513', label: '木宝箱', category: 'chest' },
-            chest_iron: { icon: 'fa-box', color: '#708090', label: '铁宝箱', category: 'chest' },
-            chest_silver: { icon: 'fa-box', color: '#c0c0c0', label: '银宝箱', category: 'chest' },
-            chest_gold: { icon: 'fa-box', color: '#ffd700', label: '金宝箱', category: 'chest' },
+            chest_wood: { icon: 'fa-box', color: '#8b4513', label: '木质宝箱', category: 'chest' },
+            chest_iron: { icon: 'fa-box', color: '#708090', label: '宝箱（敌人守护）', category: 'chest' },
+            chest_silver: { icon: 'fa-box', color: '#c0c0c0', label: '宝箱（钥匙开启）', category: 'chest' },
+            chest_gold: { icon: 'fa-box', color: '#ffd700', label: '金质宝箱', category: 'chest' },
             chest_holy: { icon: 'fa-box', color: '#e6e6fa', label: '神圣箱', category: 'chest' },
             chest_dark: { icon: 'fa-box', color: '#4b0082', label: '暗黑箱', category: 'chest' },
             
@@ -848,6 +853,7 @@
             enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人', category: 'other' },
             star: { icon: 'fa-map-marker-alt', color: '#00bfff', label: '星脉节点', category: 'other' },
             fish: { icon: 'fa-fish', color: '#1e90ff', label: '钓鱼点', category: 'other' },
+            book: { icon: 'fa-book', color: '#8e44ad', label: '书籍档案', category: 'other' },
             custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义', category: 'other' }
         };
         

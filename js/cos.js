@@ -524,61 +524,6 @@ window.downloadFromCOS = async function (cloudPath) {
     }
 };
 
-// 从 COS 加载（通过文件选择）
-window.loadFromCOS = async function () {
-    const statusDiv = document.getElementById('cos-status');
-
-    // 提示用户选择文件
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = function (e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在解析文件...';
-
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            try {
-                const data = JSON.parse(e.target.result);
-
-                // 验证数据格式
-                if (!data.maps) {
-                    throw new Error('无效的备份文件格式');
-                }
-
-                // 显示导入确认
-                let info = `版本：${data.version || '未知'}\n`;
-                let totalMarkers = 0;
-                let totalRoutes = 0;
-                Object.keys(data.maps).forEach(mapId => {
-                    const markerCount = data.maps[mapId].markerCount || data.maps[mapId].markers?.length || 0;
-                    const routeCount = data.maps[mapId].routes?.length || 0;
-                    info += `  • ${data.maps[mapId].mapName || mapId}: ${markerCount} 个标记, ${routeCount} 条路线\n`;
-                    totalMarkers += markerCount;
-                    totalRoutes += routeCount;
-                });
-
-                if (!confirm(`从备份文件加载\n\n${info}\n共 ${totalMarkers} 个标记, ${totalRoutes} 条路线\n\n点击"确定"导入所有数据\n点击"取消"取消导入`)) {
-                    statusDiv.innerHTML = '';
-                    return;
-                }
-
-                // 导入数据
-                importBackupData(data);
-
-            } catch (parseErr) {
-                console.error('解析失败:', parseErr);
-                statusDiv.innerHTML = `❌ 解析失败：${parseErr.message}`;
-                showToast('解析备份文件失败', 'error');
-            }
-        };
-        reader.readAsText(file);
-    };
-    input.click();
-};
-
 // 从 COS URL 直接加载（高级功能）
 window.loadFromCOSUrl = async function () {
     const url = prompt('请输入 COS 下载链接：');

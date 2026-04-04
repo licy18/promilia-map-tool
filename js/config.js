@@ -6,10 +6,10 @@
 const MARKER_CONFIGS = {
     // === 宝箱类 ===
     chest: { icon: 'fa-gift', color: '#f39c12', label: '宝箱', category: 'chest' },
-    chest_wood: { icon: 'fa-box', color: '#8b4513', label: '木宝箱', category: 'chest' },
-    chest_iron: { icon: 'fa-box', color: '#708090', label: '铁宝箱', category: 'chest' },
-    chest_silver: { icon: 'fa-box', color: '#c0c0c0', label: '银宝箱', category: 'chest' },
-    chest_gold: { icon: 'fa-box', color: '#ffd700', label: '金宝箱', category: 'chest' },
+    chest_wood: { icon: 'fa-box', color: '#8b4513', label: '木质宝箱', category: 'chest' },
+    chest_iron: { icon: 'fa-box', color: '#708090', label: '宝箱（敌人守护）', category: 'chest' },
+    chest_silver: { icon: 'fa-box', color: '#c0c0c0', label: '宝箱（钥匙开启）', category: 'chest' },
+    chest_gold: { icon: 'fa-box', color: '#ffd700', label: '金质宝箱', category: 'chest' },
     chest_holy: { icon: 'fa-box', color: '#e6e6fa', label: '神圣箱', category: 'chest' },
     chest_dark: { icon: 'fa-box', color: '#4b0082', label: '暗黑箱', category: 'chest' },
 
@@ -53,6 +53,7 @@ const MARKER_CONFIGS = {
     enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人', category: 'other' },
     star: { icon: 'fa-map-marker-alt', color: '#00bfff', label: '异脉星巢', category: 'other' },
     fish: { icon: 'fa-fish', color: '#1e90ff', label: '钓鱼点', category: 'other' },
+    book: { icon: 'fa-book', color: '#8e44ad', label: '书籍档案', category: 'other' },
     custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义', category: 'other' }
 };
 

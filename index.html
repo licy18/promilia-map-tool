@@ -168,19 +168,19 @@
                 <div class="category-content" data-category="chest" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px;">
                     <div class="marker-type" data-type="chest_wood" data-color="#8b4513" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #8b4513;"></i>
-                        <span>木宝箱</span>
+                        <span>木质宝箱</span>
                     </div>
                     <div class="marker-type" data-type="chest_iron" data-color="#708090" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #708090;"></i>
-                        <span>铁宝箱</span>
+                        <span>宝箱（敌人守护）</span>
                     </div>
                     <div class="marker-type" data-type="chest_silver" data-color="#c0c0c0" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #c0c0c0;"></i>
-                        <span>银宝箱</span>
+                        <span>宝箱（钥匙开启）</span>
                     </div>
                     <div class="marker-type" data-type="chest_gold" data-color="#ffd700" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #ffd700;"></i>
-                        <span>金宝箱</span>
+                        <span>金质宝箱</span>
                     </div>
                     <div class="marker-type" data-type="chest_holy" data-color="#e6e6fa" data-icon="fa-box">
                         <i class="fas fa-box" style="color: #e6e6fa;"></i>
@@ -364,6 +364,10 @@
                     <div class="marker-type" data-type="fish" data-color="#1e90ff" data-icon="fa-fish">
                         <i class="fas fa-fish" style="color: #1e90ff;"></i>
                         <span>钓鱼点</span>
+                    </div>
+                    <div class="marker-type" data-type="book" data-color="#8e44ad" data-icon="fa-book">
+                        <i class="fas fa-book" style="color: #8e44ad;"></i>
+                        <span>书籍档案</span>
                     </div>
                     <div class="marker-type" data-type="custom" data-color="#2ecc71" data-icon="fa-star">
                         <i class="fas fa-star" style="color: #2ecc71;"></i>
@@ -637,6 +641,10 @@
                             <i class="fas fa-fish" style="color: #1e90ff;"></i>
                             <span>钓鱼</span>
                         </div>
+                        <div class="marker-type active" data-type="book" data-category="other">
+                            <i class="fas fa-book" style="color: #8e44ad;"></i>
+                            <span>书籍</span>
+                        </div>
                         <div class="marker-type active" data-type="custom" data-category="other">
                             <i class="fas fa-star" style="color: #2ecc71;"></i>
                             <span>自定义</span>
@@ -743,12 +751,19 @@
                     </div>
                 </div>
                 <button class="btn btn-primary" onclick="exportData()">
-                    <i class="fas fa-download"></i> 导出数据
+                    <i class="fas fa-download"></i> 全图导出
                 </button>
                 <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">
-                    <i class="fas fa-upload"></i> 导入数据
+                    <i class="fas fa-upload"></i> 全图导入
                 </button>
                 <input type="file" id="file-input" accept=".json,.geojson" onchange="importData(event)">
+                <button class="btn btn-primary" onclick="exportSingleMapData()" style="background: #4fc3f7; color: #0f3460;">
+                    <i class="fas fa-file-export"></i> 单图导出
+                </button>
+                <button class="btn btn-secondary" onclick="document.getElementById('single-map-file-input').click()">
+                    <i class="fas fa-file-import"></i> 单图导入
+                </button>
+                <input type="file" id="single-map-file-input" accept=".json" onchange="importSingleMapData(event)" style="display: none;">
                 <button class="btn btn-secondary" onclick="document.getElementById('clear-data-modal').style.display='flex'" style="background: #e94560; color: white;">
                     <i class="fas fa-trash"></i> 清空数据（选项）
                 </button>
@@ -775,9 +790,6 @@
                 </button>
                 <button class="btn btn-info" onclick="listCOSFiles()">
                     <i class="fas fa-list"></i> 查看云端文件
-                </button>
-                <button class="btn btn-secondary" onclick="loadFromCOS()" style="margin-top: 8px; width: 100%;">
-                    <i class="fas fa-folder-open"></i> 从文件加载
                 </button>
                 <button class="btn btn-secondary" onclick="loadFromCOSUrl()" style="margin-top: 8px; width: 100%;">
                     <i class="fas fa-link"></i> 从链接加载
