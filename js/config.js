@@ -51,7 +51,7 @@ const MARKER_CONFIGS = {
 
     // === 其他 ===
     enemy: { icon: 'fa-skull', color: '#e74c3c', label: '敌人', category: 'other' },
-    star: { icon: 'fa-map-marker-alt', color: '#00bfff', label: '星脉节点', category: 'other' },
+    star: { icon: 'fa-map-marker-alt', color: '#00bfff', label: '异脉星巢', category: 'other' },
     fish: { icon: 'fa-fish', color: '#1e90ff', label: '钓鱼点', category: 'other' },
     custom: { icon: 'fa-star', color: '#2ecc71', label: '自定义', category: 'other' }
 };

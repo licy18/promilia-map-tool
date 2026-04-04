@@ -229,3 +229,281 @@ window.resetMapCenter = function () {
         showToast('已为您切换回全局视野喵！', 'success');
     }
 };
+
+// 导出数据
+window.exportData = function() {
+    // 导出所有地图的完整数据
+    const exportData = {
+        version: '1.3',
+        exportedAt: new Date().toISOString(),
+        toolName: '普罗米利亚地图标记工具',
+        maps: {}
+    };
+    
+    // 先保存当前地图（确保最新数据写入 localStorage）
+    saveCurrentMapMarkers();
+    
+    // 收集所有地图的数据（直接从 localStorage 读取）
+    let totalMarkers = 0;
+    let totalRoutes = 0;
+    Object.keys(MAP_CONFIGS).forEach(mapId => {
+        const config = MAP_CONFIGS[mapId];
+        const storageKey = config.storageKey;
+        
+        try {
+            const saved = localStorage.getItem(storageKey);
+            let markers = [];
+            let routes = [];
+            
+            if (saved) {
+                const data = JSON.parse(saved);
+                markers = Object.values(data.markers || {});
+                routes = Object.values(data.routes || {});
+            }
+            
+            exportData.maps[mapId] = {
+                mapName: config.name,
+                markers: markers,
+                markerCount: markers.length,
+                routes: routes,
+                routeCount: routes.length
+            };
+            
+            totalMarkers += markers.length;
+            totalRoutes += routes.length;
+            console.log(`📊 ${config.name}: ${markers.length} 个标记, ${routes.length} 条路线`);
+        } catch (e) {
+            console.error(`❌ 读取 ${config.name} 失败:`, e);
+            exportData.maps[mapId] = {
+                mapName: config.name,
+                markers: [],
+                markerCount: 0,
+                routes: [],
+                routeCount: 0,
+                error: e.message
+            };
+        }
+    });
+    
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `promilia-all-maps-${Date.now()}.json`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    
+    showToast(`已导出 ${totalMarkers} 个标记和 ${totalRoutes} 条路线（${Object.keys(exportData.maps).length} 张地图）`, 'success');
+};
+
+// 导入数据
+window.importData = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importData = JSON.parse(e.target.result);
+            
+            // 检查导入模式
+            const importMode = document.querySelector('input[name="import-mode"]:checked').value;
+            
+            let totalImported = 0;
+            let totalRoutesImported = 0;
+            let mapsImported = 0;
+            
+            // 导入每个地图的数据
+            if (importData.maps) {
+                Object.keys(importData.maps).forEach(mapId => {
+                    const mapData = importData.maps[mapId];
+                    const config = MAP_CONFIGS[mapId];
+                    
+                    if (config) {
+                        const storageKey = config.storageKey;
+                        
+                        try {
+                            // 读取现有数据
+                            let existingData = {};
+                            const saved = localStorage.getItem(storageKey);
+                            if (saved) {
+                                existingData = JSON.parse(saved);
+                            }
+                            
+                            // 准备新数据
+                            const newMarkers = {};
+                            let counter = existingData.counter || 0;
+                            
+                            // 处理标记数据
+                            mapData.markers.forEach(marker => {
+                                if (importMode === 'override' || !existingData.markers || !existingData.markers[marker.id]) {
+                                    newMarkers[marker.id] = marker;
+                                    totalImported++;
+                                    // 更新计数器
+                                    if (marker.id) {
+                                        const idNum = parseInt(marker.id.split('_').pop());
+                                        if (idNum >= counter) {
+                                            counter = idNum + 1;
+                                        }
+                                    }
+                                }
+                            });
+                            
+                            // 处理路线数据
+                            let newRoutes = {};
+                            let routeCounter = existingData.routeCounter || 0;
+                            
+                            if (mapData.routes) {
+                                mapData.routes.forEach(route => {
+                                    if (importMode === 'override' || !existingData.routes || !existingData.routes[route.id]) {
+                                        newRoutes[route.id] = route;
+                                        totalRoutesImported++;
+                                        // 更新路线计数器
+                                        if (route.id) {
+                                            const idNum = parseInt(route.id.split('_').pop());
+                                            if (idNum >= routeCounter) {
+                                                routeCounter = idNum + 1;
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            // 保存数据
+                            if (importMode === 'override') {
+                                existingData.markers = newMarkers;
+                                existingData.counter = counter;
+                                existingData.routes = newRoutes;
+                                existingData.routeCounter = routeCounter;
+                            } else {
+                                // 增量导入：合并标记
+                                if (!existingData.markers) {
+                                    existingData.markers = {};
+                                }
+                                Object.assign(existingData.markers, newMarkers);
+                                if (counter > (existingData.counter || 0)) {
+                                    existingData.counter = counter;
+                                }
+                                
+                                // 增量导入：合并路线
+                                if (!existingData.routes) {
+                                    existingData.routes = {};
+                                }
+                                Object.assign(existingData.routes, newRoutes);
+                                if (routeCounter > (existingData.routeCounter || 0)) {
+                                    existingData.routeCounter = routeCounter;
+                                }
+                            }
+                            
+                            // 确保版本字段存在
+                            if (!existingData.version) {
+                                existingData.version = DATA_VERSION;
+                            }
+                            
+                            localStorage.setItem(storageKey, JSON.stringify(existingData));
+                            mapsImported++;
+                            
+                            console.log(`✅ 导入 ${mapData.markers.length} 个标记到 ${config.name}`);
+                        } catch (e) {
+                            console.error(`❌ 导入 ${config.name} 失败:`, e);
+                        }
+                    }
+                });
+            } else if (importData.markers) {
+                // 兼容旧版单地图格式
+                const storageKey = currentMapConfig.storageKey;
+                
+                try {
+                    let existingData = {};
+                    const saved = localStorage.getItem(storageKey);
+                    if (saved) {
+                        existingData = JSON.parse(saved);
+                    }
+                    
+                    const newMarkers = {};
+                    let counter = existingData.counter || 0;
+                    
+                    importData.markers.forEach(marker => {
+                        if (importMode === 'override' || !existingData.markers || !existingData.markers[marker.id]) {
+                            newMarkers[marker.id] = marker;
+                            totalImported++;
+                            // 更新计数器
+                            if (marker.id) {
+                                const idNum = parseInt(marker.id.split('_').pop());
+                                if (idNum >= counter) {
+                                    counter = idNum + 1;
+                                }
+                            }
+                        }
+                    });
+                    
+                    // 处理路线数据（旧版格式可能没有路线）
+                    let newRoutes = {};
+                    let routeCounter = existingData.routeCounter || 0;
+                    
+                    if (importData.routes) {
+                        importData.routes.forEach(route => {
+                            if (importMode === 'override' || !existingData.routes || !existingData.routes[route.id]) {
+                                newRoutes[route.id] = route;
+                                totalRoutesImported++;
+                                // 更新路线计数器
+                                if (route.id) {
+                                    const idNum = parseInt(route.id.split('_').pop());
+                                    if (idNum >= routeCounter) {
+                                        routeCounter = idNum + 1;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    
+                    if (importMode === 'override') {
+                        existingData.markers = newMarkers;
+                        existingData.counter = counter;
+                        existingData.routes = newRoutes;
+                        existingData.routeCounter = routeCounter;
+                    } else {
+                        if (!existingData.markers) {
+                            existingData.markers = {};
+                        }
+                        Object.assign(existingData.markers, newMarkers);
+                        if (counter > (existingData.counter || 0)) {
+                            existingData.counter = counter;
+                        }
+                        
+                        if (!existingData.routes) {
+                            existingData.routes = {};
+                        }
+                        Object.assign(existingData.routes, newRoutes);
+                        if (routeCounter > (existingData.routeCounter || 0)) {
+                            existingData.routeCounter = routeCounter;
+                        }
+                    }
+                    
+                    if (!existingData.version) {
+                        existingData.version = DATA_VERSION;
+                    }
+                    
+                    localStorage.setItem(storageKey, JSON.stringify(existingData));
+                    mapsImported++;
+                    
+                    console.log(`✅ 导入 ${importData.markers.length} 个标记到当前地图`);
+                } catch (e) {
+                    console.error('❌ 导入失败:', e);
+                }
+            }
+            
+            showToast(`已导入 ${totalImported} 个标记和 ${totalRoutesImported} 条路线（${mapsImported} 张地图）`, 'success');
+            
+            // 重新加载当前地图
+            loadMarkersForMap(currentMapId);
+        } catch (e) {
+            console.error('❌ 解析导入文件失败:', e);
+            showToast('导入失败：文件格式错误', 'error');
+        }
+    };
+    reader.readAsText(file);
+};

@@ -936,6 +936,7 @@ input:focus + .slider {
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid #0f3460;
+    position: relative;
 }
 
 .map-context-category:first-child {
@@ -963,9 +964,16 @@ input:focus + .slider {
 
 .map-context-submenu {
     display: none;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    min-width: 180px;
     background: #0f3460;
-    border-left: 3px solid #1a4a7a;
-    animation: slideDown 0.2s ease-out;
+    border: 1px solid #1a4a7a;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    z-index: 10001;
+    animation: slideInRight 0.2s ease-out;
 }
 
 .map-context-submenu.show {

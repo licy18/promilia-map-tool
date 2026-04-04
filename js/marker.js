@@ -346,9 +346,18 @@ function loadMarkersForMap(mapId) {
                     opacity: 1.0
                 });
 
+                // 计算当前缩放级别下的箭头参数
+                let currentZoom = map.getZoom();
+                let zoomDiff = currentZoom - (-1); // ARROW_STANDARD_ZOOM = -1
+                let zoomScale = Math.pow(2, zoomDiff);
+                let currentRepeat = Math.max(20, 60 * zoomScale);
+                let currentOffset = Math.max(10, 25 * zoomScale);
+                let currentArrowSize = Math.max(2, Math.min(50, 12 * Math.pow(2, currentZoom)));
+                let currentArrowWeight = Math.max(0.5, Math.min(10, 2 * Math.pow(2, currentZoom)));
+
                 const decorator = L.polylineDecorator(line, {
                     patterns: [
-                        { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: routeData.color } }) }
+                        { offset: currentOffset, repeat: currentRepeat, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: routeData.color } }) }
                     ]
                 });
 
@@ -654,6 +663,9 @@ function generateMapContextMenu(menuContent) {
     // 清空菜单内容
     menuContent.innerHTML = '';
     
+    // 存储所有分类项和子菜单的引用
+    const categoryItems = [];
+    
     // 按分类组织标记类型
     const markersByCategory = {};
     for (const [type, config] of Object.entries(MARKER_CONFIGS)) {
@@ -684,6 +696,9 @@ function generateMapContextMenu(menuContent) {
         const submenu = document.createElement('div');
         submenu.className = 'map-context-submenu';
         
+        // 存储分类项和子菜单的引用
+        categoryItems.push({ categoryItem, submenu });
+        
         // 生成子菜单项
         markers.forEach(({ type, config }) => {
             const subitem = document.createElement('div');
@@ -704,9 +719,60 @@ function generateMapContextMenu(menuContent) {
         });
         
         // 绑定分类项点击事件
-        categoryItem.addEventListener('click', function() {
-            this.classList.toggle('expanded');
-            submenu.classList.toggle('show');
+        categoryItem.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const isExpanded = this.classList.contains('expanded');
+            
+            // 收起所有子菜单
+            categoryItems.forEach(({ categoryItem: item, submenu: sm }) => {
+                item.classList.remove('expanded');
+                sm.classList.remove('show');
+                // 确保子菜单完全隐藏
+                sm.style.display = 'none';
+            });
+            
+            // 切换当前子菜单状态
+            if (!isExpanded) {
+                // 展开当前子菜单
+                this.classList.add('expanded');
+                submenu.classList.add('show');
+                submenu.style.display = 'block';
+                
+                // 强制计算子菜单的实际高度
+                submenu.style.visibility = 'hidden';
+                const submenuHeight = submenu.offsetHeight;
+                const submenuWidth = submenu.offsetWidth || 180;
+                submenu.style.visibility = 'visible';
+                
+                // 计算子菜单位置，确保在窗口内
+                const rect = this.getBoundingClientRect();
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                
+                // 调整子菜单位置
+                let top = 0;
+                let left = rect.width;
+                
+                // 检查右侧边界
+                if (rect.right + submenuWidth > windowWidth) {
+                    left = -submenuWidth;
+                }
+                
+                // 检查底部边界
+                if (rect.top + submenuHeight > windowHeight) {
+                    // 计算需要向上调整的距离
+                    const overflow = rect.top + submenuHeight - windowHeight + 10;
+                    top = -overflow;
+                    // 确保子菜单不会超出顶部边界
+                    if (rect.top + top < 0) {
+                        top = -rect.top + 10;
+                    }
+                }
+                
+                submenu.style.top = top + 'px';
+                submenu.style.left = left + 'px';
+            }
         });
         
         menuContent.appendChild(categoryItem);

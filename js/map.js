@@ -55,12 +55,37 @@ function createPlaceholder(mapId) {
     return canvas.toDataURL('image/png');
 }
 
-// 修复：真正物理等比例缩放的引擎
+// 修复：真正物理等比例缩放的引擎 + 箭头数量恒定优化
+// 标准缩放级别：zoom = -1（以此时的箭头数量为标准）
+const ARROW_STANDARD_ZOOM = -1;
+const ARROW_STANDARD_REPEAT = 60;
+const ARROW_STANDARD_OFFSET = 25;
+
 window.updateAllRoutesThickness = function () {
-    let scale = Math.pow(2, map.getZoom());
+    let currentZoom = map.getZoom();
+    let scale = Math.pow(2, currentZoom);
+    
+    // 线条粗细随缩放调整
     let currentLineWeight = Math.max(0.5, Math.min(30, 5 * scale));
+    
+    // 箭头大小随缩放调整
     let currentArrowSize = Math.max(2, Math.min(50, 12 * scale));
     let currentArrowWeight = Math.max(0.5, Math.min(10, 2 * scale));
+    
+    // === 核心优化：箭头数量恒定算法 ===
+    // 计算当前缩放级别相对于标准缩放级别的比例
+    let zoomDiff = currentZoom - ARROW_STANDARD_ZOOM;
+    let zoomScale = Math.pow(2, zoomDiff);
+    
+    // 动态调整 repeat 和 offset，保持箭头数量恒定
+    // 当 zoom > -1 时（放大），zoomScale > 1，repeat 需要变大（箭头间隔变大）
+    // 当 zoom < -1 时（缩小），zoomScale < 1，repeat 需要变小（箭头间隔变小）
+    let currentRepeat = ARROW_STANDARD_REPEAT * zoomScale;
+    let currentOffset = ARROW_STANDARD_OFFSET * zoomScale;
+    
+    // 确保最小间隔，避免箭头过于密集
+    currentRepeat = Math.max(20, currentRepeat);
+    currentOffset = Math.max(10, currentOffset);
 
     // 1. 更新正在手动绘制的线
     if (currentRouteLine) {
@@ -68,7 +93,7 @@ window.updateAllRoutesThickness = function () {
     }
     if (currentRouteDecorator) {
         currentRouteDecorator.setPatterns([
-            { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: currentRouteColor } }) }
+            { offset: currentOffset, repeat: currentRepeat, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: currentRouteColor } }) }
         ]);
     }
 
@@ -79,7 +104,7 @@ window.updateAllRoutesThickness = function () {
         }
         if (route.decorator) {
             route.decorator.setPatterns([
-                { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: route.color } }) }
+                { offset: currentOffset, repeat: currentRepeat, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: route.color } }) }
             ]);
         }
     });
@@ -254,7 +279,14 @@ function loadMap(mapId, keepZoom = false) {
         // 按行列顺序加载瓦片
         for (let row = 0; row < config.tileRows; row++) {
             for (let col = 0; col < config.tileCols; col++) {
-                const tileUrl = `${tileDir}/tile_${row}_${col}.png`;
+                let tileUrl = `${tileDir}/tile_${row}_${col}.png`;
+                // 增强路径处理，确保路径正确
+                if (!tileUrl.startsWith('http://') && !tileUrl.startsWith('https://')) {
+                    // 确保路径以 maps/ 开头
+                    if (!tileUrl.startsWith('maps/')) {
+                        tileUrl = 'maps/' + tileUrl;
+                    }
+                }
                 const tileBounds = [
                     [row * tileSize, col * tileSize],
                     [(row + 1) * tileSize, (col + 1) * tileSize]
@@ -268,7 +300,8 @@ function loadMap(mapId, keepZoom = false) {
                 testTile.onerror = function () {
                     console.log(`⚠️ 瓦片加载失败：${tileUrl}`);
                 };
-                testTile.src = tileUrl;
+                // 增加防缓存措施
+                testTile.src = tileUrl + (tileUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
             }
         }
 
@@ -294,7 +327,14 @@ function loadMap(mapId, keepZoom = false) {
 
     } else {
         // === 单张图片地图加载 ===
-        const mapImageUrl = config.image;
+        let mapImageUrl = config.image;
+        // 增强路径处理，确保路径正确
+        if (mapImageUrl && !mapImageUrl.startsWith('http://') && !mapImageUrl.startsWith('https://') && !mapImageUrl.startsWith('data:')) {
+            // 确保路径以 maps/ 开头
+            if (!mapImageUrl.startsWith('maps/')) {
+                mapImageUrl = 'maps/' + mapImageUrl;
+            }
+        }
         const testImg = new Image();
         let imageLoaded = false;
 
@@ -311,7 +351,8 @@ function loadMap(mapId, keepZoom = false) {
             const placeholderImage = createPlaceholder(mapId);
             mapOverlay = L.imageOverlay(placeholderImage, bounds).addTo(map);
         };
-        testImg.src = mapImageUrl;
+        // 增加防缓存措施
+        testImg.src = mapImageUrl + (mapImageUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
 
         // 超时保护（增加超时时间到 15 秒）
         setTimeout(() => {
@@ -458,6 +499,13 @@ function bindMapEvents() {
     // 地图空白区域右键点击事件
     map.on('contextmenu', function(e) {
         e.originalEvent.preventDefault();
+        
+        // 检查点击位置是否在地图有效范围内（使用与左键相同的经纬度范围检查）
+        if (e.latlng.lat < 0 || e.latlng.lat > currentMapConfig.width ||
+            e.latlng.lng < 0 || e.latlng.lng > currentMapConfig.height) {
+            return; // 点击位置在地图范围外，不弹出菜单
+        }
+        
         // 检查点击位置是否有标记
         const containerPoint = map.latLngToContainerPoint(e.latlng);
         const target = document.elementFromPoint(containerPoint.x, containerPoint.y);

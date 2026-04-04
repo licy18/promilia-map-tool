@@ -107,11 +107,21 @@ window.undoLastRoutePoint = function () {
     else {
         if (currentRouteLine) {
             currentRouteLine.setLatLngs(currentRoutePoints);
-            // 重新生成箭头
+            // 重新生成箭头 - 使用动态计算的参数
             if (currentRouteDecorator) map.removeLayer(currentRouteDecorator);
+            
+            // 计算当前缩放级别下的箭头参数
+            let currentZoom = map.getZoom();
+            let zoomDiff = currentZoom - (-1); // ARROW_STANDARD_ZOOM = -1
+            let zoomScale = Math.pow(2, zoomDiff);
+            let currentRepeat = Math.max(20, 60 * zoomScale);
+            let currentOffset = Math.max(10, 25 * zoomScale);
+            let currentArrowSize = Math.max(2, Math.min(50, 12 * Math.pow(2, currentZoom)));
+            let currentArrowWeight = Math.max(0.5, Math.min(10, 2 * Math.pow(2, currentZoom)));
+            
             currentRouteDecorator = L.polylineDecorator(currentRouteLine, {
                 patterns: [
-                    { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: currentRouteColor } }) }
+                    { offset: currentOffset, repeat: currentRepeat, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: currentRouteColor } }) }
                 ]
             }).addTo(map);
         }
@@ -309,9 +319,18 @@ function bindRouteEvents() {
                     opacity: 1.0
                 }).addTo(map);
 
+                // 计算当前缩放级别下的箭头参数
+                let currentZoom = map.getZoom();
+                let zoomDiff = currentZoom - (-1); // ARROW_STANDARD_ZOOM = -1
+                let zoomScale = Math.pow(2, zoomDiff);
+                let currentRepeat = Math.max(20, 60 * zoomScale);
+                let currentOffset = Math.max(10, 25 * zoomScale);
+                let currentArrowSize = Math.max(2, Math.min(50, 12 * Math.pow(2, currentZoom)));
+                let currentArrowWeight = Math.max(0.5, Math.min(10, 2 * Math.pow(2, currentZoom)));
+
                 currentRouteDecorator = L.polylineDecorator(currentRouteLine, {
                     patterns: [
-                        { offset: 25, repeat: 60, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, weight: 3, color: currentRouteColor } }) }
+                        { offset: currentOffset, repeat: currentRepeat, symbol: L.Symbol.arrowHead({ pixelSize: currentArrowSize, polygon: false, pathOptions: { stroke: true, weight: currentArrowWeight, color: currentRouteColor } }) }
                     ]
                 }).addTo(map);
             }
