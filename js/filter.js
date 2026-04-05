@@ -110,7 +110,9 @@ function updateMarkerVisibility() {
 
         // 根据筛选状态重新添加到集群
         Object.values(markerData).forEach(data => {
-            if (filterState[data.type]) {
+            // 检查筛选状态和是否显示已收集标记
+            const isCollected = collectedMarkers[data.id];
+            if (filterState[data.type] && (showCollectedMarkers || !isCollected)) {
                 const marker = L.marker([data.lat, data.lng], {
                     icon: createMarkerIcon(data.type, data.id)
                 });
@@ -129,7 +131,9 @@ function updateMarkerVisibility() {
 
         // 根据筛选状态重新添加到地图
         Object.values(markerData).forEach(data => {
-            if (filterState[data.type]) {
+            // 检查筛选状态和是否显示已收集标记
+            const isCollected = collectedMarkers[data.id];
+            if (filterState[data.type] && (showCollectedMarkers || !isCollected)) {
                 const marker = L.marker([data.lat, data.lng], {
                     icon: createMarkerIcon(data.type, data.id)
                 });
@@ -174,5 +178,21 @@ if (clusterToggle) {
             showToast('已禁用标记聚合', 'success');
         }
         console.log('✅ 聚合开关已初始化');
+    });
+}
+
+// 显示已收集标记开关事件监听
+const showCollectedToggle = document.getElementById('show-collected-toggle');
+if (showCollectedToggle) {
+    // 设置初始状态
+    showCollectedToggle.checked = showCollectedMarkers;
+
+    // 监听开关变化
+    showCollectedToggle.addEventListener('change', function () {
+        showCollectedMarkers = this.checked;
+        localStorage.setItem('promilia-show-collected-markers', showCollectedMarkers);
+        updateMarkerVisibility();
+        showToast(showCollectedMarkers ? '已显示已收集标记' : '已隐藏已收集标记', 'success');
+        console.log('✅ 显示已收集标记开关已更新:', showCollectedMarkers);
     });
 }

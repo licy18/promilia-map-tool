@@ -148,8 +148,18 @@ function addMarker(latlng, type = currentMarkerType) {
 
     // 绑定右键点击事件
     marker.on('contextmenu', function(e) {
-        e.originalEvent.preventDefault();
-        showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, id);
+        // 阻止默认行为
+        if (e.originalEvent) {
+            e.originalEvent.preventDefault();
+            e.originalEvent.stopPropagation(); // 阻止事件冒泡，防止触发地图的右键菜单
+            showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, id);
+        } else {
+            // 处理没有originalEvent的情况
+            const containerPoint = map.latLngToContainerPoint(e.latlng);
+            const x = containerPoint.x + window.scrollX;
+            const y = containerPoint.y + window.scrollY;
+            showContextMenu(x, y, id);
+        }
     });
 
     // 根据聚合状态决定添加到集群还是直接添加到地图
@@ -250,6 +260,11 @@ window.toggleMarkerCollect = function (id) {
     console.log('[toggleMarkerCollect] 调用updateStats()');
     updateStats();
 
+    // 如果设置为不显示已收集标记，无论标记的收集状态如何变化，都需要更新标记可见性
+    if (!showCollectedMarkers) {
+        updateMarkerVisibility();
+    }
+
     showToast(`标记${statusText}`, 'success');
 };
 
@@ -302,8 +317,18 @@ function loadMarkersForMap(mapId) {
 
         // 绑定右键点击事件
         m.on('contextmenu', function(e) {
-            e.originalEvent.preventDefault();
-            showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, marker.id);
+            // 阻止默认行为
+            if (e.originalEvent) {
+                e.originalEvent.preventDefault();
+                e.originalEvent.stopPropagation(); // 阻止事件冒泡，防止触发地图的右键菜单
+                showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, marker.id);
+            } else {
+                // 处理没有originalEvent的情况
+                const containerPoint = map.latLngToContainerPoint(e.latlng);
+                const x = containerPoint.x + window.scrollX;
+                const y = containerPoint.y + window.scrollY;
+                showContextMenu(x, y, marker.id);
+            }
         });
 
         if (clusterEnabled) {
@@ -452,8 +477,18 @@ function updateMarkerVisibility() {
                 
                 // 绑定右键点击事件
                 marker.on('contextmenu', function(e) {
-                    e.originalEvent.preventDefault();
-                    showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, data.id);
+                    // 阻止默认行为
+                    if (e.originalEvent) {
+                        e.originalEvent.preventDefault();
+                        e.originalEvent.stopPropagation(); // 阻止事件冒泡，防止触发地图的右键菜单
+                        showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, data.id);
+                    } else {
+                        // 处理没有originalEvent的情况
+                        const containerPoint = map.latLngToContainerPoint(e.latlng);
+                        const x = containerPoint.x + window.scrollX;
+                        const y = containerPoint.y + window.scrollY;
+                        showContextMenu(x, y, data.id);
+                    }
                 });
                 
                 markers.addLayer(marker);
@@ -479,8 +514,18 @@ function updateMarkerVisibility() {
                 
                 // 绑定右键点击事件
                 marker.on('contextmenu', function(e) {
-                    e.originalEvent.preventDefault();
-                    showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, data.id);
+                    // 阻止默认行为
+                    if (e.originalEvent) {
+                        e.originalEvent.preventDefault();
+                        e.originalEvent.stopPropagation(); // 阻止事件冒泡，防止触发地图的右键菜单
+                        showContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, data.id);
+                    } else {
+                        // 处理没有originalEvent的情况
+                        const containerPoint = map.latLngToContainerPoint(e.latlng);
+                        const x = containerPoint.x + window.scrollX;
+                        const y = containerPoint.y + window.scrollY;
+                        showContextMenu(x, y, data.id);
+                    }
                 });
                 
                 map.addLayer(marker);

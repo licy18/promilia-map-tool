@@ -507,11 +507,46 @@ function bindMapEvents() {
         }
         
         // 检查点击位置是否有标记
-        const containerPoint = map.latLngToContainerPoint(e.latlng);
-        const target = document.elementFromPoint(containerPoint.x, containerPoint.y);
+        let isMarkerClicked = false;
         
-        // 如果点击的是地图空白区域（不是标记或其他控件）
-        if (target && target.closest('#map') && !target.closest('.leaflet-marker-icon') && !target.closest('.leaflet-popup') && !target.closest('.custom-zoom-control') && !target.closest('#map-manager-btn') && !target.closest('#radar-toggle-btn') && !target.closest('#user-toggle-btn')) {
+        // 检查集群中的标记
+        if (clusterEnabled) {
+            markers.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    const markerLatLng = layer.getLatLng();
+                    // 检查标记是否在点击位置附近（5像素范围内）
+                    const markerPoint = map.latLngToContainerPoint(markerLatLng);
+                    const clickPoint = map.latLngToContainerPoint(e.latlng);
+                    const distance = Math.sqrt(
+                        Math.pow(markerPoint.x - clickPoint.x, 2) + 
+                        Math.pow(markerPoint.y - clickPoint.y, 2)
+                    );
+                    if (distance < 20) { // 20像素的容差
+                        isMarkerClicked = true;
+                    }
+                }
+            });
+        } else {
+            // 检查直接添加到地图的标记
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    const markerLatLng = layer.getLatLng();
+                    // 检查标记是否在点击位置附近（5像素范围内）
+                    const markerPoint = map.latLngToContainerPoint(markerLatLng);
+                    const clickPoint = map.latLngToContainerPoint(e.latlng);
+                    const distance = Math.sqrt(
+                        Math.pow(markerPoint.x - clickPoint.x, 2) + 
+                        Math.pow(markerPoint.y - clickPoint.y, 2)
+                    );
+                    if (distance < 20) { // 20像素的容差
+                        isMarkerClicked = true;
+                    }
+                }
+            });
+        }
+        
+        // 如果不是点击标记，则显示地图右键菜单
+        if (!isMarkerClicked) {
             showMapContextMenu(e.originalEvent.pageX, e.originalEvent.pageY, e.latlng);
         }
     });

@@ -99,6 +99,14 @@ const batchToggleCollected = (markerIds, collect) => {
     
     // 刷新地图上所有标记的显示
     refreshAllMarkers();
+    
+    // 如果设置为不显示已收集标记，且批量标记为已收集，则更新标记可见性
+    if (!showCollectedMarkers && collect) {
+        updateMarkerVisibility();
+    } else if (!showCollectedMarkers && !collect) {
+        // 如果批量取消收集，也需要更新标记可见性
+        updateMarkerVisibility();
+    }
 };
 
 // 清除所有收集状态
@@ -110,6 +118,11 @@ const clearCollectedMarkers = () => {
     
     // 刷新地图上所有标记的显示
     refreshAllMarkers();
+    
+    // 如果设置为不显示已收集标记，清除所有收集状态后需要更新标记可见性
+    if (!showCollectedMarkers) {
+        updateMarkerVisibility();
+    }
 };
 
 // 刷新地图上所有标记的图标和弹出框
@@ -237,6 +250,7 @@ window.exportData = function() {
         version: '1.3',
         exportedAt: new Date().toISOString(),
         toolName: '普罗米利亚地图标记工具',
+        collectedMarkers: collectedMarkers, // 添加收集状态
         maps: {}
     };
     
@@ -328,6 +342,7 @@ window.exportSingleMapData = function() {
             exportedAt: new Date().toISOString(),
             toolName: '普罗米利亚地图标记工具',
             exportType: 'single-map',
+            collectedMarkers: collectedMarkers, // 添加收集状态
             mapInfo: {
                 mapId: currentMapId,
                 mapName: currentMapConfig.name,
@@ -429,6 +444,17 @@ function performSingleMapImport(importData, importMode) {
     const storageKey = currentMapConfig.storageKey;
     
     try {
+        // 导入收集状态（如果有）
+        if (importData.collectedMarkers) {
+            if (importMode === 'override') {
+                collectedMarkers = importData.collectedMarkers;
+            } else {
+                Object.assign(collectedMarkers, importData.collectedMarkers);
+            }
+            saveCollectedMarkers();
+            console.log('✅ 导入收集状态');
+        }
+        
         // 读取现有数据（仅在增量导入时需要）
         let existingData = {};
         if (importMode !== 'override') {
@@ -550,6 +576,17 @@ window.importData = function(event) {
             let totalImported = 0;
             let totalRoutesImported = 0;
             let mapsImported = 0;
+            
+            // 导入收集状态（如果有）
+            if (importData.collectedMarkers) {
+                if (importMode === 'override') {
+                    collectedMarkers = importData.collectedMarkers;
+                } else {
+                    Object.assign(collectedMarkers, importData.collectedMarkers);
+                }
+                saveCollectedMarkers();
+                console.log('✅ 导入收集状态');
+            }
             
             // 导入每个地图的数据
             if (importData.maps) {

@@ -28,6 +28,7 @@ let currentRouteStartMarker = null;
 let filterState = JSON.parse(localStorage.getItem('promilia-filter-state') || '{}');
 let categoryExpanded = JSON.parse(localStorage.getItem('promilia-category-expanded') || '{}');
 let clusterEnabled = localStorage.getItem('promilia-cluster-enabled') !== 'false';
+let showCollectedMarkers = localStorage.getItem('promilia-show-collected-markers') !== 'false'; // 默认显示已收集标记
 
 // 预计算和缓存
 let precomputedStats = {};
