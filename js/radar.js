@@ -5,12 +5,33 @@
 // === 新增：区域统计雷达核心引擎 ===
 let radarLayerGroup = null; // 延迟初始化
 let radarRegionsMap = {}; // 【新增】用于存放区域 ID 与多边形实例的映射，实现点击定位
+let selectedRegionId = null; // 当前选中的区域 ID
+let regionStatus = {}; // 区域状态存储：{ regionId: { completed: boolean, children: [] } }
 const EPSILON = 0.0005; // 【黑科技】：压线判定的容差宽度（地图坐标单位）
+
+// 初始化区域状态（从 localStorage 加载）
+function initRegionStatus() {
+    const savedStatus = localStorage.getItem('radarRegionStatus');
+    if (savedStatus) {
+        try {
+            regionStatus = JSON.parse(savedStatus);
+        } catch (e) {
+            console.error('加载区域状态失败:', e);
+            regionStatus = {};
+        }
+    }
+}
+
+// 保存区域状态到 localStorage
+function saveRegionStatus() {
+    localStorage.setItem('radarRegionStatus', JSON.stringify(regionStatus));
+}
 
 // 初始化雷达图层（在 main.js 中调用）
 function initRadarLayer() {
     if (!radarLayerGroup && map) {
         radarLayerGroup = L.featureGroup().addTo(map);
+        initRegionStatus(); // 初始化区域状态
     }
 }
 
@@ -178,15 +199,38 @@ window.runRadar = function (mode, count, customBounds = null) {
 
     regions.forEach((polyCoords, index) => {
         const regionId = (index + 1).toString().padStart(2, '0');
+        
+        // 检查区域状态
+        const status = regionStatus[regionId] || { completed: false, children: [] };
+        const color = status.completed ? '#00FF00' : '#ff3333';
+        
         const polygon = L.polygon(polyCoords, {
-            color: '#ff3333',
+            color: color,
             weight: 2,
             fillOpacity: 0.1,
-            regionId: regionId // 注入自定义属性
+            regionId: regionId, // 注入自定义属性
+            completed: status.completed
         });
+        
+        // 添加点击事件监听器
+        polygon.on('click', function() {
+            selectRegion(regionId);
+        });
+        
+        // 添加触摸事件监听器，支持触摸屏设备
+        polygon.on('touchstart', function() {
+            selectRegion(regionId);
+        });
+        
         if (radarLayerGroup) polygon.addTo(radarLayerGroup);
 
         radarRegionsMap[regionId] = polygon; // 存入索引
+        
+        // 保存区域状态
+        if (!regionStatus[regionId]) {
+            regionStatus[regionId] = status;
+            saveRegionStatus();
+        }
 
         // 计算重心贴标签
         let centerLat = 0, centerLng = 0;
@@ -253,20 +297,92 @@ window.runRadar = function (mode, count, customBounds = null) {
 
     if (reportHTML === '') reportHTML = '<div style="color:#00ff00;">当前视野及目标下未发现资产！</div>';
     document.getElementById('radar-report').innerHTML = reportHTML;
+    
     showToast('扫描完成！请查看侧边栏报告', 'success');
 };
 // ==========================================
 
+/**
+ * 区域选择函数
+ * @param {string} id - 区域 ID
+ * 功能：
+ * 1. 取消之前选中的区域的高亮状态
+ * 2. 高亮显示当前选中的区域
+ * 3. 定位到选中区域
+ * 4. 更新报告区域，显示操作按钮
+ */
+function selectRegion(id) {
+    // 取消之前选中的区域
+    if (selectedRegionId && radarRegionsMap[selectedRegionId]) {
+        const prevPoly = radarRegionsMap[selectedRegionId];
+        const status = regionStatus[selectedRegionId] || { completed: false };
+        prevPoly.setStyle({
+            color: status.completed ? '#00FF00' : '#ff3333',
+            weight: 2,
+            fillOpacity: 0.1
+        });
+    }
+    
+    // 选中当前区域
+    selectedRegionId = id;
+    const poly = radarRegionsMap[id];
+    if (poly) {
+        poly.setStyle({
+            color: '#00d9ff',
+            weight: 4,
+            fillOpacity: 0.3
+        });
+        
+        // 定位到选中区域
+        map.fitBounds(poly.getBounds(), { padding: [100, 100], maxZoom: 1, animate: true });
+        
+        // 更新报告区域，显示操作按钮
+        updateRegionActions(id);
+    }
+}
+
+/**
+ * 更新区域操作按钮
+ * @param {string} regionId - 区域 ID
+ * 功能：
+ * 1. 获取区域状态
+ * 2. 生成操作按钮 HTML
+ * 3. 在报告顶部添加操作按钮
+ * 4. 显示当前选中区域的状态信息
+ */
+function updateRegionActions(regionId) {
+    const reportEl = document.getElementById('radar-report');
+    if (!reportEl) return;
+    
+    const status = regionStatus[regionId] || { completed: false };
+    const completedText = status.completed ? '已完成' : '未完成';
+    const completedClass = status.completed ? 'btn-success' : 'btn-primary';
+    
+    // 在报告顶部添加操作按钮
+    const actionsHTML = `
+        <div style="margin-bottom: 15px; display: flex; gap: 8px;">
+            <button class="btn ${completedClass}" onclick="toggleRegionCompletion('${regionId}')" style="flex: 1; padding: 5px;">
+                <i class="fas ${status.completed ? 'fa-check' : 'fa-check-circle'}"></i> ${status.completed ? '标记为未完成' : '标记为检查完成'}
+            </button>
+            <button class="btn btn-info" onclick="subdivideRegion('${regionId}')" style="flex: 1; padding: 5px;">
+                <i class="fas fa-th"></i> 进一步细分
+            </button>
+        </div>
+        <div style="margin-bottom: 10px; padding: 8px; background: rgba(0, 217, 255, 0.1); border-radius: 4px;">
+            <strong>当前选中区域:</strong> ${regionId} (状态: ${completedText})
+        </div>
+    `;
+    
+    // 保留原报告内容
+    const originalContent = reportEl.innerHTML.replace(/<div style="margin-bottom: 15px; display: flex; gap: 8px;">.*?<\/div>\s*<div style="margin-bottom: 10px; padding: 8px; background: rgba\(0, 217, 255, 0\.1\); border-radius: 4px;\">.*?<\/div>/s, '');
+    
+    reportEl.innerHTML = actionsHTML + originalContent;
+}
+
 // 【新增】雷达点击定位与复制报告工具函数
 window.focusRadarRegion = function (id) {
-    const poly = radarRegionsMap[id];
-    if (poly && map) {
-        map.fitBounds(poly.getBounds(), { padding: [100, 100], maxZoom: 1, animate: true });
-        const originalStyle = { fillOpacity: 0.1, color: '#ff3333' };
-        poly.setStyle({ fillOpacity: 0.7, color: '#00d9ff' });
-        setTimeout(() => { poly.setStyle(originalStyle); }, 800);
-        showToast(`已定位至区域 ${id}`, 'info');
-    }
+    selectRegion(id);
+    showToast(`已定位至区域 ${id}`, 'info');
 };
 
 window.copyRadarReport = function () {
@@ -283,4 +399,147 @@ window.copyRadarReport = function () {
         console.error('复制失败:', err);
         showToast('复制失败，请手动选中复制', 'error');
     });
+};
+
+/**
+ * 切换区域完成状态
+ * @param {string} regionId - 区域 ID
+ * 功能：
+ * 1. 切换区域的完成状态
+ * 2. 更新区域样式（完成状态为绿色，未完成状态为红色）
+ * 3. 保存状态到 localStorage
+ * 4. 更新操作按钮
+ * 5. 显示操作成功提示
+ */
+window.toggleRegionCompletion = function (regionId) {
+    const poly = radarRegionsMap[regionId];
+    if (!poly) return;
+    
+    // 获取当前状态
+    const status = regionStatus[regionId] || { completed: false, children: [] };
+    const newStatus = !status.completed;
+    
+    // 更新状态
+    status.completed = newStatus;
+    regionStatus[regionId] = status;
+    saveRegionStatus();
+    
+    // 更新多边形样式
+    const color = newStatus ? '#00FF00' : '#ff3333';
+    poly.setStyle({
+        color: color,
+        weight: selectedRegionId === regionId ? 4 : 2,
+        fillOpacity: selectedRegionId === regionId ? 0.3 : 0.1
+    });
+    
+    // 更新操作按钮
+    updateRegionActions(regionId);
+    
+    // 显示提示
+    showToast(`区域 ${regionId} 已${newStatus ? '标记为检查完成' : '标记为未完成'}`, 'success');
+};
+
+/**
+ * 区域细分功能
+ * @param {string} regionId - 区域 ID
+ * 功能：
+ * 1. 获取选中区域的边界
+ * 2. 在保留原有区域的基础上，在其内部生成细分区域
+ * 3. 建立父子区域关系
+ * 4. 显示细分成功提示
+ */
+window.subdivideRegion = function (regionId) {
+    const poly = radarRegionsMap[regionId];
+    if (!poly) return;
+    
+    // 获取区域边界
+    const bounds = poly.getBounds();
+    const north = bounds.getNorth();
+    const south = bounds.getSouth();
+    const east = bounds.getEast();
+    const west = bounds.getWest();
+    
+    // 计算行列数（4宫格）
+    const cols = 2;
+    const latStep = (north - south) / cols;
+    const lngStep = (east - west) / cols;
+    
+    let subRegions = [];
+    
+    // 生成子区域多边形
+    for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < cols; j++) {
+            const top = north - i * latStep, bottom = north - (i + 1) * latStep;
+            const left = west + j * lngStep, right = west + (j + 1) * lngStep;
+            
+            // 生成矩形子区域
+            subRegions.push([[top, left], [top, right], [bottom, right], [bottom, left]]);
+        }
+    }
+    
+    // 记录子区域 ID
+    const childRegionIds = [];
+    
+    // 绘制子区域并添加到雷达图层
+    subRegions.forEach((polyCoords, index) => {
+        const subRegionId = `${regionId}-${(index + 1).toString().padStart(2, '0')}`;
+        childRegionIds.push(subRegionId);
+        
+        // 检查子区域状态
+        const status = regionStatus[subRegionId] || { completed: false, children: [], parent: regionId };
+        const color = status.completed ? '#00FF00' : '#ff3333';
+        
+        const subPolygon = L.polygon(polyCoords, {
+            color: color,
+            weight: 2,
+            fillOpacity: 0.1,
+            regionId: subRegionId, // 注入自定义属性
+            completed: status.completed
+        });
+        
+        // 添加点击事件监听器
+        subPolygon.on('click', function() {
+            selectRegion(subRegionId);
+        });
+        
+        // 添加触摸事件监听器，支持触摸屏设备
+        subPolygon.on('touchstart', function() {
+            selectRegion(subRegionId);
+        });
+        
+        if (radarLayerGroup) subPolygon.addTo(radarLayerGroup);
+        
+        // 存入索引
+        radarRegionsMap[subRegionId] = subPolygon;
+        
+        // 计算重心贴标签
+        let centerLat = 0, centerLng = 0;
+        polyCoords.forEach(p => { centerLat += p[0]; centerLng += p[1]; });
+        centerLat /= polyCoords.length; centerLng /= polyCoords.length;
+        
+        const labelMarker = L.marker([centerLat, centerLng], {
+            icon: L.divIcon({ className: 'radar-label-icon', html: subRegionId.split('-')[1], iconSize: [40, 40] }),
+            interactive: false
+        });
+        if (radarLayerGroup) labelMarker.addTo(radarLayerGroup);
+        
+        // 保存子区域状态
+        if (!regionStatus[subRegionId]) {
+            // 子区域继承父区域的完成状态
+            const parentStatus = regionStatus[regionId] || { completed: false };
+            status.completed = parentStatus.completed;
+            status.parent = regionId;
+            regionStatus[subRegionId] = status;
+        }
+    });
+    
+    // 记录父子区域关系
+    if (!regionStatus[regionId]) {
+        regionStatus[regionId] = { completed: false, children: [] };
+    }
+    regionStatus[regionId].children = childRegionIds;
+    saveRegionStatus();
+    
+    // 显示提示
+    showToast(`区域 ${regionId} 已细分为 4 个子区域`, 'info');
 };
