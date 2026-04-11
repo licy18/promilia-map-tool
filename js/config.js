@@ -71,5 +71,16 @@ const CATEGORY_CONFIGS = {
 const BASE_MAP_CONFIGS = {
     shalulu: { name: '夏露露村', width: 2048, height: 2048, image: 'maps/shalulu.png', storageKey: 'promilia-markers-shalulu', color: '#4a90d9', type: 'image' },
     xinaya: { name: '新芽山谷', width: 4096, height: 4096, tiles: 'maps/xinaya-tiles', tileRows: 4, tileCols: 4, tileSize: 1024, storageKey: 'promilia-markers-xinaya', color: '#5cb85c', type: 'tiles' },
+    xinaya_multi: { 
+        name: '新芽山谷 (高清多层)', 
+        width: 5120, 
+        height: 4096, 
+        type: 'tileLayer', 
+        tileUrl: 'maps/xinaya-multi/{z}/{x}/{y}.png', 
+        minZoom: 0, 
+        maxZoom: 30, 
+        storageKey: 'promilia-markers-xinaya-multi', 
+        color: '#2ecc71' 
+    },
     fulisi: { name: '弗利斯 (Fleece)', width: 2048, height: 2048, image: 'maps/fulisi.png', storageKey: 'promilia-markers-fulisi', color: '#f0ad4e', type: 'image' }
 };
