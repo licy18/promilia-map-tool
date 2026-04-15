@@ -41,6 +41,9 @@ let currentMarkerType = null;
 let batchSelectionMode = false;
 let selectedMarkers = new Set();
 
+// 图标大小配置
+let markerIconSize = parseInt(localStorage.getItem('promilia-marker-icon-size')) || 40;
+
 // 隐藏的标记层（用于筛选）
 const hiddenMarkers = new Map();
 

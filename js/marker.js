@@ -7,13 +7,16 @@ function createMarkerIcon(type, markerId) {
     const config = MARKER_CONFIGS[type];
     const isCollected = markerId ? isMarkerCollected(markerId) : false;
     const opacity = isCollected ? '0.5' : '1';
+    const size = markerIconSize || 40;
+    const iconSize = Math.round(size * 0.45); // 图标大小为容器的45%
+    const imageSize = Math.round(size * 0.7); // 图片大小为容器的70%
 
     // 处理未知标记类型
     if (!config) {
         const html = `
             <div style="
-                width: 40px;
-                height: 40px;
+                width: ${size}px;
+                height: ${size}px;
                 background: #999;
                 border-radius: 50%;
                 display: flex;
@@ -23,16 +26,16 @@ function createMarkerIcon(type, markerId) {
                 box-shadow: 0 2px 10px rgba(0,0,0,0.3);
                 opacity: ${opacity};
             ">
-                <i class="fas fa-question" style="color: white; font-size: 18px;"></i>
+                <i class="fas fa-question" style="color: white; font-size: ${iconSize}px;"></i>
             </div>
         `;
 
         return L.divIcon({
             html: html,
             className: 'custom-marker',
-            iconSize: [40, 40],
-            iconAnchor: [20, 20],
-            popupAnchor: [0, -20]
+            iconSize: [size, size],
+            iconAnchor: [size/2, size/2],
+            popupAnchor: [0, -size/2]
         });
     }
 
@@ -40,8 +43,8 @@ function createMarkerIcon(type, markerId) {
     if (config.useImage && config.imagePath) {
         const html = `
             <div style="
-                width: 40px;
-                height: 40px;
+                width: ${size}px;
+                height: ${size}px;
                 background: white;
                 border-radius: 50%;
                 display: flex;
@@ -52,24 +55,24 @@ function createMarkerIcon(type, markerId) {
                 overflow: hidden;
                 opacity: ${opacity};
             ">
-                <img src="${config.imagePath}" style="width: 28px; height: 28px; object-fit: contain;" alt="${config.label}" />
+                <img src="${config.imagePath}" style="width: ${imageSize}px; height: ${imageSize}px; object-fit: contain;" alt="${config.label}" />
             </div>
         `;
 
         return L.divIcon({
             html: html,
             className: 'custom-marker-image',
-            iconSize: [40, 40],
-            iconAnchor: [20, 20],
-            popupAnchor: [0, -20]
+            iconSize: [size, size],
+            iconAnchor: [size/2, size/2],
+            popupAnchor: [0, -size/2]
         });
     }
 
     // 默认使用 FontAwesome 图标
     const html = `
         <div style="
-            width: 40px;
-            height: 40px;
+            width: ${size}px;
+            height: ${size}px;
             background: ${config.color};
             border-radius: 50%;
             display: flex;
@@ -79,16 +82,16 @@ function createMarkerIcon(type, markerId) {
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             opacity: ${opacity};
         ">
-            <i class="fas ${config.icon}" style="color: white; font-size: 18px;"></i>
+            <i class="fas ${config.icon}" style="color: white; font-size: ${iconSize}px;"></i>
         </div>
     `;
 
     return L.divIcon({
         html: html,
         className: 'custom-marker',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
-        popupAnchor: [0, -20]
+        iconSize: [size, size],
+        iconAnchor: [size/2, size/2],
+        popupAnchor: [0, -size/2]
     });
 }
 
@@ -674,6 +677,47 @@ function initMapContextMenu() {
             }
         });
     }
+}
+
+// 更新标记图标大小
+function updateMarkerIconSize(newSize) {
+    markerIconSize = newSize;
+    localStorage.setItem('promilia-marker-icon-size', newSize.toString());
+    
+    // 更新所有标记的图标
+    if (clusterEnabled) {
+        markers.eachLayer(layer => {
+            if (layer instanceof L.Marker) {
+                // 尝试从弹窗内容中提取标记ID
+                const popupContent = layer.getPopup().getContent();
+                const idMatch = popupContent.match(/note-(marker_\d+_\d+)/);
+                if (idMatch) {
+                    const markerId = idMatch[1];
+                    const markerData = window.markerData[markerId];
+                    if (markerData) {
+                        layer.setIcon(createMarkerIcon(markerData.type, markerId));
+                    }
+                }
+            }
+        });
+    } else {
+        map.eachLayer(layer => {
+            if (layer instanceof L.Marker) {
+                // 尝试从弹窗内容中提取标记ID
+                const popupContent = layer.getPopup().getContent();
+                const idMatch = popupContent.match(/note-(marker_\d+_\d+)/);
+                if (idMatch) {
+                    const markerId = idMatch[1];
+                    const markerData = window.markerData[markerId];
+                    if (markerData) {
+                        layer.setIcon(createMarkerIcon(markerData.type, markerId));
+                    }
+                }
+            }
+        });
+    }
+    
+    showToast(`图标大小已设置为 ${newSize}px`, 'success');
 }
 
 // 显示空白区域右键菜单

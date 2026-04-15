@@ -109,3 +109,47 @@ function updateFilterUI() {
         el.classList.toggle('active', isActive);
     });
 }
+
+// 初始化图标大小调整控件
+function initIconSizeControls() {
+    const slider = document.getElementById('icon-size-slider');
+    const input = document.getElementById('icon-size-input');
+    
+    if (slider && input) {
+        // 初始化控件值为当前图标大小
+        slider.value = markerIconSize;
+        input.value = markerIconSize;
+        
+        // 滑块事件
+        slider.addEventListener('input', function() {
+            const size = parseInt(this.value);
+            input.value = size;
+            updateMarkerIconSize(size);
+        });
+        
+        // 输入框事件
+        input.addEventListener('input', function() {
+            let size = parseInt(this.value);
+            // 确保值在范围内
+            size = Math.max(20, Math.min(80, size));
+            this.value = size;
+            slider.value = size;
+            updateMarkerIconSize(size);
+        });
+        
+        // 输入框失去焦点事件
+        input.addEventListener('blur', function() {
+            let size = parseInt(this.value);
+            // 确保值在范围内
+            size = Math.max(20, Math.min(80, size));
+            this.value = size;
+            slider.value = size;
+            updateMarkerIconSize(size);
+        });
+    }
+}
+
+// 页面加载完成后初始化
+if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', initIconSizeControls);
+}
