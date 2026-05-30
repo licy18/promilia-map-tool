@@ -181,7 +181,7 @@ const zoomSlider = document.getElementById('zoom-slider');
 if (zoomSlider) {
     zoomSlider.addEventListener('input', function() {
         const zoomValue = parseFloat(this.value);
-        map.setZoom(zoomValue);
+        map.setZoom(getLeafletZoomValue(currentMapConfig, zoomValue));
     });
 }
 
@@ -197,15 +197,19 @@ window.zoomOut = function() {
 };
 
 window.resetMapCenter = function() {
-    const bounds = currentMapConfig.bounds || [[0, 0], [currentMapConfig.height, currentMapConfig.width]];
-    map.fitBounds(bounds);
+    if (Array.isArray(currentMapConfig.center) || typeof currentMapConfig.defaultZoom === 'number') {
+        const initialZoom = typeof currentMapConfig.defaultZoom === 'number' ? getLeafletZoomValue(currentMapConfig, currentMapConfig.defaultZoom) : map.getMinZoom();
+        map.setView(getMapCenter(currentMapConfig), initialZoom);
+    } else {
+        map.fitBounds(getMapBoundsArray(currentMapConfig));
+    }
     updateZoomSlider();
 };
 
 function updateZoomSlider() {
     const zoomSlider = document.getElementById('zoom-slider');
     if (zoomSlider) {
-        zoomSlider.value = map.getZoom();
+        syncZoomSliderForMap(map.getMinZoom(), map.getMaxZoom(), currentMapConfig);
     }
 }
 

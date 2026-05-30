@@ -55,6 +55,81 @@ function createPlaceholder(mapId) {
     return canvas.toDataURL('image/png');
 }
 
+function getMapBoundsArray(config = currentMapConfig) {
+    if (config && Array.isArray(config.bounds) && config.bounds.length === 2) {
+        return config.bounds;
+    }
+    return [[0, 0], [config.width, config.height]];
+}
+
+function getMapBounds(config = currentMapConfig) {
+    return L.latLngBounds(getMapBoundsArray(config));
+}
+
+function getMapCenter(config = currentMapConfig) {
+    if (config && Array.isArray(config.center) && config.center.length === 2) {
+        return config.center;
+    }
+    const center = getMapBounds(config).getCenter();
+    return [center.lat, center.lng];
+}
+
+function getMapSizeText(config = currentMapConfig) {
+    if (config && Array.isArray(config.bounds) && config.bounds.length === 2) {
+        const bounds = getMapBounds(config);
+        const width = Math.round(Math.abs(bounds.getEast() - bounds.getWest()));
+        const height = Math.round(Math.abs(bounds.getNorth() - bounds.getSouth()));
+        return `${width}×${height}`;
+    }
+    return `${config.width}×${config.height}`;
+}
+
+function getLeafletZoomValue(config, zoom) {
+    if (config && config.tileCoordinateMode === 'native' && typeof config.maxZoom === 'number') {
+        return zoom - config.maxZoom;
+    }
+    return zoom;
+}
+
+function getDisplayZoomValue(config, zoom) {
+    if (config && config.tileCoordinateMode === 'native' && typeof config.maxZoom === 'number') {
+        return zoom + config.maxZoom;
+    }
+    return zoom;
+}
+
+function getConfiguredMinZoom(config = currentMapConfig) {
+    if (config && config.tileCoordinateMode === 'native' && typeof config.minZoom === 'number' && typeof config.maxZoom === 'number') {
+        return config.minZoom - config.maxZoom;
+    }
+    return typeof config.minZoom === 'number' ? config.minZoom : -3;
+}
+
+function getConfiguredMaxZoom(config = currentMapConfig) {
+    if (config && config.tileCoordinateMode === 'native' && typeof config.maxZoom === 'number') {
+        return 0;
+    }
+    return typeof config.maxZoom === 'number' ? config.maxZoom : 2;
+}
+
+function syncZoomSliderForMap(minZoom = map.getMinZoom(), maxZoom = map.getMaxZoom(), config = currentMapConfig) {
+    const slider = document.getElementById('zoom-slider');
+    if (!slider) return;
+    slider.min = getDisplayZoomValue(config, minZoom);
+    slider.max = getDisplayZoomValue(config, maxZoom);
+    slider.value = getDisplayZoomValue(config, map.getZoom());
+}
+
+function setMapZoomLimits(minZoom, maxZoom, config = currentMapConfig) {
+    map.setMinZoom(minZoom);
+    map.setMaxZoom(maxZoom);
+    syncZoomSliderForMap(minZoom, maxZoom, config);
+}
+
+function isInsideCurrentMapBounds(latlng) {
+    return getMapBounds(currentMapConfig).contains(latlng);
+}
+
 // 修复：真正物理等比例缩放的引擎 + 箭头数量恒定优化
 // 标准缩放级别：zoom = -1（以此时的箭头数量为标准）
 const ARROW_STANDARD_ZOOM = -1;
@@ -162,8 +237,10 @@ function loadMap(mapId, keepZoom = false) {
     markers.clearLayers();
     Object.keys(markerData).forEach(key => delete markerData[key]);
 
-    // 边界（Simple CRS: [[x1, y1], [x2, y2]]）
-    const bounds = [[0, 0], [config.width, config.height]];
+    // 边界（Simple CRS: [[lat1, lng1], [lat2, lng2]]）
+    const bounds = getMapBoundsArray(config);
+    const boundsObj = getMapBounds(config);
+    map.setMaxBounds(boundsObj);
 
     // 根据地图类型加载（单张图片 or 单层瓦片 or 多层瓦片）
     if (config.type === 'tileLayer' && config.tileUrl) {
@@ -182,31 +259,96 @@ function loadMap(mapId, keepZoom = false) {
             tileOverlays = [];
         }
 
-        // 根据设定的原图宽度，反推出咱们真实的缩放层级偏移量
-        // (比如 4096 / 256 = 16，log2(16) = 4。意味着 Leaflet 的 Zoom 0 相当于瓦片的 Zoom 4)
-        const nativeZoomOffset = Math.round(Math.log2(config.width / 256));
+        const isNativeTileLayer = config.tileCoordinateMode === 'native';
+        const tileLayerBounds = (isNativeTileLayer || config.bounds) ? bounds : [[0, 0], [config.height, config.width]];
 
-        // 2. 将瓦片层级 (0 ~ maxZoom) 动态映射成 Leaflet 的物理层级 (用负数拉开视野)
-        const leafletMinZoom = 0 - nativeZoomOffset;
-        const leafletMaxNativeZoom = (config.maxZoom || 3) - nativeZoomOffset;
+        if (isNativeTileLayer) {
+            const nativeMinZoom = getConfiguredMinZoom(config);
+            const nativeMaxZoom = getConfiguredMaxZoom(config);
 
-        tileLayer = L.tileLayer(config.tileUrl, {
-            minZoom: leafletMinZoom,
-            maxZoom: leafletMaxNativeZoom + 2,
-            maxNativeZoom: leafletMaxNativeZoom,
-            tileSize: 256,
-            noWrap: true,
-            bounds: [[0, 0], [config.height, config.width]],
-            updateWhenIdle: false,
-            updateWhenZooming: true,
-            updateInterval: 50,
-            keepBuffer: 10
-        });
+            tileLayer = L.tileLayer(config.tileUrl, {
+                minZoom: nativeMinZoom,
+                maxZoom: nativeMaxZoom,
+                maxNativeZoom: nativeMaxZoom,
+                tileSize: config.tileSize || 256,
+                noWrap: true,
+                bounds: tileLayerBounds,
+                updateWhenIdle: false,
+                updateWhenZooming: true,
+                updateInterval: 50,
+                keepBuffer: 10
+            });
 
-        // === 【新增 v3.7】强制锁死底层的最小缩放极值，拒绝滚轮无底线缩小喵！ ===
-        // 直接把地图容器的下限，和咱们计算出的瓦片下限死死绑在一起！
-        map.setMinZoom(leafletMinZoom);
-        // ==========================================================
+            tileLayer.getTileUrl = function (coords) {
+                const tileZ = getDisplayZoomValue(config, coords.z);
+                const tileUnits = (config.tileSize || 256) * Math.pow(2, config.maxZoom - tileZ);
+                const mapBounds = getMapBounds(config);
+                const minX = Math.floor(mapBounds.getWest() / tileUnits);
+                const maxX = Math.ceil(mapBounds.getEast() / tileUnits) - 1;
+                const minY = Math.floor(-mapBounds.getNorth() / tileUnits);
+                const maxY = Math.ceil(-mapBounds.getSouth() / tileUnits) - 1;
+
+                if (coords.x < minX || coords.x > maxX || coords.y < minY || coords.y > maxY) {
+                    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+                }
+
+                return L.Util.template(this._url, {
+                    s: this._getSubdomain(coords),
+                    z: tileZ,
+                    x: coords.x,
+                    y: coords.y
+                });
+            };
+
+            setMapZoomLimits(nativeMinZoom, nativeMaxZoom, config);
+        } else {
+            // 根据设定的原图宽度，反推出咱们真实的缩放层级偏移量
+            // (比如 4096 / 256 = 16，log2(16) = 4。意味着 Leaflet 的 Zoom 0 相当于瓦片的 Zoom 4)
+            const nativeZoomOffset = Math.round(Math.log2(config.width / 256));
+
+            // 2. 将瓦片层级 (0 ~ maxZoom) 动态映射成 Leaflet 的物理层级 (用负数拉开视野)
+            const leafletMinZoom = 0 - nativeZoomOffset;
+            const leafletMaxNativeZoom = (config.maxZoom || 3) - nativeZoomOffset;
+
+            tileLayer = L.tileLayer(config.tileUrl, {
+                minZoom: leafletMinZoom,
+                maxZoom: leafletMaxNativeZoom + 2,
+                maxNativeZoom: leafletMaxNativeZoom,
+                tileSize: config.tileSize || 256,
+                noWrap: true,
+                bounds: tileLayerBounds,
+                updateWhenIdle: false,
+                updateWhenZooming: true,
+                updateInterval: 50,
+                keepBuffer: 10
+            });
+
+            setMapZoomLimits(leafletMinZoom, leafletMaxNativeZoom + 2, config);
+
+            // 核心黑科技：拦截寻址逻辑，接管 Y 轴翻转，干掉 404 报错
+            tileLayer.getTileUrl = function (coords) {
+                // 此时因为有 maxNativeZoom 保护，coords.z 绝对不会超过咱们切的最高层
+                const tileZ = coords.z + nativeZoomOffset;
+                const maxTiles = Math.pow(2, tileZ);
+                const x = coords.x;
+
+                // 【最关键的魔法】：Y轴翻转 (Leaflet 北向负数 转为咱们文件夹里自上而下正数)
+                const y = coords.y + maxTiles;
+
+                // 防爆框：如果算出来的坐标超出这层的格子，返回一张 1x1 透明图片，瞬间消灭控制台红字！
+                if (x < 0 || x >= maxTiles || y < 0 || y >= maxTiles) {
+                    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+                }
+
+                // 给引擎返回正确的瓦片 URL
+                return L.Util.template(this._url, {
+                    s: this._getSubdomain(coords),
+                    z: tileZ,
+                    x: x,
+                    y: y
+                });
+            };
+        }
 
         // === 【终极版 v3.7】真·边缘超视距预加载 (EdgeBuffer 视网膜欺骗术) ===
         // 直接拦截底层视野计算器，骗它屏幕比实际大，强迫它提前下载视野外的瓦片喵！
@@ -227,43 +369,13 @@ function loadMap(mapId, keepZoom = false) {
         };
         // ==========================================================
 
-        // 核心黑科技：拦截寻址逻辑，接管 Y 轴翻转，干掉 404 报错
-        tileLayer.getTileUrl = function (coords) {
-            // 此时因为有 maxNativeZoom 保护，coords.z 绝对不会超过咱们切的最高层
-            const tileZ = coords.z + nativeZoomOffset;
-            const maxTiles = Math.pow(2, tileZ);
-            const x = coords.x;
-
-            // 【最关键的魔法】：Y轴翻转 (Leaflet 北向负数 转为咱们文件夹里自上而下正数)
-            const y = coords.y + maxTiles;
-
-            // 防爆框：如果算出来的坐标超出这层的格子，返回一张 1x1 透明图片，瞬间消灭控制台红字！
-            if (x < 0 || x >= maxTiles || y < 0 || y >= maxTiles) {
-                return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
-            }
-
-            // 给引擎返回正确的瓦片 URL
-            return L.Util.template(this._url, {
-                s: this._getSubdomain(coords),
-                z: tileZ,
-                x: x,
-                y: y
-            });
-        };
-
         tileLayer.addTo(map);
-
-        // 将算好的物理层级应用到大地图对象上
-        map.setMinZoom(leafletMinZoom);
-        map.setMaxZoom(leafletMaxNativeZoom + 2);
-
-        // 设置视图到地图中心 (初始设为最远视角)
-        const center = [config.height / 2, config.width / 2];
-        map.setView(center, leafletMinZoom);
 
         console.log(`✅ 多层瓦片地图加载完成：${config.name}`);
 
     } else if (config.type === 'tiles' && config.tiles) {
+        setMapZoomLimits(-3, 2, config);
+
         // === 单层瓦片地图加载（简单行列） ===
         console.log(`🗺️ 加载单层瓦片地图：${config.name} (${config.tileCols}x${config.tileRows} 瓦片)`);
 
@@ -326,6 +438,8 @@ function loadMap(mapId, keepZoom = false) {
         }, 500);
 
     } else {
+        setMapZoomLimits(-3, 2, config);
+
         // === 单张图片地图加载 ===
         let mapImageUrl = config.image;
         // 增强路径处理，确保路径正确
@@ -367,17 +481,30 @@ function loadMap(mapId, keepZoom = false) {
     }
 
     // 恢复视图（如果有保存的视图）
-    if (keepZoom && mapViews[mapId]) {
-        console.log(`🔍 恢复 ${mapId} 的视图 (zoom=${mapViews[mapId].zoom})`);
-        map.setView(mapViews[mapId].center, mapViews[mapId].zoom);
+    const savedView = mapViews[mapId];
+    const savedViewMatchesMap = config.tileCoordinateMode !== 'native' ||
+        (savedView && savedView.tileCoordinateMode === config.tileCoordinateMode);
+    const hasValidSavedView = keepZoom && savedView &&
+        savedViewMatchesMap &&
+        boundsObj.contains(savedView.center) &&
+        savedView.zoom >= map.getMinZoom() &&
+        savedView.zoom <= map.getMaxZoom();
+
+    if (hasValidSavedView) {
+        console.log(`🔍 恢复 ${mapId} 的视图 (zoom=${savedView.zoom})`);
+        map.setView(savedView.center, savedView.zoom);
+    } else if (Array.isArray(config.center) || typeof config.defaultZoom === 'number') {
+        const initialZoom = typeof config.defaultZoom === 'number' ? getLeafletZoomValue(config, config.defaultZoom) : map.getMinZoom();
+        map.setView(getMapCenter(config), initialZoom);
     } else {
         // 没有保存的视图时，总是 fitBounds（包括 keepZoom=true 但无缓存的情况）
         map.fitBounds(bounds);
     }
+    syncZoomSliderForMap(map.getMinZoom(), map.getMaxZoom(), config);
 
     // 更新 UI
     document.getElementById('current-map-name').textContent = config.name;
-    document.getElementById('current-map-size').textContent = `${config.width}×${config.height}`;
+    document.getElementById('current-map-size').textContent = getMapSizeText(config);
     document.getElementById('map-select').value = mapId;
 
     // 加载标记
@@ -486,7 +613,8 @@ function bindMapEvents() {
         saveViewTimeout = setTimeout(() => {
             const view = {
                 center: map.getCenter(),
-                zoom: map.getZoom()
+                zoom: map.getZoom(),
+                tileCoordinateMode: currentMapConfig.tileCoordinateMode || null
             };
             // 保存到当前地图的视图
             mapViews[currentMapId] = view;
@@ -500,9 +628,8 @@ function bindMapEvents() {
     map.on('contextmenu', function(e) {
         e.originalEvent.preventDefault();
         
-        // 检查点击位置是否在地图有效范围内（使用与左键相同的经纬度范围检查）
-        if (e.latlng.lat < 0 || e.latlng.lat > currentMapConfig.width ||
-            e.latlng.lng < 0 || e.latlng.lng > currentMapConfig.height) {
+        // 检查点击位置是否在地图有效范围内
+        if (!isInsideCurrentMapBounds(e.latlng)) {
             return; // 点击位置在地图范围外，不弹出菜单
         }
         

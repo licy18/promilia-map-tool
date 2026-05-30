@@ -318,7 +318,7 @@ window.uploadToCOS = async function () {
 
         // 收集所有地图数据
         const uploadData = {
-            version: '3.8.5',
+            version: '4.0.0',
             exportedAt: new Date().toISOString(),
             toolName: '普罗米利亚地图标记工具',
             maps: {}

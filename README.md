@@ -1,13 +1,13 @@
 # 普罗米利亚地图标记工具
 
-> 🗺️ 一个轻量级的本地游戏地图标记工具，无需联网即可使用。
+> 🗺️ 一个轻量级的本地游戏地图标记工具，本地存储标记数据；新芽山谷和弗利斯多层地图会在线加载瓦片。
 
 [![GitHub Release](https://img.shields.io/github/v/release/licy18/promilia-map-tool?style=flat-square)](https://github.com/licy18/promilia-map-tool/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Made with 🐸](https://img.shields.io/badge/made%20with-%F0%9F%90%B8-green.svg?style=flat-square)](https://github.com/licy18/promilia-map-tool)
 
 **📦 GitHub:** https://github.com/licy18/promilia-map-tool  
-**🏷️ 最新版本:** v3.8.0 (2026-03-29)
+**🏷️ 最新版本:** v4.0.0 (2026-05-30)
 
 ---
 
@@ -39,7 +39,7 @@ python3 -m http.server 8000
 - ✅ **自动保存** - 所有操作自动保存到 localStorage
 
 ### 多地图支持
-- ✅ **3 张地图** - 夏露露村、新芽山谷（单层）、弗利斯
+- ✅ **3 张地图** - 夏露露村、新芽山谷（外部多层瓦片）、弗利斯（外部多层瓦片）
 - ✅ **独立存储** - 每张地图的标记数据独立存储
 - ✅ **地图切换** - 下拉菜单快速切换地图
 - ✅ **视图记忆** - 自动保存每张地图的缩放级别和中心点
@@ -59,7 +59,7 @@ python3 -m http.server 8000
 
 ## 📁 文件结构
 
-### v3.8.0+ 模块化结构
+### v4.0.0+ 当前模块化结构
 
 ```
 promilia-map-tool/
@@ -84,8 +84,8 @@ promilia-map-tool/
 │   └── main.js             # 入口初始化
 ├── maps/                   # 地图资源目录
 │   ├── shalulu.png         # 夏露露村（5.9MB）
-│   ├── fulisi.png          # 弗利斯（9.1MB）
-│   └── xinaya-tiles/       # 新芽山谷单层瓦片（16 张）
+│   ├── fulisi.png          # 弗利斯旧单图素材（保留）
+│   └── xinaya-tiles/       # 新芽山谷旧单层瓦片素材（保留）
 ├── icons/                  # 自定义图标目录
 └── README.md               # 使用说明
 ```
@@ -107,27 +107,45 @@ promilia-map-tool/
 
 ## 🗺️ 地图说明
 
+从 v4.0.0 起，新芽山谷和弗利斯都作为内置基础地图接入外部多层网络瓦片。两张地图使用服务端原生坐标体系，缩放级别显示为 4-8；旧本地标记数据会继续保留，但旧坐标点位可能需要重新校准。
+
 ### 当前可用地图
 
 | 地图 ID | 名称 | 类型 | 尺寸 | 文件大小 | 状态 |
 |--------|------|------|------|----------|------|
 | `shalulu` | 夏露露村 | 单张图片 | 2048×2048 | 5.9MB | ✅ 已提供 |
-| `xinaya` | 新芽山谷 | 单层瓦片 | 4096×4096 | 560KB | ✅ 已提供 |
-| `fulisi` | 弗利斯 (Fleece) | 单张图片 | 2048×2048 | 9.1MB | ✅ 已提供 |
+| `xinaya` | 新芽山谷 | 外部多层瓦片 | 12288×12288 | 在线加载 | ✅ 基础地图 |
+| `fulisi` | 弗利斯 (Fleece) | 外部多层瓦片 | 12288×12288 | 在线加载 | ✅ 基础地图 |
 
 ### 新芽山谷瓦片规格
 
-**单层模式（v1.9+）：**
-- 4×4 网格，16 张瓦片
-- 每张瓦片 1024×1024
-- 总尺寸 4096×4096
-- 文件名：`tile_{row}_{col}.png`
+**当前基础模式：**
+- 地图 ID 保持 `xinaya`
+- 使用外部多层瓦片：`https://wiki-dev-patch-oss.oss-cn-hangzhou.aliyuncs.com/res/ap/map/xysg/cbt2/G/{z}/tile-{x}_{y}.png`
+- 缩放范围：Zoom 4-8，默认 Zoom 5
+- 初始中心：`[-805, -1734]`
+- 地图边界：`[[-6144, -6144], [6144, 6144]]`
+- 存储键保持 `promilia-markers-xinaya`
 
-**多层模式（调试中）：**
-- 3 个缩放级别（Zoom 0-2）
-- 共 21 张瓦片（5.8MB）
-- 文件名：`{z}/{x}_{y}.png`
-- **注意：** 多层模式在 `debug/multi-layer-tiles` 分支调试中
+**兼容提醒：**
+- 旧版 `xinaya` 标记数据会继续保留并读取。
+- 新芽山谷已切换为外部原生坐标体系，旧坐标点位可能需要重新校准。
+- 本轮只接入 G 图层，暂不提供图层切换。
+
+### 弗利斯瓦片规格
+
+**当前基础模式：**
+- 地图 ID 保持 `fulisi`
+- 使用外部多层瓦片：`https://wiki-dev-patch-oss.oss-cn-hangzhou.aliyuncs.com/res/ap/map/fls/cbt2/G/{z}/tile-{x}_{y}.png`
+- 缩放范围：Zoom 4-8，默认 Zoom 5
+- 初始中心：`[-1000, 600]`
+- 地图边界：`[[-6144, -6144], [6144, 6144]]`
+- 存储键保持 `promilia-markers-fulisi`
+
+**兼容提醒：**
+- 旧版 `fulisi` 标记数据会继续保留并读取。
+- 弗利斯已切换为外部原生坐标体系，旧坐标点位可能需要重新校准。
+- 本轮只接入 G 图层，暂不提供图层切换。
 
 ---
 
@@ -287,6 +305,13 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 ## 📝 更新日志
+
+### v4.0.0 (2026-05-30) - 多层网络地图升级
+- 将新芽山谷 `xinaya` 升级为外部原生坐标多层瓦片基础地图，保留地图 ID 和 `promilia-markers-xinaya` 存储键。
+- 将弗利斯 `fulisi` 升级为外部原生坐标多层瓦片基础地图，保留地图 ID 和 `promilia-markers-fulisi` 存储键。
+- 清理旧的 `xinaya_multi` 基础地图入口；如果本地缓存仍指向该地图，会自动切回 `xinaya`。
+- 统一地图边界、中心点、默认缩放和缩放滑条逻辑，回到全貌、越界判断、路线绘制和雷达扫描都会优先使用地图配置。
+- 导入导出 JSON 结构保持不变；旧标记数据会保留，但新芽山谷和弗利斯坐标体系已切换，旧点位可能需要重新校准。
 
 ### v3.8.0 (2026-03-29) - 🔀 模块化拆分
 - 🔀 **重构：** 将单文件 `index.html` 拆分为多个模块
@@ -632,8 +657,8 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 2. 刷新页面测试
 3. 无需编译，即时生效
 
-**调试分支：**
-- `debug/multi-layer-tiles` - 多层瓦片地图调试
+**地图说明：**
+- 新芽山谷和弗利斯已接入外部多层瓦片作为基础地图。
 
 ---
 
@@ -643,6 +668,6 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 
 ---
 
-**开发：** 呱呱 (Guāguā) 🐸  
-**最后更新：** 2026-03-27  
-**最新版本：** v3.7.0
+**开发：** 呱呱 (Guāguā) 🐸
+**最后更新：** 2026-05-30
+**最新版本：** v4.0.0

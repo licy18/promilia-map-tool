@@ -280,8 +280,7 @@ function bindRouteEvents() {
         const isCurrentlyBrowseMode = document.getElementById('browse-mode-toggle').checked;
 
         // === 【修改 v3.7】：温和版宇宙边界安检口喵！ ===
-        if (e.latlng.lat < 0 || e.latlng.lat > currentMapConfig.width ||
-            e.latlng.lng < 0 || e.latlng.lng > currentMapConfig.height) {
+        if (!isInsideCurrentMapBounds(e.latlng)) {
 
             // 只有当用户"真的想干活"（正在画线，或者关闭了浏览模式且选好了标记）时，点到外面才弹窗提示
             if (isRouteMode || (!isCurrentlyBrowseMode && currentMarkerType)) {

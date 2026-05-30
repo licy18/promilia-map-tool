@@ -7,4 +7,4 @@
 const DATA_VERSION = 1;
 
 // 工具版本
-const TOOL_VERSION = '3.9.1';
+const TOOL_VERSION = '4.0.0';
