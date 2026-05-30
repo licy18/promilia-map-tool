@@ -156,10 +156,11 @@ window.runRadar = function (mode, count, customBounds = null) {
         west = customBounds.getWest();
     } else {
         // 模式 B：全局扫描 -> 获取当前地图的真实物理边界！无视屏幕缩放！
-        north = currentMapConfig.width;
-        south = 0;
-        east = currentMapConfig.height;
-        west = 0;
+        const mapBounds = getMapBounds(currentMapConfig);
+        north = mapBounds.getNorth();
+        south = mapBounds.getSouth();
+        east = mapBounds.getEast();
+        west = mapBounds.getWest();
     }
 
     // 计算行列数 (4 -> 2x2, 16 -> 4x4, 64 -> 8x8)
@@ -334,7 +335,11 @@ function selectRegion(id) {
         });
         
         // 定位到选中区域
-        map.fitBounds(poly.getBounds(), { padding: [100, 100], maxZoom: 1, animate: true });
+        const focusZoom = Math.min(
+            map.getMaxZoom(),
+            Math.max(map.getMinZoom(), currentMapConfig.defaultZoom || 1)
+        );
+        map.fitBounds(poly.getBounds(), { padding: [100, 100], maxZoom: focusZoom, animate: true });
         
         // 更新报告区域，显示操作按钮
         updateRegionActions(id);

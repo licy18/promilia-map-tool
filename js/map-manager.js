@@ -2,10 +2,30 @@
  * 自定义地图增删改管理
  */
 
+function cloneBaseMapConfigs() {
+    return JSON.parse(JSON.stringify(BASE_MAP_CONFIGS));
+}
+
+function normalizeMapConfigs(configs) {
+    const normalized = { ...(configs || {}) };
+
+    // 内置地图以代码配置为准，便于版本升级时修正地图源和边界。
+    Object.keys(BASE_MAP_CONFIGS).forEach(mapId => {
+        normalized[mapId] = JSON.parse(JSON.stringify(BASE_MAP_CONFIGS[mapId]));
+    });
+
+    // xinaya 已升级为基础多层地图，清理旧调试入口。
+    if (normalized.xinaya_multi) {
+        delete normalized.xinaya_multi;
+    }
+
+    return normalized;
+}
+
 // 【核心改造】：新手大礼包分发机制
 if (!localStorage.getItem('promilia-maps-initialized')) {
-    // 第一次进网站，把三个基础地图作为初始配置写入本地
-    localStorage.setItem('promilia-custom-maps', JSON.stringify(BASE_MAP_CONFIGS));
+    // 第一次进网站，把基础地图作为初始配置写入本地
+    localStorage.setItem('promilia-custom-maps', JSON.stringify(cloneBaseMapConfigs()));
     localStorage.setItem('promilia-maps-initialized', 'true');
 }
 
@@ -15,11 +35,18 @@ try {
     MAP_CONFIGS = JSON.parse(localStorage.getItem('promilia-custom-maps')) || {};
     // 绝对兜底：如果用户用魔法把缓存清空了，强制补回大礼包
     if (Object.keys(MAP_CONFIGS).length === 0) {
-        MAP_CONFIGS = { ...BASE_MAP_CONFIGS };
-        localStorage.setItem('promilia-custom-maps', JSON.stringify(MAP_CONFIGS));
+        MAP_CONFIGS = cloneBaseMapConfigs();
     }
 } catch (e) {
-    MAP_CONFIGS = { ...BASE_MAP_CONFIGS };
+    MAP_CONFIGS = cloneBaseMapConfigs();
+}
+
+MAP_CONFIGS = normalizeMapConfigs(MAP_CONFIGS);
+localStorage.setItem('promilia-custom-maps', JSON.stringify(MAP_CONFIGS));
+
+if (currentMapId === 'xinaya_multi') {
+    currentMapId = 'xinaya';
+    localStorage.setItem('promilia-current-map', currentMapId);
 }
 
 // 初始化地图配置

@@ -227,18 +227,23 @@ function zoomOut() {
 function updateZoomSlider() {
     const slider = document.getElementById('zoom-slider');
     if (slider) {
-        slider.value = map.getZoom();
+        syncZoomSliderForMap(map.getMinZoom(), map.getMaxZoom(), currentMapConfig);
     }
 }
 
 // 一键回正到地图中心
 window.resetMapCenter = function () {
     if (typeof currentMapConfig !== 'undefined') {
-        // flyToBounds 会自动计算最佳全景缩放比例，并自带极度丝滑的飞行过渡动画喵！
-        map.flyToBounds([[0, 0], [currentMapConfig.height, currentMapConfig.width]], {
-            duration: 0.6, // 0.6秒的飞行时间，优雅从容
-            easeLinearity: 0.25
-        });
+        if (Array.isArray(currentMapConfig.center) || typeof currentMapConfig.defaultZoom === 'number') {
+            const initialZoom = typeof currentMapConfig.defaultZoom === 'number' ? getLeafletZoomValue(currentMapConfig, currentMapConfig.defaultZoom) : map.getMinZoom();
+            map.setView(getMapCenter(currentMapConfig), initialZoom);
+        } else {
+            // flyToBounds 会自动计算最佳全景缩放比例，并自带极度丝滑的飞行过渡动画喵！
+            map.flyToBounds(getMapBoundsArray(currentMapConfig), {
+                duration: 0.6, // 0.6秒的飞行时间，优雅从容
+                easeLinearity: 0.25
+            });
+        }
         showToast('已为您切换回全局视野喵！', 'success');
     }
 };
@@ -247,7 +252,7 @@ window.resetMapCenter = function () {
 window.exportData = function() {
     // 导出所有地图的完整数据
     const exportData = {
-        version: '1.3',
+        version: '4.0.0',
         exportedAt: new Date().toISOString(),
         toolName: '普罗米利亚地图标记工具',
         collectedMarkers: collectedMarkers, // 添加收集状态
@@ -338,7 +343,7 @@ window.exportSingleMapData = function() {
         
         // 构建单图导出数据
         const exportData = {
-            version: '1.0',
+            version: '4.0.0',
             exportedAt: new Date().toISOString(),
             toolName: '普罗米利亚地图标记工具',
             exportType: 'single-map',
