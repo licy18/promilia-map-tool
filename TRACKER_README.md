@@ -59,6 +59,29 @@ python tracker.py
 
 服务器运行在 `ws://localhost:8765`
 
+推荐发送带状态的新格式：
+
+```json
+{
+  "type": "location",
+  "mapId": "fulisi",
+  "source": "debug-coordinate",
+  "lat": -1000.0,
+  "lng": 600.0,
+  "confidence": 1,
+  "state": "tracking",
+  "timestamp": 1782624000000
+}
+```
+
+字段说明：
+- `mapId`：可选；提供后会和当前地图校验，不一致时前端不会更新位置。
+- `source`：可选；用于显示坐标来源，例如 `debug-coordinate`、`game-coordinate`、`minimap-vision`。
+- `confidence`：可选；支持 `0-1` 或 `0-100`，低于前端阈值时不会更新玩家点。
+- `state`：可选；用于显示 `tracking`、`lost`、`manual`、`debug` 等状态。
+
+旧格式仍兼容：
+
 ```json
 {
   "lat": 1024.5,
@@ -75,6 +98,16 @@ ws.onmessage = (event) => {
     console.log(`位置: ${location.lat}, ${location.lng}`);
 };
 ```
+
+## 🧭 网页端追踪能力
+
+网页端现在提供独立的“位置追踪”面板：
+- 坐标源：`WebSocket 坐标流`、`小地图视觉流`、`手动校准`、`调试轨迹`
+- 操作：定位到当前位置、使用地图中心、点选当前位置、清除轨迹
+- 状态：来源、置信度、坐标、最后更新时间
+- 辅助：跟随玩家、轨迹线、附近点位列表
+
+因此后续如果能拿到游戏内真实坐标，可以直接替换坐标源，不需要继续依赖小地图视觉匹配。
 
 ## 🔧 常见问题
 

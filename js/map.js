@@ -534,6 +534,10 @@ function loadMap(mapId, keepZoom = false) {
         browseToggle.dispatchEvent(new Event('change')); // 触发刚才写的清理联动逻辑
     }
     // ==========================================
+
+    if (typeof syncTrackerToCurrentMap === 'function') {
+        syncTrackerToCurrentMap(mapId);
+    }
 }
 
 // 切换地图

@@ -291,6 +291,10 @@ function bindRouteEvents() {
         }
         // ========================================================
 
+        if (typeof window.isTrackerPickingLocation === 'function' && window.isTrackerPickingLocation()) {
+            return;
+        }
+
         // === 新增：如果在路线绘制模式下，拦截点击去画线！ ===
         if (isRouteMode) {
             currentRoutePoints.push(e.latlng);
