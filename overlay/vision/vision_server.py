@@ -477,7 +477,7 @@ def load_or_build_features(project_root, map_id, manifest):
     import numpy as np
 
     paths = get_reference_paths(project_root, map_id)
-    features_path = paths["features"]
+    features_path = Path(manifest.get("featuresPath") or paths["features"])
     if features_path.exists():
         try:
             data = np.load(features_path, allow_pickle=False)
@@ -493,13 +493,15 @@ def load_or_build_features(project_root, map_id, manifest):
     if reference is None:
         raise RuntimeError(f"Cannot read reference image: {image_path}")
 
-    sift = cv2.SIFT_create(nfeatures=10000)
+    area = reference.shape[0] * reference.shape[1]
+    nfeatures = int(max(3000, min(14000, area / 1400)))
+    sift = cv2.SIFT_create(nfeatures=nfeatures)
     keypoints, descriptors = sift.detectAndCompute(reference, None)
     if descriptors is None or not keypoints:
         raise RuntimeError("Reference image has no SIFT features")
 
     kp_points = np.float32([kp.pt for kp in keypoints])
-    paths["dir"].mkdir(parents=True, exist_ok=True)
+    features_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(features_path, kp_points=kp_points, descriptors=descriptors.astype(np.float32))
     return kp_points, descriptors.astype(np.float32)
 
