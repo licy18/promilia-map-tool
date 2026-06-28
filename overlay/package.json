@@ -1,0 +1,14 @@
+{
+  "name": "azpr-map-overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Transparent in-game map point overlay for Azur Promilia official point datasets.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main.js && node --check preload.js && node --check renderer/renderer.js && node --check src/shared.js && node test-data.js && python -m py_compile vision/vision_server.py && python vision/vision_server.py self-test --metadata-only"
+  },
+  "devDependencies": {
+    "electron": "^37.2.0"
+  }
+}

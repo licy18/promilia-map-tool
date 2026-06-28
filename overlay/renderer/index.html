@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>蓝色星原点位覆盖层</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="interactive">
+  <main id="overlay-root">
+    <svg id="point-layer" aria-label="官方点位覆盖层"></svg>
+
+    <div id="calibration-rect" class="calibration-rect" hidden></div>
+    <div id="draft-rect" class="draft-rect" hidden></div>
+
+    <aside id="control-panel" class="control-panel">
+      <header class="panel-header">
+        <div>
+          <h1>点位覆盖层</h1>
+          <p id="interaction-status">鼠标穿透</p>
+        </div>
+        <div class="header-actions">
+          <button id="toggle-interaction" class="icon-button" type="button" title="切换交互">◎</button>
+          <button id="quit-overlay" class="icon-button danger" type="button" title="关闭">×</button>
+        </div>
+      </header>
+
+      <section class="panel-section">
+        <label class="field-label" for="map-select">地图</label>
+        <select id="map-select">
+          <option value="shalulu">夏露露村</option>
+          <option value="xinaya" selected>新芽山谷</option>
+          <option value="fulisi">弗利斯</option>
+        </select>
+      </section>
+
+      <section class="panel-section">
+        <div class="calibration-row">
+          <div>
+            <span class="field-label">校准</span>
+            <strong id="calibration-status">未校准</strong>
+          </div>
+          <button id="calibration-toggle" class="text-button" type="button">开始</button>
+          <button id="calibration-reset" class="text-button danger" type="button">清除</button>
+        </div>
+      </section>
+
+      <section class="panel-section vision-panel">
+        <div class="section-title">
+          <span>自动校准</span>
+          <span id="vision-status">未就绪</span>
+        </div>
+        <div class="vision-row">
+          <button id="vision-deps-btn" class="text-button" type="button">检查依赖</button>
+          <span id="vision-deps-status" class="vision-text">未检查</span>
+        </div>
+        <div class="vision-window-row">
+          <select id="vision-window-select">
+            <option value="">选择游戏窗口</option>
+          </select>
+          <button id="vision-window-refresh" class="icon-button" type="button" title="刷新窗口">↻</button>
+        </div>
+        <div class="vision-row">
+          <button id="vision-cache-btn" class="text-button" type="button">构建缓存</button>
+          <span id="vision-cache-status" class="vision-text">未缓存</span>
+        </div>
+        <button id="vision-toggle" class="text-button vision-toggle" type="button">开始自动</button>
+      </section>
+
+      <section class="panel-section">
+        <label class="field-label" for="search-input">搜索</label>
+        <div class="search-row">
+          <input id="search-input" type="search" placeholder="名称 / 分类 / ID / 资源">
+          <button id="search-clear" class="icon-button" type="button" title="清空搜索">×</button>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <div class="section-title">
+          <span>分类</span>
+          <span id="render-status">加载中</span>
+        </div>
+        <div id="category-list" class="category-list"></div>
+      </section>
+
+      <footer id="debug-status" class="debug-status">等待操作</footer>
+    </aside>
+
+    <div id="hover-card" class="hover-card" hidden></div>
+  </main>
+
+  <script src="../src/shared.js"></script>
+  <script src="./renderer.js"></script>
+</body>
+</html>
