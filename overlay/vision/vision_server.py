@@ -29,8 +29,15 @@ WINDOWS_DEPS = [
 ]
 
 DX_CAMERA = None
-CACHE_VERSION = 2
+CACHE_VERSION = 3
 MIN_TRACKING_CONFIDENCE = 0.45
+MIN_REFINED_CONFIDENCE = 0.52
+LOCAL_REFERENCE_ZOOMS = (8, 7)
+MAX_LOCAL_TILES = 96
+LOCAL_REFERENCE_MARGIN_TILES = 2
+MAX_REPROJECTION_ERROR = 8.0
+MAX_FLOW_ERROR = 4.0
+MIN_FLOW_INLIERS = 40
 
 MAP_CONFIGS = {
     "shalulu": {
@@ -166,6 +173,19 @@ def get_reference_paths(project_root, map_id):
         "image": root / "reference.png",
         "manifest": root / "manifest.json",
         "features": root / "features.npz",
+        "local": root / "local",
+    }
+
+
+def get_local_reference_paths(project_root, map_id, zoom, tile_range):
+    root = get_reference_paths(project_root, map_id)["local"] / f"z{zoom}" / (
+        f"x{tile_range['minX']}_{tile_range['maxX']}_y{tile_range['minY']}_{tile_range['maxY']}"
+    )
+    return {
+        "dir": root,
+        "image": root / "reference.png",
+        "manifest": root / "manifest.json",
+        "features": root / "features.npz",
     }
 
 
@@ -209,13 +229,18 @@ def ensure_shalulu_reference(project_root):
     return manifest
 
 
-def get_native_tile_range(project_root, map_id):
+def tile_units_for_zoom(map_id, zoom):
     config = MAP_CONFIGS[map_id]
-    zoom = config["zoom"]
     max_zoom = config["maxZoom"]
     tile_size = config["tileSize"]
+    return tile_size * (2 ** (max_zoom - zoom))
+
+
+def get_native_tile_range(project_root, map_id, zoom=None):
+    config = MAP_CONFIGS[map_id]
+    zoom = config["zoom"] if zoom is None else zoom
+    tile_units = tile_units_for_zoom(map_id, zoom)
     min_lat, min_lng, max_lat, max_lng = normalize_bounds(get_config_bounds(project_root, map_id))
-    tile_units = tile_size * (2 ** (max_zoom - zoom))
     min_x = math.floor(min_lng / tile_units)
     max_x = math.ceil(max_lng / tile_units) - 1
     min_y = math.floor(-max_lat / tile_units)
@@ -232,6 +257,52 @@ def get_native_tile_range(project_root, map_id):
     }
 
 
+def clamp_tile_range(tile_range, limit):
+    return {
+        "zoom": tile_range["zoom"],
+        "tileUnits": tile_range["tileUnits"],
+        "minX": max(tile_range["minX"], limit["minX"]),
+        "maxX": min(tile_range["maxX"], limit["maxX"]),
+        "minY": max(tile_range["minY"], limit["minY"]),
+        "maxY": min(tile_range["maxY"], limit["maxY"]),
+    }
+
+
+def finalize_tile_range(tile_range):
+    tile_range = dict(tile_range)
+    tile_range["columns"] = int(tile_range["maxX"] - tile_range["minX"] + 1)
+    tile_range["rows"] = int(tile_range["maxY"] - tile_range["minY"] + 1)
+    return tile_range
+
+
+def tile_count(tile_range):
+    return max(0, int(tile_range.get("columns", 0))) * max(0, int(tile_range.get("rows", 0)))
+
+
+def get_tile_range_for_map_bounds(project_root, map_id, zoom, map_bounds, margin_tiles=0):
+    min_lat, min_lng, max_lat, max_lng = normalize_bounds([[map_bounds["minLat"], map_bounds["minLng"]], [map_bounds["maxLat"], map_bounds["maxLng"]]])
+    tile_units = tile_units_for_zoom(map_id, zoom)
+    tile_range = {
+        "zoom": zoom,
+        "tileUnits": tile_units,
+        "minX": math.floor(min_lng / tile_units) - margin_tiles,
+        "maxX": math.ceil(max_lng / tile_units) - 1 + margin_tiles,
+        "minY": math.floor(-max_lat / tile_units) - margin_tiles,
+        "maxY": math.ceil(-min_lat / tile_units) - 1 + margin_tiles,
+    }
+    full_range = get_native_tile_range(project_root, map_id, zoom)
+    return finalize_tile_range(clamp_tile_range(tile_range, full_range))
+
+
+def tile_range_to_bounds(tile_range):
+    units = float(tile_range["tileUnits"])
+    min_lng = tile_range["minX"] * units
+    max_lng = (tile_range["maxX"] + 1) * units
+    max_lat = -tile_range["minY"] * units
+    min_lat = -(tile_range["maxY"] + 1) * units
+    return [[min_lat, min_lng], [max_lat, max_lng]]
+
+
 def download_tile(url, target, timeout=20):
     if target.exists() and target.stat().st_size > 0:
         return False
@@ -242,15 +313,12 @@ def download_tile(url, target, timeout=20):
     return True
 
 
-def build_tile_reference(project_root, map_id):
+def build_tile_mosaic(project_root, map_id, zoom, tile_range, paths, progress=False):
     from PIL import Image
 
     config = MAP_CONFIGS[map_id]
-    zoom = config["zoom"]
     tile_size = config["tileSize"]
-    tile_range = get_native_tile_range(project_root, map_id)
-    paths = get_reference_paths(project_root, map_id)
-    tile_dir = paths["dir"] / f"tiles-z{zoom}"
+    tile_dir = get_reference_paths(project_root, map_id)["dir"] / f"tiles-z{zoom}"
     paths["dir"].mkdir(parents=True, exist_ok=True)
 
     total = tile_range["columns"] * tile_range["rows"]
@@ -271,7 +339,7 @@ def build_tile_reference(project_root, map_id):
                     "message": f"瓦片 {x},{y} 下载失败: {error}",
                 })
             done += 1
-            if done == total or done % 16 == 0:
+            if progress and (done == total or done % 16 == 0):
                 emit({
                     "type": "cache-progress",
                     "mapId": map_id,
@@ -300,6 +368,16 @@ def build_tile_reference(project_root, map_id):
     reference.save(paths["image"])
     if paths["features"].exists():
         paths["features"].unlink()
+    return reference, missing, downloaded
+
+
+def build_tile_reference(project_root, map_id):
+    config = MAP_CONFIGS[map_id]
+    zoom = config["zoom"]
+    tile_size = config["tileSize"]
+    tile_range = get_native_tile_range(project_root, map_id, zoom)
+    paths = get_reference_paths(project_root, map_id)
+    reference, missing, _downloaded = build_tile_mosaic(project_root, map_id, zoom, tile_range, paths, progress=True)
     manifest = {
         "mapId": map_id,
         "tileUrl": config["tileUrl"],
@@ -317,6 +395,54 @@ def build_tile_reference(project_root, map_id):
         "cacheKind": "downloaded-tiles",
     }
     write_manifest(project_root, map_id, manifest)
+    return manifest
+
+
+def ensure_local_reference(project_root, map_id, zoom, map_bounds):
+    if MAP_CONFIGS[map_id]["type"] != "tileLayer":
+        return None
+
+    tile_range = get_tile_range_for_map_bounds(
+        project_root,
+        map_id,
+        zoom,
+        map_bounds,
+        margin_tiles=LOCAL_REFERENCE_MARGIN_TILES,
+    )
+    if tile_range["columns"] <= 0 or tile_range["rows"] <= 0:
+        return None
+    if tile_count(tile_range) > MAX_LOCAL_TILES:
+        return None
+
+    paths = get_local_reference_paths(project_root, map_id, zoom, tile_range)
+    if paths["manifest"].exists() and paths["image"].exists():
+        try:
+            manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+            if manifest.get("version") == CACHE_VERSION:
+                return manifest
+        except Exception:
+            pass
+
+    reference, missing, downloaded = build_tile_mosaic(project_root, map_id, zoom, tile_range, paths, progress=False)
+    manifest = {
+        "mapId": map_id,
+        "tileUrl": MAP_CONFIGS[map_id]["tileUrl"],
+        "zoom": zoom,
+        "maxZoom": MAP_CONFIGS[map_id]["maxZoom"],
+        "tileSize": MAP_CONFIGS[map_id]["tileSize"],
+        "tileRange": tile_range,
+        "referenceImage": str(paths["image"]),
+        "featuresPath": str(paths["features"]),
+        "width": reference.width,
+        "height": reference.height,
+        "bounds": tile_range_to_bounds(tile_range),
+        "missingTiles": missing,
+        "downloadedTiles": downloaded,
+        "version": CACHE_VERSION,
+        "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "cacheKind": "local-tiles",
+    }
+    paths["manifest"].write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
 
 
