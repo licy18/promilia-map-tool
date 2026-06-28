@@ -155,6 +155,38 @@
                     </label>
                 </div>
 
+                <div class="official-layer-panel">
+                    <div class="official-layer-row">
+                        <div class="official-layer-title">
+                            <i class="fas fa-database"></i>
+                            <span>官方点位</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="official-layer-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="official-layer-row official-layer-subrow">
+                        <div class="official-layer-title official-layer-subtitle">
+                            <i class="fas fa-object-group"></i>
+                            <span>聚合显示</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="official-cluster-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div id="official-layer-status" class="official-layer-status">等待加载</div>
+                    <div class="official-search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="official-search-input" placeholder="搜索官方点位">
+                        <button type="button" id="official-search-clear" title="清空搜索">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="official-filter-list" class="official-filter-list"></div>
+                </div>
+
                 <!-- 宝箱类 -->
                 <div class="category-header" data-category="chest" style="cursor: pointer; padding: 10px; background: #0f3460; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -1043,6 +1075,8 @@
     <script src="js/search.js"></script>
     <script src="js/map-manager.js"></script>
     <script src="js/cos.js"></script>
+    <script src="data/official/shalulu-worldmap.js"></script>
+    <script src="js/official-layer.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

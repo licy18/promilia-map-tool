@@ -509,6 +509,9 @@ function loadMap(mapId, keepZoom = false) {
 
     // 加载标记
     loadMarkersForMap(mapId);
+    if (typeof loadOfficialLayerForMap === 'function') {
+        loadOfficialLayerForMap(mapId);
+    }
     updateStats();
     updateProgressStats();
 

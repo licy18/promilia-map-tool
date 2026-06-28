@@ -156,6 +156,7 @@ restoreView();
 restoreMarkerType();
 initCosConfigUI();
 initBatchTypeSelect();
+if (typeof initOfficialLayerUI === 'function') initOfficialLayerUI();
 
 // 初始化地图（使用保存的地图 ID，保持缩放）
 loadMap(currentMapId, true);

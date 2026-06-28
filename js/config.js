@@ -17,6 +17,7 @@ const MARKER_CONFIGS = {
     quest: { icon: 'fa-scroll', color: '#3498db', label: '任务', category: 'explore' },
     flower: { icon: 'fa-fan', color: '#e91e63', label: '采集', category: 'explore' },
     teleport: { icon: 'fa-door-open', color: '#9b59b6', label: '传送', category: 'explore' },
+    star_node: { icon: 'fa-door-open', color: '#00bfff', label: '星脉节点', category: 'explore' },
     umi: { icon: 'fa-cat', color: '#2d3436', label: '乌咪', category: 'explore' },
     umi_challenge: { icon: 'fa-cat', color: '#e94560', label: '乌咪-挑战', category: 'explore' },
     challenge: { icon: 'fa-trophy', color: '#ffd700', label: '挑战', category: 'explore' },
@@ -69,37 +70,57 @@ const CATEGORY_CONFIGS = {
 
 // 基础地图配置（新手大礼包）
 const BASE_MAP_CONFIGS = {
-    shalulu: { name: '夏露露村', width: 2048, height: 2048, image: 'maps/shalulu.png', storageKey: 'promilia-markers-shalulu', color: '#4a90d9', type: 'image' },
+    shalulu: {
+        name: '夏露露村',
+        width: 2048,
+        height: 2048,
+        image: 'maps/shalulu.png',
+        storageKey: 'promilia-markers-shalulu',
+        color: '#4a90d9',
+        type: 'image',
+        officialData: {
+            key: 'shalulu',
+            url: 'data/official/shalulu-worldmap.json'
+        }
+    },
     xinaya: {
         name: '新芽山谷',
-        width: 12288,
-        height: 12288,
+        width: 16384,
+        height: 16384,
         type: 'tileLayer',
         tileUrl: 'https://wiki-dev-patch-oss.oss-cn-hangzhou.aliyuncs.com/res/ap/map/xysg/cbt2/G/{z}/tile-{x}_{y}.png',
         minZoom: 4,
         maxZoom: 8,
         defaultZoom: 5,
         center: [-805, -1734],
-        bounds: [[-6144, -6144], [6144, 6144]],
+        bounds: [[-8192, -8192], [8192, 8192]],
         tileSize: 256,
         tileCoordinateMode: 'native',
         storageKey: 'promilia-markers-xinaya',
-        color: '#5cb85c'
+        color: '#5cb85c',
+        officialData: {
+            key: 'xinaya',
+            url: 'data/official/xinaya-worldmap.json'
+        }
     },
     fulisi: {
         name: '弗利斯 (Fleece)',
-        width: 12288,
-        height: 12288,
+        width: 16384,
+        height: 16384,
         type: 'tileLayer',
         tileUrl: 'https://wiki-dev-patch-oss.oss-cn-hangzhou.aliyuncs.com/res/ap/map/fls/cbt2/G/{z}/tile-{x}_{y}.png',
         minZoom: 4,
         maxZoom: 8,
         defaultZoom: 5,
         center: [-1000, 600],
-        bounds: [[-6144, -6144], [6144, 6144]],
+        bounds: [[-8192, -8192], [8192, 8192]],
         tileSize: 256,
         tileCoordinateMode: 'native',
         storageKey: 'promilia-markers-fulisi',
-        color: '#f0ad4e'
+        color: '#f0ad4e',
+        officialData: {
+            key: 'fulisi',
+            url: 'data/official/fulisi-worldmap.json'
+        }
     }
 };

@@ -223,6 +223,219 @@ body {
         font-size: 0.75em;
     }
 
+.official-layer-panel {
+    padding: 12px;
+    background: #0f3460;
+    border: 1px solid #1a4a7a;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.official-layer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.official-layer-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #eee;
+    font-weight: bold;
+}
+
+.official-layer-title i {
+    color: #00d9ff;
+}
+
+.official-layer-subrow {
+    margin-top: 10px;
+}
+
+.official-layer-subtitle {
+    color: #b7c9d9;
+    font-size: 0.88em;
+    font-weight: 600;
+}
+
+.official-layer-subtitle i {
+    color: #9b59b6;
+}
+
+.official-layer-status {
+    margin-top: 8px;
+    font-size: 0.78em;
+    color: #95a5a6;
+}
+
+.official-search-box {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) 26px;
+    align-items: center;
+    gap: 7px;
+    margin-top: 9px;
+    padding: 6px 7px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+
+.official-search-box > i {
+    color: #00d9ff;
+    text-align: center;
+    font-size: 0.82em;
+}
+
+.official-search-box input {
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    outline: 0;
+    color: #eef6ff;
+    font-size: 0.82em;
+}
+
+.official-search-box input::placeholder {
+    color: #8fa5b8;
+}
+
+.official-search-box button {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    color: #b7c9d9;
+    cursor: pointer;
+}
+
+.official-search-box button:hover {
+    color: #ffffff;
+    background: rgba(233, 69, 96, 0.28);
+}
+
+.official-filter-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.official-filter-group {
+    display: grid;
+    gap: 5px;
+}
+
+.official-filter-group-header {
+    display: grid;
+    grid-template-columns: 18px 18px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 8px;
+    background: rgba(0, 217, 255, 0.09);
+    border: 1px solid rgba(0, 217, 255, 0.16);
+    border-radius: 6px;
+    color: #edf7ff;
+    cursor: pointer;
+    font-size: 0.84em;
+    font-weight: 700;
+}
+
+.official-filter-group-header input {
+    margin: 0;
+}
+
+.official-filter-group-icon {
+    width: 18px;
+    text-align: center;
+    color: #00d9ff;
+}
+
+.official-filter-group-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.official-filter-children {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding-left: 14px;
+}
+
+.official-filter-item {
+    display: grid;
+    grid-template-columns: 18px 12px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #dbe8f4;
+    cursor: pointer;
+    font-size: 0.82em;
+}
+
+.official-filter-item input {
+    margin: 0;
+}
+
+.official-filter-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.75);
+}
+
+.official-filter-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.official-filter-count {
+    color: #95a5a6;
+    font-variant-numeric: tabular-nums;
+}
+
+.official-filter-empty {
+    color: #95a5a6;
+    font-size: 0.8em;
+}
+
+.official-point-icon {
+    background: transparent;
+    border: 0;
+}
+
+.official-point-icon span {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.official-point-icon i {
+    color: #fff;
+    font-size: 10px;
+}
+
+.official-popup p {
+    margin: 6px 0;
+    color: #d8e7f5;
+    font-size: 0.85em;
+}
+
 /* 按钮 */
 .btn {
     display: block;
