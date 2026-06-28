@@ -66,8 +66,9 @@ python tracker.py
   "type": "location",
   "mapId": "fulisi",
   "source": "debug-coordinate",
-  "lat": -1000.0,
-  "lng": 600.0,
+  "coordinateSpace": "game",
+  "x": 648.93,
+  "z": 574.6,
   "confidence": 1,
   "state": "tracking",
   "timestamp": 1782624000000
@@ -77,8 +78,12 @@ python tracker.py
 字段说明：
 - `mapId`：可选；提供后会和当前地图校验，不一致时前端不会更新位置。
 - `source`：可选；用于显示坐标来源，例如 `debug-coordinate`、`game-coordinate`、`minimap-vision`。
+- `coordinateSpace`：可选；支持 `map`、`image`、`native`、`game`。默认 `map`。
+- `coordinateSpace: "game"` 时，前端会优先用当前官方点位中的 `game.x/game.z -> map.lat/map.lng` 自动拟合结果转换。
+- `coordinateSpace: "image"` 时，前端按地图图片像素坐标转换；`shalulu` 会兼容旧的 `2048 - y` 小地图图像坐标。
 - `confidence`：可选；支持 `0-1` 或 `0-100`，低于前端阈值时不会更新玩家点。
 - `state`：可选；用于显示 `tracking`、`lost`、`manual`、`debug` 等状态。
+- `reset`：可选；为 `true` 时跳过大跳变拦截，适合传送或切线后的首次位置。
 
 旧格式仍兼容：
 
@@ -105,7 +110,7 @@ ws.onmessage = (event) => {
 - 坐标源：`WebSocket 坐标流`、`小地图视觉流`、`手动校准`、`调试轨迹`
 - 操作：定位到当前位置、使用地图中心、点选当前位置、清除轨迹
 - 状态：来源、置信度、坐标、最后更新时间
-- 辅助：跟随玩家、轨迹线、附近点位列表
+- 辅助：跟随玩家、轨迹线、附近点位列表、跳变拦截、平滑更新
 
 因此后续如果能拿到游戏内真实坐标，可以直接替换坐标源，不需要继续依赖小地图视觉匹配。
 

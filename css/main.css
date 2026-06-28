@@ -573,6 +573,40 @@ body {
     color: #95a5a6 !important;
 }
 
+.tracker-tuning-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.tracker-tuning-grid label {
+    display: grid;
+    gap: 5px;
+}
+
+.tracker-tuning-grid span {
+    color: #8fa5b8;
+    font-size: 0.78em;
+    font-weight: 700;
+}
+
+.tracker-tuning-grid input {
+    min-width: 0;
+    height: 32px;
+    margin: 0;
+    padding: 6px 8px;
+    background: #16213e;
+    border: 1px solid #1a4a7a;
+    border-radius: 6px;
+    color: #eef6ff;
+    outline: none;
+}
+
+.tracker-tuning-grid input:focus {
+    border-color: #00d9ff;
+    box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.18);
+}
+
 .tracker-radius-field {
     grid-template-columns: 72px minmax(0, 1fr);
     align-items: center;

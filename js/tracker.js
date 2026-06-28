@@ -10,7 +10,9 @@ const TRACKER_STORAGE_KEYS = {
     follow: 'promilia-tracker-follow',
     trail: 'promilia-tracker-trail',
     url: 'promilia-tracker-url',
-    radius: 'promilia-tracker-nearby-radius'
+    radius: 'promilia-tracker-nearby-radius',
+    smoothing: 'promilia-tracker-smoothing',
+    maxJump: 'promilia-tracker-max-jump'
 };
 
 const TRACKER_SOURCE_LABELS = {
@@ -22,6 +24,15 @@ const TRACKER_SOURCE_LABELS = {
 
 const TRACKER_MIN_CONFIDENCE = 0.25;
 const TRACKER_MAX_TRAIL_POINTS = 360;
+const TRACKER_DEFAULT_SMOOTHING = 0.65;
+const TRACKER_DEFAULT_MAX_JUMP = 900;
+
+const TRACKER_SOURCE_PROFILES = {
+    websocket: { minConfidence: 0.25, timeoutMs: 5000, useStabilizer: true },
+    'minimap-vision': { minConfidence: 0.35, timeoutMs: 3500, useStabilizer: true },
+    manual: { minConfidence: 0, timeoutMs: Infinity, useStabilizer: false },
+    debug: { minConfidence: 0, timeoutMs: Infinity, useStabilizer: false }
+};
 
 let trackerMarker = null;
 let trackerTrailLine = null;
@@ -38,9 +49,12 @@ let trackerState = {
     trailEnabled: localStorage.getItem(TRACKER_STORAGE_KEYS.trail) !== 'false',
     url: localStorage.getItem(TRACKER_STORAGE_KEYS.url) || 'ws://localhost:8765',
     nearbyRadius: Number(localStorage.getItem(TRACKER_STORAGE_KEYS.radius)) || 250,
+    smoothing: getStoredTrackerNumber(TRACKER_STORAGE_KEYS.smoothing, TRACKER_DEFAULT_SMOOTHING, 0, 1),
+    maxJump: getStoredTrackerNumber(TRACKER_STORAGE_KEYS.maxJump, TRACKER_DEFAULT_MAX_JUMP, 0),
     lastLocation: null,
     lastUpdateAt: 0,
-    trailPoints: []
+    trailPoints: [],
+    filteredCount: 0
 };
 
 function isSocketTrackerSource(source = trackerState.source) {
@@ -49,6 +63,22 @@ function isSocketTrackerSource(source = trackerState.source) {
 
 function getTrackerSourceLabel(source) {
     return TRACKER_SOURCE_LABELS[source] || source || '-';
+}
+
+function getTrackerProfile(source = trackerState.source) {
+    return TRACKER_SOURCE_PROFILES[source] || TRACKER_SOURCE_PROFILES.websocket;
+}
+
+function clampNumber(value, min, max, fallback) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return Math.max(min, Math.min(max, numeric));
+}
+
+function getStoredTrackerNumber(key, fallback, min = -Infinity, max = Infinity) {
+    const rawValue = localStorage.getItem(key);
+    if (rawValue === null || rawValue === '') return fallback;
+    return clampNumber(rawValue, min, max, fallback);
 }
 
 function getFiniteNumber(...values) {
@@ -105,6 +135,8 @@ function syncTrackerPanel() {
     const trailToggle = document.getElementById('tracker-trail-toggle');
     const urlInput = document.getElementById('tracker-url');
     const radiusInput = document.getElementById('tracker-nearby-radius');
+    const smoothingInput = document.getElementById('tracker-smoothing');
+    const maxJumpInput = document.getElementById('tracker-max-jump');
     const socketFields = document.getElementById('tracker-socket-fields');
 
     if (enabledToggle) enabledToggle.checked = trackerState.enabled;
@@ -113,12 +145,15 @@ function syncTrackerPanel() {
     if (trailToggle) trailToggle.checked = trackerState.trailEnabled;
     if (urlInput) urlInput.value = trackerState.url;
     if (radiusInput) radiusInput.value = trackerState.nearbyRadius;
+    if (smoothingInput) smoothingInput.value = trackerState.smoothing;
+    if (maxJumpInput) maxJumpInput.value = trackerState.maxJump;
     if (socketFields) socketFields.style.display = isSocketTrackerSource() ? 'grid' : 'none';
 
     setTrackerText('tracker-source-label', getTrackerSourceLabel(trackerState.source));
     setTrackerText('tracker-confidence', formatTrackerConfidence(trackerState.lastLocation?.confidence));
     setTrackerText('tracker-coords', formatTrackerCoords(trackerState.lastLocation));
     setTrackerText('tracker-updated-at', trackerState.lastUpdateAt ? formatTrackerTime(trackerState.lastUpdateAt) : '-');
+    setTrackerText('tracker-filtered-count', String(trackerState.filteredCount));
 }
 
 function createTrackerIcon(location) {
@@ -145,8 +180,10 @@ function createTrackerPopup(location) {
             <h3><i class="fas fa-location-arrow"></i> 当前位置</h3>
             <p><strong>来源：</strong>${getTrackerSourceLabel(location.source)}</p>
             <p><strong>状态：</strong>${stateLabel}</p>
+            <p><strong>坐标层：</strong>${location.coordinateSpace || 'map'} / ${location.coordinateMethod || '-'}</p>
             <p><strong>置信度：</strong>${formatTrackerConfidence(location.confidence)}</p>
             <p><strong>坐标：</strong>${formatTrackerCoords(location)}</p>
+            ${location.smoothed ? `<p><strong>原始坐标：</strong>${location.rawLat.toFixed(1)}, ${location.rawLng.toFixed(1)}</p>` : ''}
             <p><strong>时间：</strong>${formatTrackerTime(location.updatedAt)}</p>
         </div>
     `;
@@ -213,45 +250,110 @@ function normalizeTrackerPayload(payload) {
 
     const data = payload.data || payload.location || payload.position || payload;
     const mapPoint = data.map || payload.map || null;
-    const lat = getFiniteNumber(data.lat, data.latitude, data.mapLat, mapPoint?.lat);
-    const lng = getFiniteNumber(data.lng, data.lon, data.longitude, data.mapLng, mapPoint?.lng);
-    const x = getFiniteNumber(data.x, data.gameX, data.worldX);
-    const z = getFiniteNumber(data.z, data.gameZ, data.worldZ);
+    const gamePoint = data.game || payload.game || null;
+    const imagePoint = data.image || data.pixel || payload.image || payload.pixel || null;
+    const mapId = payload.mapId || data.mapId || currentMapId;
     const source = payload.source || data.source || trackerState.source;
-    const coordinateSpace = payload.coordinateSpace || data.coordinateSpace || data.space || 'map';
+    const coordinateSpace = String(payload.coordinateSpace || data.coordinateSpace || data.space || 'map').toLowerCase();
+    const confidence = normalizeConfidence(payload.confidence ?? data.confidence ?? data.score);
+    const baseLocation = {
+        source,
+        coordinateSpace,
+        mapId,
+        confidence,
+        state: payload.state || data.state || 'tracking',
+        matches: getFiniteNumber(payload.matches, data.matches, data.goodMatches),
+        reset: Boolean(payload.reset || data.reset),
+        raw: payload
+    };
 
-    if (lat !== null && lng !== null) {
+    let mapped = null;
+    if (coordinateSpace === 'game' || coordinateSpace === 'world') {
+        mapped = typeof window.gameToMap === 'function'
+            ? window.gameToMap(gamePoint || data, mapId)
+            : null;
+    } else if (coordinateSpace === 'image' || coordinateSpace === 'pixel' || coordinateSpace === 'legacy-shalulu') {
+        mapped = typeof window.imageToMap === 'function'
+            ? window.imageToMap(imagePoint || data, mapId)
+            : null;
+    } else if (coordinateSpace === 'native') {
+        mapped = window.CoordinateSystem?.nativeToMap
+            ? window.CoordinateSystem.nativeToMap(data, mapId)
+            : null;
+    } else {
+        mapped = window.CoordinateSystem?.convertPoint
+            ? window.CoordinateSystem.convertPoint(mapPoint || data, { from: 'map', to: 'map', mapId })
+            : null;
+    }
+
+    if (mapped && Number.isFinite(mapped.lat) && Number.isFinite(mapped.lng)) {
         return {
-            lat,
-            lng,
-            source,
-            coordinateSpace,
-            mapId: payload.mapId || data.mapId || currentMapId,
-            confidence: normalizeConfidence(payload.confidence ?? data.confidence ?? data.score),
-            state: payload.state || data.state || 'tracking',
-            matches: getFiniteNumber(payload.matches, data.matches, data.goodMatches),
-            raw: payload
+            ...baseLocation,
+            lat: Number(mapped.lat),
+            lng: Number(mapped.lng),
+            coordinateMethod: mapped.method || coordinateSpace,
+            calibration: mapped.calibration || null
         };
     }
 
-    if (coordinateSpace === 'game' && x !== null && z !== null && typeof window.gameToMap === 'function') {
-        const mapped = window.gameToMap({ x, z }, currentMapId);
-        if (mapped && Number.isFinite(mapped.lat) && Number.isFinite(mapped.lng)) {
-            return {
-                lat: mapped.lat,
-                lng: mapped.lng,
-                source,
-                coordinateSpace,
-                mapId: payload.mapId || data.mapId || currentMapId,
-                confidence: normalizeConfidence(payload.confidence ?? data.confidence ?? data.score),
-                state: payload.state || data.state || 'tracking',
-                matches: getFiniteNumber(payload.matches, data.matches, data.goodMatches),
-                raw: payload
-            };
+    return null;
+}
+
+function getTrackerTimeoutMs(location = trackerState.lastLocation) {
+    return getTrackerProfile(location?.source || trackerState.source).timeoutMs;
+}
+
+function shouldBypassStabilizer(location) {
+    if (!getTrackerProfile(location.source).useStabilizer) return true;
+    if (location.reset) return true;
+    return ['manual', 'debug', 'teleport'].includes(location.state);
+}
+
+function resetTrackerStabilizer(options = {}) {
+    trackerState.filteredCount = 0;
+    if (options.clearLocation) {
+        if (trackerMarker) {
+            map.removeLayer(trackerMarker);
+            trackerMarker = null;
         }
+        clearTrackerTrailLayer(true);
+        trackerState.lastLocation = null;
+        trackerState.lastUpdateAt = 0;
+        updateNearbyTrackerList(null);
+        syncTrackerPanel();
+    }
+}
+
+function stabilizeTrackerLocation(location) {
+    const now = Date.now();
+    const rawLat = location.lat;
+    const rawLng = location.lng;
+    const lastLocation = trackerState.lastLocation;
+    const timeoutMs = getTrackerTimeoutMs(location);
+    const staleGap = Number.isFinite(timeoutMs) && trackerState.lastUpdateAt && (now - trackerState.lastUpdateAt > timeoutMs);
+
+    location.rawLat = rawLat;
+    location.rawLng = rawLng;
+    location.stale = false;
+
+    if (shouldBypassStabilizer(location) || !lastLocation || staleGap) {
+        return location;
     }
 
-    return null;
+    const rawDistance = getDistanceBetween(location, lastLocation);
+    const maxJump = clampNumber(trackerState.maxJump, 0, Infinity, TRACKER_DEFAULT_MAX_JUMP);
+    if (maxJump > 0 && rawDistance > maxJump) {
+        trackerState.filteredCount++;
+        setTrackerStatus(`跳变拦截 ${Math.round(rawDistance)}`, 'warn');
+        setTrackerText('tracker-filtered-count', String(trackerState.filteredCount));
+        return null;
+    }
+
+    const smoothing = clampNumber(trackerState.smoothing, 0, 1, TRACKER_DEFAULT_SMOOTHING);
+    location.lat = lastLocation.lat + smoothing * (rawLat - lastLocation.lat);
+    location.lng = lastLocation.lng + smoothing * (rawLng - lastLocation.lng);
+    location.smoothed = smoothing < 1;
+    return location;
 }
 
 function acceptTrackerLocation(payload) {
@@ -267,28 +369,35 @@ function acceptTrackerLocation(payload) {
         return false;
     }
 
-    if (location.confidence !== null && location.confidence < TRACKER_MIN_CONFIDENCE) {
+    const minConfidence = getTrackerProfile(location.source).minConfidence ?? TRACKER_MIN_CONFIDENCE;
+    if (location.confidence !== null && location.confidence < minConfidence) {
         setTrackerStatus('低置信度', 'warn');
         setTrackerText('tracker-confidence', formatTrackerConfidence(location.confidence));
         return false;
     }
 
-    const latLng = L.latLng(location.lat, location.lng);
-    if (typeof isInsideCurrentMapBounds === 'function' && !isInsideCurrentMapBounds(latLng)) {
+    const rawLatLng = L.latLng(location.lat, location.lng);
+    if (typeof isInsideCurrentMapBounds === 'function' && !isInsideCurrentMapBounds(rawLatLng)) {
         setTrackerStatus('坐标越界', 'warn');
+        return false;
+    }
+
+    const stabilizedLocation = stabilizeTrackerLocation(location);
+    if (!stabilizedLocation) {
         return false;
     }
 
     location.updatedAt = Date.now();
     trackerState.lastLocation = location;
     trackerState.lastUpdateAt = location.updatedAt;
+    const acceptedLatLng = L.latLng(location.lat, location.lng);
 
     updateTrackerMarker(location);
     updateTrackerTrail(location);
     updateNearbyTrackerList(location);
 
     if (trackerState.follow) {
-        map.panTo(latLng, { animate: true, duration: 0.25 });
+        map.panTo(acceptedLatLng, { animate: true, duration: 0.25 });
     }
 
     const confidenceText = location.confidence === null ? '' : ` ${formatTrackerConfidence(location.confidence)}`;
@@ -510,8 +619,10 @@ function startTrackerFreshnessTimer() {
     if (trackerFreshnessTimer) return;
     trackerFreshnessTimer = setInterval(() => {
         if (!trackerState.enabled || !trackerState.lastUpdateAt) return;
+        const timeoutMs = getTrackerTimeoutMs();
+        if (!Number.isFinite(timeoutMs)) return;
         const age = Date.now() - trackerState.lastUpdateAt;
-        if (age > 5000 && trackerState.source !== 'manual') {
+        if (age > timeoutMs) {
             setTrackerStatus('信号中断', 'warn');
             if (trackerState.lastLocation && trackerMarker) {
                 trackerState.lastLocation.stale = true;
@@ -528,10 +639,11 @@ function stopTrackerFreshnessTimer() {
     }
 }
 
-function startTrackerSource() {
+function startTrackerSource(options = {}) {
     closeTrackerSocket();
     stopDebugTracker();
     startTrackerFreshnessTimer();
+    resetTrackerStabilizer({ clearLocation: Boolean(options.clearLocation) });
 
     if (!trackerState.enabled) {
         setTrackerStatus('未开启', 'idle');
@@ -575,6 +687,8 @@ function persistTrackerState() {
     localStorage.setItem(TRACKER_STORAGE_KEYS.trail, trackerState.trailEnabled ? 'true' : 'false');
     localStorage.setItem(TRACKER_STORAGE_KEYS.url, trackerState.url);
     localStorage.setItem(TRACKER_STORAGE_KEYS.radius, String(trackerState.nearbyRadius));
+    localStorage.setItem(TRACKER_STORAGE_KEYS.smoothing, String(trackerState.smoothing));
+    localStorage.setItem(TRACKER_STORAGE_KEYS.maxJump, String(trackerState.maxJump));
 }
 
 function activateManualTrackerSource() {
@@ -683,6 +797,7 @@ window.syncTrackerToCurrentMap = function () {
     clearTrackerTrailLayer(true);
     trackerState.lastLocation = null;
     trackerState.lastUpdateAt = 0;
+    resetTrackerStabilizer();
     updateNearbyTrackerList(null);
     syncTrackerPanel();
     if (trackerState.enabled && trackerState.source === 'debug') {
@@ -742,6 +857,17 @@ window.initTrackerUI = function () {
                 <span>置信度</span><strong id="tracker-confidence">-</strong>
                 <span>坐标</span><strong id="tracker-coords">-</strong>
                 <span>更新</span><strong id="tracker-updated-at">-</strong>
+                <span>过滤</span><strong id="tracker-filtered-count">0</strong>
+            </div>
+            <div class="tracker-tuning-grid">
+                <label>
+                    <span>平滑</span>
+                    <input type="number" id="tracker-smoothing" min="0" max="1" step="0.05">
+                </label>
+                <label>
+                    <span>跳变阈值</span>
+                    <input type="number" id="tracker-max-jump" min="0" step="50">
+                </label>
             </div>
             <label class="tracker-field tracker-radius-field">
                 <span>附近半径</span>
@@ -760,12 +886,14 @@ window.initTrackerUI = function () {
     const trailToggle = document.getElementById('tracker-trail-toggle');
     const urlInput = document.getElementById('tracker-url');
     const radiusInput = document.getElementById('tracker-nearby-radius');
+    const smoothingInput = document.getElementById('tracker-smoothing');
+    const maxJumpInput = document.getElementById('tracker-max-jump');
 
     sourceSelect?.addEventListener('change', function () {
         trackerState.source = this.value;
         persistTrackerState();
         syncTrackerPanel();
-        if (trackerState.enabled) startTrackerSource();
+        if (trackerState.enabled) startTrackerSource({ clearLocation: true });
     });
 
     followToggle?.addEventListener('change', function () {
@@ -791,6 +919,18 @@ window.initTrackerUI = function () {
         persistTrackerState();
         syncTrackerPanel();
         updateNearbyTrackerList();
+    });
+
+    smoothingInput?.addEventListener('change', function () {
+        trackerState.smoothing = clampNumber(this.value, 0, 1, TRACKER_DEFAULT_SMOOTHING);
+        persistTrackerState();
+        syncTrackerPanel();
+    });
+
+    maxJumpInput?.addEventListener('change', function () {
+        trackerState.maxJump = clampNumber(this.value, 0, Infinity, TRACKER_DEFAULT_MAX_JUMP);
+        persistTrackerState();
+        syncTrackerPanel();
     });
 
     syncTrackerPanel();
