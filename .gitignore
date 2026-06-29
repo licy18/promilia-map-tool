@@ -23,6 +23,9 @@ ENV/
 *.tmp
 *.bak
 
+# 运行缓存
+cache/
+
 # 地图资源（大文件）
 maps/*.png
 maps/*.jpg

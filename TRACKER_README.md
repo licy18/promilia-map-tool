@@ -31,13 +31,12 @@ python video_test.py
 
 ### 3. 配置追踪引擎
 
-编辑 `tracker.py` 的配置区：
+现在不需要改代码，直接通过参数选择地图和截图方式：
 
-```python
-BIG_MAP_PATH = 'maps/shalulu.png'   # 大地图路径
-VIDEO_PATH = 'test1.mp4'             # 视频路径
-MINIMAP_ROI = (37, 192, 36, 187)    # 从 video_test.py 获取
-MINIMAP_ZOOM = 0.95                  # 缩放补偿
+```bash
+python tracker.py --map-id shalulu --minimap-roi 37,192,36,187
+python tracker.py --map-id xinaya --minimap-roi 37,192,36,187
+python tracker.py --map-id fulisi --minimap-roi 37,192,36,187
 ```
 
 ### 4. 运行追踪
@@ -45,6 +44,8 @@ MINIMAP_ZOOM = 0.95                  # 缩放补偿
 ```bash
 python tracker.py
 ```
+
+默认仍追踪 `shalulu`。追踪 `xinaya / fulisi` 时，首次运行会在 `cache/tracker/` 下下载 z=6 粗定位瓦片；粗定位命中后再按当前位置懒加载 z=8 高清局部瓦片，视野太大时降到 z=7。
 
 ## 🎯 参数调优指南
 
@@ -54,6 +55,15 @@ python tracker.py
 | `MAX_JUMP` | 位置跳跃阈值（像素） | 100~200 |
 | `SMOOTHING` | 平滑系数 | 0.4~0.8 |
 | `nfeatures` | SIFT 特征点数量 | 2000~5000 |
+| `--local-half-span` | 新芽/弗利斯高清局部搜索半径 | 512~900 |
+
+常用参数：
+
+```bash
+python tracker.py --map-id xinaya --screenshot-mode window --window-title Promilia
+python tracker.py --map-id fulisi --build-cache
+python tracker.py --map-id fulisi --no-preview
+```
 
 ## 🌐 WebSocket 数据格式
 
@@ -65,11 +75,11 @@ python tracker.py
 {
   "type": "location",
   "mapId": "fulisi",
-  "source": "debug-coordinate",
-  "coordinateSpace": "game",
-  "x": 648.93,
-  "z": 574.6,
-  "confidence": 1,
+  "source": "minimap-vision",
+  "coordinateSpace": "map",
+  "lat": -166.46,
+  "lng": 320.67,
+  "confidence": 0.82,
   "state": "tracking",
   "timestamp": 1782624000000
 }
@@ -84,6 +94,7 @@ python tracker.py
 - `confidence`：可选；支持 `0-1` 或 `0-100`，低于前端阈值时不会更新玩家点。
 - `state`：可选；用于显示 `tracking`、`lost`、`manual`、`debug` 等状态。
 - `reset`：可选；为 `true` 时跳过大跳变拦截，适合传送或切线后的首次位置。
+- `tracker.py` 的小地图识别会发送 `coordinateSpace: "map"`，前端可直接显示到当前地图。
 
 旧格式仍兼容：
 
