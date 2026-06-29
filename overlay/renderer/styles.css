@@ -109,6 +109,11 @@ body.interactive .control-panel {
   transform: translateX(0);
 }
 
+body.passthrough-hotspot #toggle-interaction {
+  border-color: rgba(0, 217, 255, 0.85);
+  background: rgba(0, 217, 255, 0.18);
+}
+
 .panel-header {
   display: flex;
   align-items: center;

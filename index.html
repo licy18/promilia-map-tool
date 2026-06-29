@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <!-- 提取出来的本地样式 -->
-    <link rel="stylesheet" href="css/main.css?v=tracker-20260628e">
+    <link rel="stylesheet" href="css/main.css?v=overlay-20260628a">
 
     <!-- Crypto JS for COS Signature -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
@@ -94,6 +94,14 @@
                     当前地图：<strong id="current-map-name">夏露露村</strong><br>
                     标记数：<span id="current-map-count">0</span> | 尺寸：<span id="current-map-size">2048×2048</span>
                 </div>
+            </div>
+
+            <div class="overlay-launch-panel">
+                <button type="button" id="overlay-launch-btn" class="overlay-launch-button" title="启动游戏内点位覆盖层">
+                    <i class="fas fa-desktop"></i>
+                    <span>启动覆盖层</span>
+                </button>
+                <div id="overlay-launch-status" class="overlay-launch-status">未连接</div>
             </div>
 
             <!-- 统计 -->
@@ -1079,6 +1087,7 @@
     <script src="js/coordinate.js?v=tracker-20260628e"></script>
     <script src="js/official-layer.js"></script>
     <script src="js/tracker.js?v=tracker-20260628e"></script>
+    <script src="js/overlay-launcher.js?v=overlay-20260628a"></script>
     <script src="js/main.js?v=tracker-20260628e"></script>
 </body>
 </html>

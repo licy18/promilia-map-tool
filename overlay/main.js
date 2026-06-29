@@ -23,6 +23,8 @@ const MAPS = Object.freeze({
 
 let overlayWindow = null;
 let isInteractive = false;
+let passthroughHotspotActive = false;
+let passthroughHotspotTimer = null;
 let visionProcess = null;
 const runtimeDir = path.join(__dirname, 'runtime');
 const logPath = path.join(runtimeDir, 'overlay.log');
@@ -30,6 +32,18 @@ const projectRoot = path.resolve(__dirname, '..');
 const visionScriptPath = path.join(__dirname, 'vision', 'vision_server.py');
 const visionRequirementsPath = path.join(__dirname, 'vision', 'requirements.txt');
 const pythonCommand = process.env.PYTHON || 'python';
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (!overlayWindow || overlayWindow.isDestroyed()) return;
+    if (overlayWindow.isMinimized()) overlayWindow.restore();
+    overlayWindow.showInactive();
+    overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  });
+}
 
 async function logOverlay(message) {
   try {
@@ -141,7 +155,9 @@ async function stopVisionProcess() {
 
 function startVisionProcess({ mapId, windowId, mode }) {
   stopVisionProcess();
-  const interval = mode === 'real-time' ? '0.12' : '0.25';
+  const interval = mode === 'low-frequency' ? '0.06' : '0.05';
+  const globalInterval = mode === 'low-frequency' ? '0.28' : '0.20';
+  const localRefineInterval = mode === 'low-frequency' ? '1.25' : '1.00';
   const child = spawn(pythonCommand, [
     visionScriptPath,
     '--project-root',
@@ -152,7 +168,13 @@ function startVisionProcess({ mapId, windowId, mode }) {
     '--window-id',
     String(windowId),
     '--interval',
-    interval
+    interval,
+    '--global-every',
+    mode === 'low-frequency' ? '5' : '4',
+    '--global-interval',
+    globalInterval,
+    '--local-refine-interval',
+    localRefineInterval
   ], {
     cwd: __dirname,
     windowsHide: true
@@ -205,12 +227,38 @@ function sendInteractionState() {
   overlayWindow.webContents.send('overlay:interaction-changed', { interactive: isInteractive });
 }
 
+function applyMouseEventMode() {
+  if (!overlayWindow || overlayWindow.isDestroyed()) return;
+  const shouldPassthrough = !isInteractive && !passthroughHotspotActive;
+  overlayWindow.setIgnoreMouseEvents(shouldPassthrough, { forward: true });
+  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+}
+
+function setPassthroughHotspot(active) {
+  passthroughHotspotActive = Boolean(active);
+  if (passthroughHotspotTimer) {
+    clearTimeout(passthroughHotspotTimer);
+    passthroughHotspotTimer = null;
+  }
+  if (passthroughHotspotActive) {
+    passthroughHotspotTimer = setTimeout(() => {
+      passthroughHotspotActive = false;
+      passthroughHotspotTimer = null;
+      applyMouseEventMode();
+    }, 1800);
+  }
+  applyMouseEventMode();
+}
+
 function setInteractionMode(nextInteractive) {
   isInteractive = Boolean(nextInteractive);
   if (!overlayWindow || overlayWindow.isDestroyed()) return;
 
-  overlayWindow.setIgnoreMouseEvents(!isInteractive, { forward: true });
-  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  if (isInteractive) {
+    setPassthroughHotspot(false);
+  } else {
+    applyMouseEventMode();
+  }
   logOverlay(`interaction=${isInteractive ? 'interactive' : 'passthrough'}`);
   sendInteractionState();
 }
@@ -290,6 +338,10 @@ ipcMain.handle('overlay:set-interaction', (_event, interactive) => {
 ipcMain.handle('overlay:toggle-interaction', () => {
   toggleInteractionMode();
   return { interactive: isInteractive };
+});
+ipcMain.handle('overlay:set-passthrough-hotspot', (_event, active) => {
+  setPassthroughHotspot(active);
+  return { active: passthroughHotspotActive, interactive: isInteractive };
 });
 ipcMain.handle('overlay:quit', () => {
   app.quit();
@@ -418,18 +470,24 @@ ipcMain.handle('vision:start', async (_event, options) => {
 
 ipcMain.handle('vision:stop', async () => stopVisionProcess());
 
-app.whenReady().then(() => {
-  createOverlayWindow();
-  globalShortcut.register('CommandOrControl+Shift+O', toggleInteractionMode);
+if (hasSingleInstanceLock) {
+  app.whenReady().then(() => {
+    createOverlayWindow();
+    globalShortcut.register('CommandOrControl+Shift+O', toggleInteractionMode);
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createOverlayWindow();
-    }
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createOverlayWindow();
+      }
+    });
   });
-});
+}
 
 app.on('will-quit', () => {
+  if (passthroughHotspotTimer) {
+    clearTimeout(passthroughHotspotTimer);
+    passthroughHotspotTimer = null;
+  }
   if (visionProcess) {
     visionProcess.kill();
     visionProcess = null;

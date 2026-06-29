@@ -1,6 +1,9 @@
 const api = window.overlayApi;
 const overlayShared = window.OverlayShared;
 const VISION_MIN_RENDER_CONFIDENCE = 0.45;
+const VISION_RENDER_MARGIN = 160;
+const VISION_STATIONARY_RENDER_EPSILON = 2.0;
+const VISION_HOVER_RENDER_EPSILON = 8.0;
 
 const state = {
   maps: [],
@@ -9,6 +12,7 @@ const state = {
   calibration: null,
   calibrationSource: 'manual',
   visionCalibration: null,
+  renderedVisionCalibration: null,
   visionTracking: false,
   visionDepsOk: false,
   visionWindows: [],
@@ -25,6 +29,7 @@ const state = {
   dragStart: null,
   draftRect: null,
   interactive: false,
+  passthroughHotspot: false,
   pointSearchCache: new WeakMap()
 };
 
@@ -116,6 +121,7 @@ function saveCalibration(mapId, rect) {
 function clearCalibration(mapId) {
   localStorage.removeItem(calibrationKey(mapId));
   state.calibration = null;
+  state.renderedVisionCalibration = null;
   if (state.calibrationSource === 'manual') {
     state.calibrationSource = state.visionCalibration ? 'vision' : 'manual';
   }
@@ -162,7 +168,33 @@ function setInteraction(interactive) {
   els.body.classList.toggle('interactive', state.interactive);
   els.body.classList.toggle('passthrough', !state.interactive);
   els.interactionStatus.textContent = state.interactive ? '可交互' : '鼠标穿透';
+  if (state.interactive) setPassthroughHotspot(false);
   setDebugStatus(state.interactive ? '已进入可交互' : '已进入鼠标穿透');
+}
+
+function isInsideElementRect(event, element, margin = 0) {
+  if (!element) return false;
+  const rect = element.getBoundingClientRect();
+  return event.clientX >= rect.left - margin
+    && event.clientX <= rect.right + margin
+    && event.clientY >= rect.top - margin
+    && event.clientY <= rect.bottom + margin;
+}
+
+function setPassthroughHotspot(active) {
+  const next = Boolean(active) && !state.interactive;
+  if (state.passthroughHotspot === next) return;
+  state.passthroughHotspot = next;
+  els.body.classList.toggle('passthrough-hotspot', next);
+  api.setPassthroughHotspot?.(next).catch(error => console.error(error));
+}
+
+function updatePassthroughHotspot(event) {
+  if (state.interactive) {
+    setPassthroughHotspot(false);
+    return;
+  }
+  setPassthroughHotspot(isInsideElementRect(event, els.toggleInteraction, 12));
 }
 
 function setCalibrationMode(enabled) {
@@ -190,6 +222,15 @@ function setVisionDepsStatus(text, ok = false) {
 function setVisionCacheStatus(text, ok = false) {
   els.visionCacheStatus.textContent = text;
   els.visionCacheStatus.dataset.ready = ok ? 'true' : 'false';
+}
+
+function formatVisionSource(source) {
+  const text = String(source || '');
+  const zoom = text.match(/-z(\d+)/i)?.[1];
+  if (text.includes('frame-flow')) return '光流';
+  if (text.includes('local')) return zoom ? `高清 z${zoom}` : '高清';
+  if (text.includes('global')) return zoom ? `全局 z${zoom}` : '全局';
+  return '追踪';
 }
 
 function hasVisionCalibration() {
@@ -252,11 +293,68 @@ function projectMapPointToReference(point, reference) {
 
 function isPointInsideWindow(point, windowRect) {
   if (!point || !windowRect) return false;
-  const margin = 12;
+  const margin = VISION_RENDER_MARGIN;
   return point.x >= windowRect.x - margin
     && point.x <= windowRect.x + windowRect.width + margin
     && point.y >= windowRect.y - margin
-    && point.y <= windowRect.y + windowRect.height + margin;
+    && point.y <= windowRect.y + windowRect.height + margin
+    && point.x >= -margin
+    && point.x <= window.innerWidth + margin
+    && point.y >= -margin
+    && point.y <= window.innerHeight + margin;
+}
+
+function getCalibrationSamplePoints(calibration) {
+  if (!calibration || !calibration.reference) return [];
+  const polygon = Array.isArray(calibration.referencePolygon) ? calibration.referencePolygon : [];
+  const points = polygon
+    .map(point => ({ x: Number(point.x), y: Number(point.y) }))
+    .filter(point => Number.isFinite(point.x) && Number.isFinite(point.y));
+  if (points.length) {
+    const center = points.reduce((acc, point) => ({
+      x: acc.x + point.x / points.length,
+      y: acc.y + point.y / points.length
+    }), { x: 0, y: 0 });
+    return [...points, center];
+  }
+
+  const width = Number(calibration.reference.width);
+  const height = Number(calibration.reference.height);
+  if (![width, height].every(Number.isFinite)) return [];
+  return [
+    { x: width * 0.25, y: height * 0.25 },
+    { x: width * 0.75, y: height * 0.25 },
+    { x: width * 0.75, y: height * 0.75 },
+    { x: width * 0.25, y: height * 0.75 },
+    { x: width * 0.5, y: height * 0.5 }
+  ];
+}
+
+function getCalibrationMaxScreenDelta(previous, next) {
+  if (!previous || !next || !previous.homographyRefToScreen || !next.homographyRefToScreen) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const samples = getCalibrationSamplePoints(next);
+  if (!samples.length) return Number.POSITIVE_INFINITY;
+
+  let maxDelta = 0;
+  for (const sample of samples) {
+    const before = transformPoint(previous.homographyRefToScreen, sample.x, sample.y);
+    const after = transformPoint(next.homographyRefToScreen, sample.x, sample.y);
+    if (!before || !after) return Number.POSITIVE_INFINITY;
+    const delta = Math.hypot(after.x - before.x, after.y - before.y);
+    if (!Number.isFinite(delta)) return Number.POSITIVE_INFINITY;
+    maxDelta = Math.max(maxDelta, delta);
+  }
+  return maxDelta;
+}
+
+function shouldRenderVisionCalibration(calibration) {
+  if (!state.renderedVisionCalibration) return true;
+  if (state.calibrationSource !== 'vision') return true;
+  const maxDelta = getCalibrationMaxScreenDelta(state.renderedVisionCalibration, calibration);
+  const epsilon = els.hoverCard.hidden ? VISION_STATIONARY_RENDER_EPSILON : VISION_HOVER_RENDER_EPSILON;
+  return maxDelta >= epsilon;
 }
 
 function projectPoint(point) {
@@ -505,6 +603,7 @@ function renderPoints() {
     group.classList.add('map-point');
     group.dataset.category = point.category || 'unknown';
     group.setAttribute('transform', `translate(${projected.x.toFixed(2)} ${projected.y.toFixed(2)})`);
+    group.setAttribute('aria-label', buildPointTitle(point));
 
     const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     halo.classList.add('point-halo');
@@ -516,10 +615,7 @@ function renderPoints() {
     dot.setAttribute('r', '4');
     dot.setAttribute('fill', config.color);
 
-    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-    title.textContent = buildPointTitle(point);
-
-    group.append(halo, dot, title);
+    group.append(halo, dot);
     group.addEventListener('mouseenter', event => showHoverCard(point, { x: event.clientX, y: event.clientY }));
     group.addEventListener('mousemove', event => showHoverCard(point, { x: event.clientX, y: event.clientY }));
     group.addEventListener('mouseleave', hideHoverCard);
@@ -535,6 +631,9 @@ function renderPoints() {
   els.renderStatus.textContent = state.searchKeyword.trim()
     ? `${renderedCount} / ${categoryVisible} 命中`
     : `${renderedCount} / ${allInBounds} 显示`;
+  if (state.calibrationSource === 'vision' && hasVisionCalibration()) {
+    state.renderedVisionCalibration = state.visionCalibration;
+  }
 }
 
 async function selectMap(mapId, options = {}) {
@@ -547,6 +646,7 @@ async function selectMap(mapId, options = {}) {
   }
   state.dataset = null;
   state.visionCalibration = null;
+  state.renderedVisionCalibration = null;
   state.calibrationSource = 'manual';
   state.categoryVisibility = {};
   state.pointSearchCache = new WeakMap();
@@ -573,6 +673,7 @@ async function selectMap(mapId, options = {}) {
 function setCalibrationRect(rect) {
   state.calibration = saveCalibration(state.mapId, rect);
   state.calibrationSource = 'manual';
+  state.renderedVisionCalibration = null;
   setCalibrationMode(false);
   setDebugStatus(`已保存校准 ${state.calibration.rect.width}x${state.calibration.rect.height}`);
   renderPoints();
@@ -682,6 +783,7 @@ async function startVisionTracking() {
     return;
   }
   state.visionCalibration = null;
+  state.renderedVisionCalibration = null;
   state.calibrationSource = 'vision';
   state.visionTracking = true;
   els.visionToggle.textContent = '停止自动';
@@ -707,6 +809,7 @@ async function stopVisionTracking(resetCalibration = false) {
   els.visionToggle.textContent = '开始自动';
   if (resetCalibration) {
     state.visionCalibration = null;
+    state.renderedVisionCalibration = null;
     state.calibrationSource = hasManualCalibration() ? 'manual' : 'vision';
   }
   setVisionStatus('已停止', 'idle');
@@ -736,6 +839,9 @@ function handleVisionEvent(payload) {
     if (payload.mapId && payload.mapId !== state.mapId) return;
     if (payload.state === 'downloading' && payload.total) {
       setVisionCacheStatus(`${payload.done}/${payload.total}`);
+    } else if (payload.state === 'refining') {
+      setVisionCacheStatus(payload.message || '高清瓦片');
+      if (state.visionTracking) setVisionStatus('高清缓存', 'busy');
     } else if (payload.state === 'ready') {
       setVisionCacheStatus('已就绪', true);
     } else if (payload.state === 'error') {
@@ -786,10 +892,17 @@ function handleVisionEvent(payload) {
       if (payload.message) setDebugStatus(payload.message);
       return;
     }
+    const needsRender = shouldRenderVisionCalibration(calibration);
     state.visionCalibration = calibration;
     state.calibrationSource = 'vision';
-    setVisionStatus(`追踪 ${Math.round(confidence * 100)}%`, 'ready');
-    renderPoints();
+    const source = formatVisionSource(calibration.source);
+    const inliers = Number(calibration.inliers || 0);
+    const suffix = inliers ? ` · ${inliers}` : '';
+    setVisionStatus(`${source} ${Math.round(confidence * 100)}%${suffix}`, 'ready');
+    if (needsRender) {
+      renderPoints();
+      state.renderedVisionCalibration = calibration;
+    }
   }
 }
 
@@ -817,6 +930,8 @@ function bindEvents() {
       setDebugStatus(`收到点击：${target.id || target.tagName.toLowerCase()}`);
     }
   }, true);
+  document.addEventListener('pointermove', updatePassthroughHotspot, true);
+  document.addEventListener('pointerleave', () => setPassthroughHotspot(false), true);
 
   els.mapSelect.addEventListener('change', async event => {
     setDebugStatus(`切换地图：${event.target.value}`);

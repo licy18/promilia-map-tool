@@ -165,6 +165,59 @@ body {
         color: #00d9ff;
     }
 
+.overlay-launch-panel {
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #0f3460;
+    border: 1px solid #1a4a7a;
+    border-radius: 8px;
+}
+
+.overlay-launch-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 38px;
+    border: 1px solid #00d9ff;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #0f8ec5, #00d9ff);
+    color: #061521;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.overlay-launch-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 217, 255, 0.25);
+}
+
+.overlay-launch-button:disabled {
+    cursor: wait;
+    opacity: 0.72;
+}
+
+.overlay-launch-status {
+    margin-top: 8px;
+    min-height: 16px;
+    color: #8fa5b8;
+    font-size: 0.78em;
+}
+
+.overlay-launch-status.ready {
+    color: #2ecc71;
+}
+
+.overlay-launch-status.error {
+    color: #ff6b7a;
+}
+
+.overlay-launch-status.busy {
+    color: #f1c40f;
+}
+
 .section {
     margin-bottom: 25px;
 }

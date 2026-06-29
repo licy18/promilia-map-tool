@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('overlayApi', {
   getInteraction: () => ipcRenderer.invoke('overlay:get-interaction'),
   setInteraction: interactive => ipcRenderer.invoke('overlay:set-interaction', interactive),
   toggleInteraction: () => ipcRenderer.invoke('overlay:toggle-interaction'),
+  setPassthroughHotspot: active => ipcRenderer.invoke('overlay:set-passthrough-hotspot', active),
   quit: () => ipcRenderer.invoke('overlay:quit'),
   vision: {
     checkDeps: () => ipcRenderer.invoke('vision:check-deps'),
