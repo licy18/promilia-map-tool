@@ -7,7 +7,7 @@
 [![Made with 🐸](https://img.shields.io/badge/made%20with-%F0%9F%90%B8-green.svg?style=flat-square)](https://github.com/licy18/promilia-map-tool)
 
 **📦 GitHub:** https://github.com/licy18/promilia-map-tool  
-**🏷️ 最新版本:** v4.0.0 (2026-05-30)
+**🏷️ 最新版本:** v4.1.0 (2026-06-29)
 
 ---
 
@@ -55,11 +55,16 @@ python3 -m http.server 8000
 - ✅ **实时统计** - 显示各分类的标记数量
 - ✅ **全部切换** - 一键显示/隐藏所有标记
 
+### 官方点位与游戏覆盖层
+- ✅ **官方点位只读图层** - 读取 `data/official/*.json`，支持分类筛选、搜索、聚合和点位详情。
+- ✅ **游戏内点位覆盖层** - 可从网页启动本地 Electron 透明覆盖层，把官方点位投到游戏大地图窗口上。
+- ✅ **自动视觉校准** - 覆盖层通过 OpenCV sidecar 匹配游戏大地图画面，支持全局重锁、局部参考缓存和光流跟随。
+
 ---
 
 ## 📁 文件结构
 
-### v4.0.0+ 当前模块化结构
+### v4.1.0 当前模块化结构
 
 ```
 promilia-map-tool/
@@ -81,7 +86,11 @@ promilia-map-tool/
 │   ├── search.js           # 标记搜索
 │   ├── map-manager.js      # 自定义地图管理
 │   ├── cos.js              # 腾讯云 COS 云端存储
+│   ├── official-layer.js   # 官方点位只读图层
+│   ├── overlay-launcher.js # 游戏内覆盖层启动器
 │   └── main.js             # 入口初始化
+├── data/official/          # 官方点位数据
+├── overlay/                # Electron 游戏内点位覆盖层
 ├── maps/                   # 地图资源目录
 │   ├── shalulu.png         # 夏露露村（5.9MB）
 │   ├── fulisi.png          # 弗利斯旧单图素材（保留）
@@ -305,6 +314,13 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 ## 📝 更新日志
+
+### v4.1.0 (2026-06-29) - 官方点位与游戏内覆盖层
+- 新增官方点位只读图层，支持按分类筛选、搜索、聚合显示和点位详情查看。
+- 新增 `data/official/` 官方点位数据入口，覆盖夏露露村、新芽山谷和弗利斯。
+- 新增网页侧“启动覆盖层”入口，可连接本地控制服务启动 Electron 透明游戏内覆盖层。
+- 覆盖层新增窗口选择、手动矩形校准、自动视觉校准缓存和 OpenCV sidecar 自检流程。
+- 视觉追踪升级为全局 SIFT 重锁、局部高清参考缓存和 LK optical flow 快速跟随，降低拖动大地图时的卡顿和漂移。
 
 ### v4.0.0 (2026-05-30) - 多层网络地图升级
 - 将新芽山谷 `xinaya` 升级为外部原生坐标多层瓦片基础地图，保留地图 ID 和 `promilia-markers-xinaya` 存储键。
@@ -653,12 +669,13 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 - 纯 HTML/CSS/JS（无构建工具）
 
 **扩展开发：**
-1. 修改 `index.html` 中的代码
+1. 修改 `index.html`、`css/` 或 `js/` 中的代码
 2. 刷新页面测试
 3. 无需编译，即时生效
 
 **地图说明：**
 - 新芽山谷和弗利斯已接入外部多层瓦片作为基础地图。
+- 官方点位图层读取 `data/official/*.json`，游戏内覆盖层位于 `overlay/`。
 
 ---
 
@@ -669,5 +686,5 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 **开发：** 呱呱 (Guāguā) 🐸
-**最后更新：** 2026-05-30
-**最新版本：** v4.0.0
+**最后更新：** 2026-06-29
+**最新版本：** v4.1.0
