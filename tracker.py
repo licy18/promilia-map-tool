@@ -92,16 +92,54 @@ def get_current_payload():
 
 def is_overlay_running():
     with overlay_process_lock:
-        return overlay_process is not None and overlay_process.poll() is None
+        return (overlay_process is not None and overlay_process.poll() is None) or find_overlay_process_pid() is not None
+
+
+def overlay_electron_exe():
+    return PROJECT_ROOT / "overlay" / "node_modules" / "electron" / "dist" / "electron.exe"
+
+
+def powershell_single_quote(value):
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def find_overlay_process_pid():
+    electron_exe = overlay_electron_exe()
+    if not electron_exe.exists() or not sys.platform.startswith("win"):
+        return None
+    script = (
+        f"$target = {powershell_single_quote(str(electron_exe))}; "
+        "Get-CimInstance Win32_Process -Filter \"Name = 'electron.exe'\" | "
+        "Where-Object { $_.ExecutablePath -eq $target } | "
+        "Select-Object -First 1 -ExpandProperty ProcessId"
+    )
+    try:
+        output = subprocess.check_output(
+            ["powershell.exe", "-NoProfile", "-Command", script],
+            text=True,
+            encoding="utf-8",
+            errors="ignore",
+            timeout=3,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+    except Exception:
+        return None
+    for line in output.splitlines():
+        line = line.strip()
+        if line.isdigit():
+            return int(line)
+    return None
 
 
 def overlay_status_payload():
     with overlay_process_lock:
         running = overlay_process is not None and overlay_process.poll() is None
+        pid = overlay_process.pid if running else find_overlay_process_pid()
+        running = running or pid is not None
         return {
             "ok": True,
             "running": running,
-            "pid": overlay_process.pid if running else None,
+            "pid": pid,
         }
 
 
@@ -109,7 +147,7 @@ def start_overlay():
     global overlay_process
 
     overlay_dir = PROJECT_ROOT / "overlay"
-    electron_exe = overlay_dir / "node_modules" / "electron" / "dist" / "electron.exe"
+    electron_exe = overlay_electron_exe()
     if not electron_exe.exists():
         return {
             "ok": False,
@@ -123,6 +161,14 @@ def start_overlay():
                 "running": True,
                 "alreadyRunning": True,
                 "pid": overlay_process.pid,
+            }
+        existing_pid = find_overlay_process_pid()
+        if existing_pid is not None:
+            return {
+                "ok": True,
+                "running": True,
+                "alreadyRunning": True,
+                "pid": existing_pid,
             }
 
         creationflags = subprocess.CREATE_NO_WINDOW if sys.platform.startswith("win") else 0

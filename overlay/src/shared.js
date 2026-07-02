@@ -10,6 +10,7 @@ const FILTER_GROUPS = Object.freeze([
 const MARKER_CONFIGS = Object.freeze({
   npc: { color: '#3498db', label: 'NPC', group: 'creature' },
   creature: { color: '#ff6b9d', label: '生物', group: 'creature' },
+  capturable_kibo: { color: '#ff6b9d', label: '可捕捉奇波', group: 'creature' },
   shop: { color: '#16a085', label: '商店', group: 'other' },
   photo_spot: { color: '#00bcd4', label: '拍照点', group: 'other' },
   teleport: { color: '#9b59b6', label: '传送点', group: 'explore' },
@@ -182,7 +183,8 @@ function getPointSearchText(point) {
     raw: point.raw,
     refs: point.refs,
     source: point.source,
-    semantic: point.semantic
+    semantic: point.semantic,
+    capture: point.capture
   }, values);
   return values.join(' ').toLowerCase();
 }

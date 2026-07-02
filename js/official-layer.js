@@ -56,6 +56,7 @@ function getOfficialMarkerConfig(target) {
         picking_cabin: { icon: 'fa-leaf', color: '#27ae60', label: '采集小屋', category: 'other' },
         feeding_point: { icon: 'fa-utensils', color: '#ff9f43', label: '投食点', category: 'other' },
         airship: { icon: 'fa-plane', color: '#2980b9', label: '飞空艇', category: 'other' },
+        capturable_kibo: { icon: 'fa-paw', color: '#ff6b9d', label: '可捕捉奇波', category: 'creature' },
         egg_point: { icon: 'fa-egg', color: '#ffeaa7', label: '蛋点', category: 'creature' },
         decorative_egg: { icon: 'fa-egg', color: '#ffeaa7', label: '装饰蛋', category: 'creature' },
         kibo_egg: { icon: 'fa-egg', color: '#f8c291', label: '普通奇波蛋', category: 'creature' },
@@ -134,6 +135,41 @@ function formatOfficialVector(vector) {
     return `${vector.x}, ${vector.y}, ${vector.z}`;
 }
 
+function formatOfficialCaptureSource(entry) {
+    const source = entry.randomGroupId
+        ? `随机组 ${entry.randomGroupId}${entry.timeKeys?.length ? ` / 时段 ${entry.timeKeys.join('/')}` : ''}`
+        : '固定敌人组';
+    const groups = entry.groupIds?.length ? `敌人组 ${entry.groupIds.join('/')}` : '';
+    const packs = entry.enemyPackIds?.length ? `敌人包 ${entry.enemyPackIds.join('/')}` : '';
+    return [source, groups, packs].filter(Boolean).join('，');
+}
+
+function createOfficialCaptureHtml(point) {
+    const entries = point.capture?.entries || [];
+    if (entries.length === 0) return '';
+    const items = entries.map(entry => {
+        const probability = entry.probabilityPercent || '未知概率';
+        const enemyNames = entry.enemyNames?.length ? ` / ${entry.enemyNames.join('、')}` : '';
+        const weight = entry.weights?.length ? ` (${entry.weights.join('、')})` : '';
+        return `
+            <div class="official-capture-item">
+                <div>
+                    <strong>${escapeOfficialHtml(entry.kiboName || entry.petId)}</strong>
+                    <span>${escapeOfficialHtml(enemyNames)}</span>
+                </div>
+                <div class="official-capture-prob">${escapeOfficialHtml(probability)}${escapeOfficialHtml(weight)}</div>
+                <div class="official-capture-source">${escapeOfficialHtml(formatOfficialCaptureSource(entry))}</div>
+            </div>
+        `;
+    }).join('');
+    return `
+        <div class="official-capture-list">
+            <div class="official-capture-title"><i class="fas fa-paw"></i> 可捕捉奇波</div>
+            ${items}
+        </div>
+    `;
+}
+
 function createOfficialPopup(point, dataset) {
     const source = point.source || {};
     const raw = point.raw || {};
@@ -145,6 +181,7 @@ function createOfficialPopup(point, dataset) {
             <h3><i class="fas ${getOfficialLayerIcon(point)}" style="color: ${color};"></i> ${escapeOfficialHtml(point.displayName || point.id)}</h3>
             <p><strong>分类：</strong>${escapeOfficialHtml(point.categoryLabel || point.typeLabel || point.type)}</p>
             ${semantic.source ? `<p><strong>语义来源：</strong>${escapeOfficialHtml(semantic.source)}${semantic.elementLabel ? ` / ${escapeOfficialHtml(semantic.elementLabel)}属性` : ''}</p>` : ''}
+            ${createOfficialCaptureHtml(point)}
             <p><strong>地图坐标：</strong>${point.map.lat.toFixed(2)}, ${point.map.lng.toFixed(2)}</p>
             <p><strong>游戏坐标：</strong>${escapeOfficialHtml(formatOfficialVector(point.game))}</p>
             <p><strong>原始表 ID：</strong>${escapeOfficialHtml(raw.id)}</p>
@@ -231,6 +268,8 @@ function getOfficialPointSearchText(point) {
     const raw = point.raw || {};
     const source = point.source || {};
     const semantic = point.semantic || {};
+    const capture = point.capture || {};
+    const captureEntries = capture.entries || [];
     return [
         point.id,
         point.type,
@@ -261,6 +300,24 @@ function getOfficialPointSearchText(point) {
         semantic.source,
         semantic.note,
         semantic.text,
+        semantic.captureSummary,
+        capture.summary,
+        ...(capture.names || []),
+        ...captureEntries.flatMap(entry => [
+            entry.petId,
+            entry.kiboName,
+            ...(entry.enemyIds || []),
+            ...(entry.enemyNames || []),
+            ...(entry.enemyPackIds || []),
+            ...(entry.groupIds || []),
+            entry.probabilityPercent,
+            entry.sourceField,
+            entry.sourceValue,
+            entry.randomGroupId,
+            ...(entry.timeKeys || []),
+            entry.randomSourceField,
+            ...(entry.weights || [])
+        ]),
         source.worldmap,
         source.worldArea,
         source.filterMark,
@@ -271,10 +328,31 @@ function getOfficialPointSearchText(point) {
     ].filter(value => value !== undefined && value !== null).join(' ').toLowerCase();
 }
 
+function getOfficialSearchParts() {
+    return officialSearchKeyword.trim().toLowerCase().split(/\s+/).filter(Boolean);
+}
+
 function isOfficialPointSearchMatch(point) {
-    const keyword = officialSearchKeyword.trim().toLowerCase();
-    if (!keyword) return true;
-    return keyword.split(/\s+/).every(part => getOfficialPointSearchText(point).includes(part));
+    const parts = getOfficialSearchParts();
+    if (parts.length === 0) return true;
+    const text = getOfficialPointSearchText(point);
+    return parts.every(part => text.includes(part));
+}
+
+function isOfficialCaptureSearchMatch(point) {
+    const parts = getOfficialSearchParts();
+    if (parts.length === 0 || !point.capture?.entries?.length) return false;
+    const text = [
+        point.capture.summary,
+        ...(point.capture.names || []),
+        ...point.capture.entries.flatMap(entry => [
+            entry.petId,
+            entry.kiboName,
+            ...(entry.enemyNames || []),
+            entry.probabilityPercent
+        ])
+    ].filter(value => value !== undefined && value !== null).join(' ').toLowerCase();
+    return parts.every(part => text.includes(part));
 }
 
 function createOfficialMarker(point, dataset) {
@@ -374,7 +452,11 @@ function renderOfficialLayer(dataset) {
     renderOfficialFilters(dataset);
 
     const allInBoundsPoints = dataset.points.filter(point => point.inBounds && point.map);
-    const categoryVisiblePoints = allInBoundsPoints.filter(point => isOfficialCategoryVisible(point, dataset));
+    const searchActive = getOfficialSearchParts().length > 0;
+    const categoryVisiblePoints = allInBoundsPoints.filter(point => (
+        isOfficialCategoryVisible(point, dataset) ||
+        (searchActive && isOfficialCaptureSearchMatch(point))
+    ));
     const visiblePoints = categoryVisiblePoints.filter(point => isOfficialPointSearchMatch(point));
     const useCluster = officialClusterEnabled && typeof L.markerClusterGroup === 'function';
     officialLayerGroup = useCluster

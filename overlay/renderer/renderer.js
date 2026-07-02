@@ -4,6 +4,9 @@ const VISION_MIN_RENDER_CONFIDENCE = 0.45;
 const VISION_RENDER_MARGIN = 160;
 const VISION_STATIONARY_RENDER_EPSILON = 2.0;
 const VISION_HOVER_RENDER_EPSILON = 8.0;
+const HOVER_HIDE_DELAY_MS = 180;
+const CAPTURE_FILTER_ANY = '__all-capturable__';
+const CAPTURE_COLLAPSED_LIMIT = 4;
 
 const state = {
   maps: [],
@@ -25,12 +28,19 @@ const state = {
     }
   })(),
   searchKeyword: '',
+  captureFilter: '',
+  pointState: { completed: new Set(), hidden: new Set() },
   calibrationMode: false,
   dragStart: null,
   draftRect: null,
   interactive: false,
   passthroughHotspot: false,
-  pointSearchCache: new WeakMap()
+  pointSearchCache: new WeakMap(),
+  activePoint: null,
+  activeCardPosition: null,
+  hoverCardHovered: false,
+  hoverHideTimer: null,
+  expandedCaptureLists: new Set()
 };
 
 const els = {
@@ -55,6 +65,12 @@ const els = {
   visionToggle: document.getElementById('vision-toggle'),
   searchInput: document.getElementById('search-input'),
   searchClear: document.getElementById('search-clear'),
+  captureFilterSelect: document.getElementById('capture-filter-select'),
+  captureFilterClear: document.getElementById('capture-filter-clear'),
+  captureFilterStatus: document.getElementById('capture-filter-status'),
+  pointStateStatus: document.getElementById('point-state-status'),
+  pointStateClearCompleted: document.getElementById('point-state-clear-completed'),
+  pointStateRestoreHidden: document.getElementById('point-state-restore-hidden'),
   categoryList: document.getElementById('category-list'),
   renderStatus: document.getElementById('render-status'),
   debugStatus: document.getElementById('debug-status'),
@@ -78,6 +94,155 @@ function escapeHtml(value) {
 
 function calibrationKey(mapId) {
   return `overlay-calibration:${mapId}`;
+}
+
+function categoryVisibilityKey(mapId) {
+  return `overlay-category-visibility:${mapId}`;
+}
+
+function pointStateKey(mapId) {
+  return `overlay-point-state:${mapId}`;
+}
+
+function loadCategoryVisibility(mapId) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(categoryVisibilityKey(mapId)) || '{}');
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed)
+        .filter(([key]) => key)
+        .map(([key, value]) => [key, Boolean(value)])
+    );
+  } catch (_error) {
+    return {};
+  }
+}
+
+function saveCategoryVisibility() {
+  if (!state.mapId) return;
+  localStorage.setItem(categoryVisibilityKey(state.mapId), JSON.stringify(state.categoryVisibility));
+}
+
+function pruneCategoryVisibilityToDataset() {
+  if (!state.dataset || !Array.isArray(state.dataset.categories)) return;
+  const validKeys = new Set(state.dataset.categories.map(category => category.key).filter(Boolean));
+  let changed = false;
+  for (const key of Object.keys(state.categoryVisibility)) {
+    if (!validKeys.has(key)) {
+      delete state.categoryVisibility[key];
+      changed = true;
+    }
+  }
+  if (changed) saveCategoryVisibility();
+}
+
+function createEmptyPointState() {
+  return { completed: new Set(), hidden: new Set() };
+}
+
+function normalizePointStateRecord(record) {
+  const completed = Array.isArray(record && record.completed) ? record.completed : [];
+  const hidden = Array.isArray(record && record.hidden) ? record.hidden : [];
+  return {
+    completed: new Set(completed.map(String).filter(Boolean)),
+    hidden: new Set(hidden.map(String).filter(Boolean))
+  };
+}
+
+function loadPointState(mapId) {
+  try {
+    return normalizePointStateRecord(JSON.parse(localStorage.getItem(pointStateKey(mapId)) || 'null'));
+  } catch (_error) {
+    return createEmptyPointState();
+  }
+}
+
+function savePointState() {
+  if (!state.mapId) return;
+  const payload = {
+    mapId: state.mapId,
+    completed: Array.from(state.pointState.completed).sort(),
+    hidden: Array.from(state.pointState.hidden).sort(),
+    updatedAt: new Date().toISOString()
+  };
+  localStorage.setItem(pointStateKey(state.mapId), JSON.stringify(payload));
+}
+
+function getPointKey(point) {
+  if (!point) return '';
+  if (point.id !== undefined && point.id !== null) return String(point.id);
+
+  const rawId = point.raw && point.raw.id;
+  const source = point.source && (point.source.worldmap || point.source.file || point.source.map);
+  if (rawId !== undefined && rawId !== null && source) return `${source}:${rawId}`;
+  if (rawId !== undefined && rawId !== null) return String(rawId);
+
+  const lat = point.map && Number.isFinite(Number(point.map.lat)) ? Number(point.map.lat).toFixed(3) : '';
+  const lng = point.map && Number.isFinite(Number(point.map.lng)) ? Number(point.map.lng).toFixed(3) : '';
+  return [point.category || point.type || 'unknown', point.displayName || '', lat, lng].join(':');
+}
+
+function escapeAttributeSelector(value) {
+  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function isPointCompleted(point) {
+  return state.pointState.completed.has(getPointKey(point));
+}
+
+function isPointHidden(point) {
+  return state.pointState.hidden.has(getPointKey(point));
+}
+
+function setPointCompleted(point, completed) {
+  const key = getPointKey(point);
+  if (!key) return;
+  if (completed) {
+    state.pointState.completed.add(key);
+  } else {
+    state.pointState.completed.delete(key);
+  }
+  savePointState();
+  renderPointStatePanel();
+  renderCaptureFilter();
+}
+
+function setPointHidden(point, hidden) {
+  const key = getPointKey(point);
+  if (!key) return;
+  if (hidden) {
+    state.pointState.hidden.add(key);
+  } else {
+    state.pointState.hidden.delete(key);
+  }
+  savePointState();
+  renderPointStatePanel();
+  renderCaptureFilter();
+}
+
+function prunePointStateToDataset() {
+  if (!state.dataset || !Array.isArray(state.dataset.points)) return;
+  const validKeys = new Set(state.dataset.points.map(getPointKey).filter(Boolean));
+  let changed = false;
+
+  for (const key of Array.from(state.pointState.completed)) {
+    if (!validKeys.has(key)) {
+      state.pointState.completed.delete(key);
+      changed = true;
+    }
+  }
+  for (const key of Array.from(state.pointState.hidden)) {
+    if (!validKeys.has(key)) {
+      state.pointState.hidden.delete(key);
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    savePointState();
+    renderPointStatePanel();
+    renderCaptureFilter();
+  }
 }
 
 function normalizeRect(rect) {
@@ -150,10 +315,164 @@ function doesPointMatchSearch(point) {
   return normalized.split(/\s+/).every(part => searchText.includes(part));
 }
 
+function getCaptureEntries(point) {
+  const entries = point && point.capture && point.capture.entries;
+  return Array.isArray(entries) ? entries : [];
+}
+
+function getCaptureName(entry) {
+  return String(entry?.kiboName || entry?.petId || '').trim();
+}
+
+function hasCaptureEntries(point) {
+  return getCaptureEntries(point).length > 0;
+}
+
+function doesPointMatchCaptureFilter(point) {
+  if (!state.captureFilter) return true;
+  const entries = getCaptureEntries(point);
+  if (state.captureFilter === CAPTURE_FILTER_ANY) return entries.length > 0;
+  return entries.some(entry => getCaptureName(entry) === state.captureFilter);
+}
+
+function getCaptureFilterStats() {
+  const stats = {
+    totalPoints: 0,
+    options: []
+  };
+  if (!state.dataset || !Array.isArray(state.dataset.points)) return stats;
+
+  const byName = new Map();
+  state.dataset.points
+    .filter(point => point.inBounds && point.map)
+    .forEach(point => {
+      const entries = getCaptureEntries(point);
+      if (!entries.length) return;
+      stats.totalPoints += 1;
+
+      const namesInPoint = new Set(entries.map(getCaptureName).filter(Boolean));
+      namesInPoint.forEach(name => {
+        const item = byName.get(name) || { name, points: 0 };
+        item.points += 1;
+        byName.set(name, item);
+      });
+    });
+
+  stats.options = Array.from(byName.values())
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name, 'zh-CN'));
+  return stats;
+}
+
+function getCaptureFilterPointCount(filterValue) {
+  if (!state.dataset || !Array.isArray(state.dataset.points)) return 0;
+  return state.dataset.points
+    .filter(point => point.inBounds && point.map)
+    .filter(point => !isPointHidden(point))
+    .filter(point => {
+      if (!filterValue) return hasCaptureEntries(point);
+      if (filterValue === CAPTURE_FILTER_ANY) return hasCaptureEntries(point);
+      return getCaptureEntries(point).some(entry => getCaptureName(entry) === filterValue);
+    }).length;
+}
+
+function renderCaptureFilter() {
+  const stats = getCaptureFilterStats();
+  const validValues = new Set(stats.options.map(item => item.name));
+  if (state.captureFilter && state.captureFilter !== CAPTURE_FILTER_ANY && !validValues.has(state.captureFilter)) {
+    state.captureFilter = '';
+  }
+
+  const options = [];
+  const allOption = document.createElement('option');
+  allOption.value = '';
+  allOption.textContent = '全部点位';
+  options.push(allOption);
+
+  const captureOption = document.createElement('option');
+  captureOption.value = CAPTURE_FILTER_ANY;
+  captureOption.textContent = `全部可捕捉 (${stats.totalPoints})`;
+  options.push(captureOption);
+
+  stats.options.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.name;
+    option.textContent = `${item.name} (${item.points})`;
+    options.push(option);
+  });
+
+  els.captureFilterSelect.replaceChildren(...options);
+  els.captureFilterSelect.value = state.captureFilter;
+  els.captureFilterClear.disabled = !state.captureFilter;
+
+  if (!state.captureFilter) {
+    els.captureFilterStatus.textContent = `${stats.totalPoints} 可捕捉`;
+  } else if (state.captureFilter === CAPTURE_FILTER_ANY) {
+    els.captureFilterStatus.textContent = `${getCaptureFilterPointCount(CAPTURE_FILTER_ANY)} 点`;
+  } else {
+    els.captureFilterStatus.textContent = `${getCaptureFilterPointCount(state.captureFilter)} 点`;
+  }
+}
+
+function formatCaptureSource(entry) {
+  const source = entry.randomGroupId
+    ? `随机组 ${entry.randomGroupId}${entry.timeKeys?.length ? ` / 时段 ${entry.timeKeys.join('/')}` : ''}`
+    : '固定敌人组';
+  const groups = entry.groupIds?.length ? `敌人组 ${entry.groupIds.join('/')}` : '';
+  const packs = entry.enemyPackIds?.length ? `敌人包 ${entry.enemyPackIds.join('/')}` : '';
+  return [source, groups, packs].filter(Boolean).join('，');
+}
+
+function isCaptureListExpanded(point) {
+  return state.expandedCaptureLists.has(getPointKey(point));
+}
+
+function getRenderedCaptureEntryCount(point) {
+  const entries = getCaptureEntries(point);
+  if (entries.length <= CAPTURE_COLLAPSED_LIMIT || isCaptureListExpanded(point)) return entries.length;
+  return CAPTURE_COLLAPSED_LIMIT;
+}
+
+function createCaptureHtml(point) {
+  const entries = getCaptureEntries(point);
+  if (!entries.length) return '';
+  const expanded = isCaptureListExpanded(point);
+  const visibleEntries = expanded ? entries : entries.slice(0, CAPTURE_COLLAPSED_LIMIT);
+  const hiddenCount = entries.length - visibleEntries.length;
+  const items = visibleEntries.map(entry => {
+    const probability = entry.probabilityPercent || '未知概率';
+    const enemyNames = entry.enemyNames?.length ? ` / ${entry.enemyNames.join('、')}` : '';
+    const weight = entry.weights?.length ? ` (${entry.weights.join('、')})` : '';
+    return `
+      <div class="capture-item">
+        <div class="capture-main">
+          <strong>${escapeHtml(getCaptureName(entry) || entry.petId || '')}</strong>
+          <span>${escapeHtml(enemyNames)}</span>
+        </div>
+        <div class="capture-prob">${escapeHtml(probability)}${escapeHtml(weight)}</div>
+        <div class="capture-source">${escapeHtml(formatCaptureSource(entry))}</div>
+      </div>
+    `;
+  }).join('');
+  const toggle = entries.length > CAPTURE_COLLAPSED_LIMIT
+    ? `<button class="capture-toggle" type="button" data-point-action="toggle-capture-list">${expanded ? '收起列表' : `展开其余 ${hiddenCount} 条`}</button>`
+    : '';
+  return `
+    <div class="capture-list${expanded ? ' is-expanded' : ''}">
+      <div class="capture-title">可捕捉奇波 <span>${entries.length} 种</span></div>
+      <div class="capture-items${expanded ? ' is-expanded' : ''}">
+        ${items}
+      </div>
+      ${toggle}
+    </div>
+  `;
+}
+
 function getVisiblePoints() {
   if (!state.dataset) return [];
   return state.dataset.points
     .filter(point => point.inBounds && point.map)
+    .filter(point => !isPointHidden(point))
+    .filter(doesPointMatchCaptureFilter)
     .filter(point => overlayShared.isPointVisibleByCategory(point, state.dataset, state.categoryVisibility))
     .filter(doesPointMatchSearch);
 }
@@ -161,6 +480,19 @@ function getVisiblePoints() {
 function getAllInBoundsCount() {
   if (!state.dataset || !Array.isArray(state.dataset.points)) return 0;
   return state.dataset.points.filter(point => point.inBounds && point.map).length;
+}
+
+function getDisplayableInBoundsCount() {
+  if (!state.dataset || !Array.isArray(state.dataset.points)) return 0;
+  return state.dataset.points.filter(point => point.inBounds && point.map && !isPointHidden(point)).length;
+}
+
+function renderPointStatePanel() {
+  const completed = state.pointState.completed.size;
+  const hidden = state.pointState.hidden.size;
+  els.pointStateStatus.textContent = `${completed} 完成 / ${hidden} 隐藏`;
+  els.pointStateClearCompleted.disabled = completed === 0;
+  els.pointStateRestoreHidden.disabled = hidden === 0;
 }
 
 function setInteraction(interactive) {
@@ -501,6 +833,7 @@ function renderCategories() {
 
       input.addEventListener('change', () => {
         state.categoryVisibility[category.key] = input.checked;
+        saveCategoryVisibility();
         renderCategories();
         renderPoints();
       });
@@ -515,6 +848,7 @@ function renderCategories() {
       group.categories.forEach(category => {
         state.categoryVisibility[category.key] = groupInput.checked;
       });
+      saveCategoryVisibility();
       renderCategories();
       renderPoints();
     });
@@ -552,27 +886,102 @@ function showHoverCard(point, position) {
   const source = point.source || {};
   const config = overlayShared.getMarkerConfig(point);
   const resourcePath = refs.worldResource?.resPath || refs.worldItem?.resPath || refs.playable?.objectResourcePaths?.[0] || '';
+  const completed = isPointCompleted(point);
+
+  cancelHoverHide();
+  state.activePoint = point;
+  state.activeCardPosition = position;
 
   els.hoverCard.innerHTML = `
     <div class="hover-title"><span style="background:${config.color}"></span>${escapeHtml(point.displayName || point.id)}</div>
     <div class="hover-row"><strong>分类</strong><span>${escapeHtml(point.categoryLabel || point.category)}</span></div>
+    ${createCaptureHtml(point)}
     <div class="hover-row"><strong>原始 ID</strong><span>${escapeHtml(raw.id || '')}</span></div>
     <div class="hover-row"><strong>坐标</strong><span>${Number(point.map.lat).toFixed(2)}, ${Number(point.map.lng).toFixed(2)}</span></div>
     ${resourcePath ? `<div class="hover-row"><strong>资源</strong><span>${escapeHtml(resourcePath)}</span></div>` : ''}
     ${source.worldmap ? `<div class="hover-row"><strong>来源</strong><span>${escapeHtml(source.worldmap)}</span></div>` : ''}
+    <div class="hover-actions">
+      <button class="text-button hover-action" type="button" data-point-action="toggle-completed">${completed ? '标记未完成' : '标记已完成'}</button>
+      <button class="text-button danger hover-action" type="button" data-point-action="hide">隐藏</button>
+    </div>
   `;
 
   const padding = 14;
   const width = 320;
+  const captureEntries = getCaptureEntries(point);
+  const captureEntryCount = getRenderedCaptureEntryCount(point);
+  const expandedCapture = captureEntries.length > CAPTURE_COLLAPSED_LIMIT && isCaptureListExpanded(point);
+  const captureHeight = expandedCapture
+    ? 230
+    : (captureEntryCount ? 38 + captureEntryCount * 54 + (captureEntries.length > CAPTURE_COLLAPSED_LIMIT ? 34 : 0) : 0);
+  const height = Math.min(window.innerHeight - padding * 2, 176 + captureHeight);
   const left = Math.min(window.innerWidth - width - padding, position.x + 18);
-  const top = Math.min(window.innerHeight - 180, position.y + 18);
+  const top = Math.min(window.innerHeight - height - padding, position.y + 18);
   els.hoverCard.style.left = `${Math.max(padding, left)}px`;
   els.hoverCard.style.top = `${Math.max(padding, top)}px`;
   els.hoverCard.hidden = false;
 }
 
 function hideHoverCard() {
+  cancelHoverHide();
+  state.activePoint = null;
+  state.activeCardPosition = null;
+  state.hoverCardHovered = false;
   els.hoverCard.hidden = true;
+}
+
+function cancelHoverHide() {
+  if (!state.hoverHideTimer) return;
+  window.clearTimeout(state.hoverHideTimer);
+  state.hoverHideTimer = null;
+}
+
+function scheduleHideHoverCard() {
+  cancelHoverHide();
+  state.hoverHideTimer = window.setTimeout(() => {
+    if (!state.hoverCardHovered) hideHoverCard();
+  }, HOVER_HIDE_DELAY_MS);
+}
+
+function refreshRenderedPointState(point) {
+  const key = getPointKey(point);
+  const selector = `[data-point-key="${escapeAttributeSelector(key)}"]`;
+  const element = els.svg.querySelector(selector);
+  if (element) {
+    element.classList.toggle('is-completed', isPointCompleted(point));
+  }
+}
+
+function handleHoverCardAction(action) {
+  const point = state.activePoint;
+  if (!point) return;
+  const name = point.displayName || point.id || '点位';
+
+  if (action === 'toggle-completed') {
+    const completed = !isPointCompleted(point);
+    setPointCompleted(point, completed);
+    refreshRenderedPointState(point);
+    setDebugStatus(completed ? `已标记完成：${name}` : `已标记未完成：${name}`);
+    showHoverCard(point, state.activeCardPosition || { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    return;
+  }
+
+  if (action === 'toggle-capture-list') {
+    const key = getPointKey(point);
+    if (state.expandedCaptureLists.has(key)) {
+      state.expandedCaptureLists.delete(key);
+    } else {
+      state.expandedCaptureLists.add(key);
+    }
+    showHoverCard(point, state.activeCardPosition || { x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    return;
+  }
+
+  if (action === 'hide') {
+    setPointHidden(point, true);
+    setDebugStatus(`已隐藏：${name}`);
+    renderPoints();
+  }
 }
 
 function renderPoints() {
@@ -601,7 +1010,9 @@ function renderPoints() {
     const config = overlayShared.getMarkerConfig(point);
     const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     group.classList.add('map-point');
+    group.classList.toggle('is-completed', isPointCompleted(point));
     group.dataset.category = point.category || 'unknown';
+    group.dataset.pointKey = getPointKey(point);
     group.setAttribute('transform', `translate(${projected.x.toFixed(2)} ${projected.y.toFixed(2)})`);
     group.setAttribute('aria-label', buildPointTitle(point));
 
@@ -617,18 +1028,23 @@ function renderPoints() {
 
     group.append(halo, dot);
     group.addEventListener('mouseenter', event => showHoverCard(point, { x: event.clientX, y: event.clientY }));
-    group.addEventListener('mousemove', event => showHoverCard(point, { x: event.clientX, y: event.clientY }));
-    group.addEventListener('mouseleave', hideHoverCard);
+    group.addEventListener('mousemove', event => {
+      if (!state.hoverCardHovered) showHoverCard(point, { x: event.clientX, y: event.clientY });
+    });
+    group.addEventListener('mouseleave', scheduleHideHoverCard);
     fragment.append(group);
   });
 
   els.svg.append(fragment);
 
-  const allInBounds = getAllInBoundsCount();
+  const allInBounds = getDisplayableInBoundsCount();
   const categoryVisible = state.dataset.points
     .filter(point => point.inBounds && point.map)
+    .filter(point => !isPointHidden(point))
+    .filter(doesPointMatchCaptureFilter)
     .filter(point => overlayShared.isPointVisibleByCategory(point, state.dataset, state.categoryVisibility)).length;
-  els.renderStatus.textContent = state.searchKeyword.trim()
+  const hasFilter = state.searchKeyword.trim() || state.captureFilter;
+  els.renderStatus.textContent = hasFilter
     ? `${renderedCount} / ${categoryVisible} 命中`
     : `${renderedCount} / ${allInBounds} 显示`;
   if (state.calibrationSource === 'vision' && hasVisionCalibration()) {
@@ -648,24 +1064,34 @@ async function selectMap(mapId, options = {}) {
   state.visionCalibration = null;
   state.renderedVisionCalibration = null;
   state.calibrationSource = 'manual';
-  state.categoryVisibility = {};
+  state.categoryVisibility = loadCategoryVisibility(mapId);
+  state.captureFilter = '';
   state.pointSearchCache = new WeakMap();
+  state.pointState = loadPointState(mapId);
+  state.expandedCaptureLists.clear();
   els.renderStatus.textContent = '加载中';
   els.svg.replaceChildren();
   hideHoverCard();
+  renderCaptureFilter();
+  renderPointStatePanel();
 
   state.calibration = loadCalibration(mapId);
   renderCalibrationRect();
 
   try {
     state.dataset = await api.loadDataset(mapId);
+    pruneCategoryVisibilityToDataset();
+    prunePointStateToDataset();
     setDebugStatus(`已加载地图 ${mapId}`);
+    renderCaptureFilter();
     renderCategories();
+    renderPointStatePanel();
     renderPoints();
   } catch (error) {
     console.error(error);
     setDebugStatus(`地图 ${mapId} 加载失败`);
     els.categoryList.innerHTML = '<div class="empty-state">加载失败</div>';
+    renderCaptureFilter();
     els.renderStatus.textContent = '加载失败';
   }
 }
@@ -681,6 +1107,7 @@ function setCalibrationRect(rect) {
 
 function setCategoryVisible(category, visible) {
   state.categoryVisibility[category] = Boolean(visible);
+  saveCategoryVisibility();
   renderCategories();
   renderPoints();
 }
@@ -688,6 +1115,15 @@ function setCategoryVisible(category, visible) {
 function setSearchKeyword(keyword) {
   state.searchKeyword = keyword;
   els.searchInput.value = keyword;
+  renderPoints();
+}
+
+function setCaptureFilter(value) {
+  state.captureFilter = String(value || '');
+  if (els.captureFilterSelect.value !== state.captureFilter) {
+    els.captureFilterSelect.value = state.captureFilter;
+  }
+  renderCaptureFilter();
   renderPoints();
 }
 
@@ -961,6 +1397,45 @@ function bindEvents() {
     setDebugStatus('清空搜索');
     setSearchKeyword('');
   });
+  els.captureFilterSelect.addEventListener('change', event => {
+    const value = event.target.value;
+    setDebugStatus(value ? `奇波筛选：${value === CAPTURE_FILTER_ANY ? '全部可捕捉' : value}` : '清除奇波筛选');
+    setCaptureFilter(value);
+  });
+  els.captureFilterClear.addEventListener('click', () => {
+    setDebugStatus('清除奇波筛选');
+    setCaptureFilter('');
+  });
+  els.pointStateClearCompleted.addEventListener('click', () => {
+    state.pointState.completed.clear();
+    savePointState();
+    renderPointStatePanel();
+    setDebugStatus('已清空完成标记');
+    renderPoints();
+  });
+  els.pointStateRestoreHidden.addEventListener('click', () => {
+    state.pointState.hidden.clear();
+    savePointState();
+    renderPointStatePanel();
+    renderCaptureFilter();
+    setDebugStatus('已恢复隐藏点位');
+    renderPoints();
+  });
+  els.hoverCard.addEventListener('mouseenter', () => {
+    state.hoverCardHovered = true;
+    cancelHoverHide();
+  });
+  els.hoverCard.addEventListener('mouseleave', () => {
+    state.hoverCardHovered = false;
+    scheduleHideHoverCard();
+  });
+  els.hoverCard.addEventListener('click', event => {
+    const button = event.target.closest('[data-point-action]');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    handleHoverCardAction(button.dataset.pointAction);
+  });
 
   els.visionDepsBtn.addEventListener('click', async () => {
     if (state.visionDepsOk) {
@@ -1035,6 +1510,7 @@ window.selectMap = selectMap;
 window.setCalibrationRect = setCalibrationRect;
 window.setCategoryVisible = setCategoryVisible;
 window.setSearchKeyword = setSearchKeyword;
+window.setCaptureFilter = setCaptureFilter;
 
 init().catch(error => {
   console.error(error);

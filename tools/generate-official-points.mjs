@@ -73,6 +73,7 @@ const MARKER_CATEGORY_BY_TYPE = {
     puzzle_dark: 'puzzle',
     egg: 'creature',
     chipo_egg: 'creature',
+    capturable_kibo: 'creature',
     chipo_battle: 'creature',
     mating: 'creature',
     creature: 'creature',
@@ -187,9 +188,310 @@ function parsePlayableObjectSpawnerIds(value) {
         .filter(id => Number.isFinite(id) && id > 0);
 }
 
+function uniqueList(values) {
+    const seen = new Set();
+    const output = [];
+    values.forEach(value => {
+        const key = String(value ?? '');
+        if (!key || seen.has(key)) return;
+        seen.add(key);
+        output.push(value);
+    });
+    return output;
+}
+
+function dualGet(map, key) {
+    if (!map || key == null || key === '') return null;
+    return map.get(Number(key)) || map.get(String(key)) || null;
+}
+
+function dualIndexBy(rows, key = 'id') {
+    const map = new Map();
+    rows.forEach(row => {
+        if (!row || row[key] == null) return;
+        map.set(Number(row[key]), row);
+        map.set(String(row[key]), row);
+    });
+    return map;
+}
+
+function groupByDualKey(rows, key) {
+    const map = new Map();
+    rows.forEach(row => {
+        if (!row || row[key] == null || row[key] === '') return;
+        const keys = [Number(row[key]), String(row[key])];
+        keys.forEach(groupKey => {
+            if (!map.has(groupKey)) map.set(groupKey, []);
+            map.get(groupKey).push(row);
+        });
+    });
+    return map;
+}
+
 function includesAny(value, needles) {
     const text = String(value || '').toLowerCase();
     return needles.some(needle => text.includes(String(needle).toLowerCase()));
+}
+
+function isTruthyFlag(value) {
+    if (value === true) return true;
+    if (value === false) return false;
+    const text = String(value ?? '').trim().toLowerCase();
+    return text === 'true' || text === '1';
+}
+
+function parseEnemyGroupRandomEntries(value, sourceField = 'enemyGroupRandom') {
+    const entries = [];
+    String(value ?? '').split('|').forEach(segmentRaw => {
+        const segment = segmentRaw.trim();
+        if (!segment) return;
+        const hashIndex = segment.indexOf('#');
+        const timeKey = (hashIndex >= 0 ? segment.slice(0, hashIndex) : '0').trim() || '0';
+        const candidateText = (hashIndex >= 0 ? segment.slice(hashIndex + 1) : segment).trim();
+        const candidates = [];
+        for (const match of candidateText.matchAll(/(\d+)\s*[,，.]\s*([+-]?\d+(?:\.\d+)?)/gu)) {
+            const groupId = match[1];
+            const weight = Number(match[2]);
+            if (!groupId || groupId === '0' || !Number.isFinite(weight)) continue;
+            candidates.push({ groupId, weight });
+        }
+        const totalWeight = candidates.reduce((sum, item) => sum + item.weight, 0);
+        candidates.forEach(candidate => {
+            entries.push({
+                groupId: candidate.groupId,
+                weight: candidate.weight,
+                totalWeight,
+                probability: totalWeight > 0 ? candidate.weight / totalWeight : null,
+                timeKey,
+                sourceField,
+                sourceValue: segment
+            });
+        });
+    });
+    return entries;
+}
+
+function formatProbabilityPercent(value) {
+    if (value == null || value === '') return '';
+    const ratio = Number(value);
+    if (!Number.isFinite(ratio)) return '';
+    const percent = Math.max(0, Math.min(100, ratio * 100));
+    const digits = percent > 0 && percent < 1 ? 3 : 2;
+    return `${percent.toFixed(digits).replace(/\.?0+$/u, '')}%`;
+}
+
+function buildCaptureContext() {
+    const enemies = readRows(tableRoot, 'enemy.json');
+    const enemyPacks = readRows(tableRoot, 'enemy_pack.json');
+    const enemyPackUnused = readRows(tableRoot, 'enemy_pack_unused.json');
+    const pets = readRows(tableRoot, 'pet.json');
+    const worldEnemyGroups = readRows(tableRoot, 'world_enemy_group.json');
+    const worldEnemyGroupRandoms = readRows(tableRoot, 'world_enemy_group_random.json');
+    const petNames = buildTextMap('lang_pet.json');
+    const enemyNames = buildTextMap('lang_enemy.json');
+    const enemyPackById = dualIndexBy(enemyPackUnused, 'id');
+    enemyPacks.forEach(row => {
+        enemyPackById.set(Number(row.id), row);
+        enemyPackById.set(String(row.id), row);
+    });
+
+    return {
+        enemyById: dualIndexBy(enemies, 'id'),
+        enemyPackById,
+        petById: dualIndexBy(pets, 'id'),
+        petByUnitId: groupByDualKey(pets, 'unitId'),
+        worldEnemyGroupById: dualIndexBy(worldEnemyGroups, 'id'),
+        worldEnemyGroupRandomById: dualIndexBy(worldEnemyGroupRandoms, 'id'),
+        petNames,
+        enemyNames
+    };
+}
+
+function petDisplayName(pet, captureContext) {
+    return textValue(captureContext.petNames, pet?.name) || (pet?.id ? `奇波 ${pet.id}` : '');
+}
+
+function enemyDisplayName(enemy, captureContext) {
+    return textValue(captureContext.enemyNames, enemy?.name) || (enemy?.id ? `敌人 ${enemy.id}` : '');
+}
+
+function shouldTreatWorldMapSpawnerAsEnemyGroup(row, refs, captureContext, worldResourceById) {
+    if (!dualGet(captureContext.worldEnemyGroupById, row.spawnerId)) return false;
+    if (refs.spawner) return false;
+    if (dualGet(worldResourceById, row.spawnerId)) return false;
+    return true;
+}
+
+function resolvePointEnemyGroupRefs(row, refs, captureContext, worldResourceById) {
+    const groupRefs = [];
+    const pushRef = (groupId, sourceField, sourceValue, matchedBy, extra = {}) => {
+        if (!groupId || !dualGet(captureContext.worldEnemyGroupById, groupId)) return;
+        const key = [
+            groupId,
+            sourceField,
+            sourceValue,
+            extra.randomGroupId || '',
+            extra.randomTimeKey || '',
+            extra.randomSourceField || ''
+        ].join('\0');
+        if (groupRefs.some(item => item.key === key)) return;
+        groupRefs.push({
+            key,
+            groupId: String(groupId),
+            sourceField,
+            sourceValue,
+            matchedBy,
+            probability: 1,
+            probabilityPercent: '100%',
+            ...extra
+        });
+    };
+
+    if (shouldTreatWorldMapSpawnerAsEnemyGroup(row, refs, captureContext, worldResourceById)) {
+        pushRef(row.spawnerId, 'worldmap.spawnerId', row.spawnerId, 'worldmap-spawnerId-as-world_enemy_group');
+    }
+
+    const spawner = refs.spawner;
+    if (!spawner || !Number(row.expandId || 0)) return groupRefs;
+
+    const objectType = Number(spawner.objectType || 0);
+    if (objectType === 50) {
+        pushRef(row.expandId, 'worldmap.expandId', row.expandId, 'fixed-enemy-node-expandId');
+    } else if (objectType === 51) {
+        const randomRow = dualGet(captureContext.worldEnemyGroupRandomById, row.expandId);
+        const entries = [
+            ...parseEnemyGroupRandomEntries(randomRow?.enemyGroupRandom || '', 'enemyGroupRandom'),
+            ...parseEnemyGroupRandomEntries(randomRow?.conditionCompleteEnemyGroup || '', 'conditionCompleteEnemyGroup')
+        ];
+        entries.forEach(entry => {
+            pushRef(entry.groupId, `worldmap.expandId/world_enemy_group_random.${entry.sourceField}`, row.expandId, 'random-enemy-node-expandId', {
+                randomGroupId: String(row.expandId),
+                randomTimeKey: entry.timeKey,
+                randomWeight: entry.weight,
+                randomTotalWeight: entry.totalWeight,
+                randomProbability: entry.probability,
+                randomProbabilityPercent: formatProbabilityPercent(entry.probability),
+                randomSourceField: entry.sourceField,
+                randomSourceValue: entry.sourceValue,
+                probability: entry.probability,
+                probabilityPercent: formatProbabilityPercent(entry.probability)
+            });
+        });
+    }
+
+    return groupRefs;
+}
+
+function catchableKibosForEnemyPack(pack, captureContext) {
+    if (!pack || String(pack.uncatchableType ?? '0') !== '0') return [];
+    const enemy = dualGet(captureContext.enemyById, pack.enemyId);
+    if (!enemy) return [];
+    const petCandidates = [
+        dualGet(captureContext.petById, enemy.petId),
+        ...(captureContext.petByUnitId.get(Number(enemy.unitId)) || []),
+        ...(captureContext.petByUnitId.get(String(enemy.unitId)) || [])
+    ].filter(Boolean);
+    const pets = uniqueList(petCandidates.map(pet => String(pet.id)))
+        .map(petId => dualGet(captureContext.petById, petId))
+        .filter(pet => pet && isTruthyFlag(pet.IsCatch));
+    return pets.map(pet => ({
+        pet,
+        enemy,
+        pack
+    }));
+}
+
+function buildCaptureInfo(row, refs, captureContext, worldResourceById) {
+    const groupRefs = resolvePointEnemyGroupRefs(row, refs, captureContext, worldResourceById);
+    if (groupRefs.length === 0) return null;
+
+    const entriesByKey = new Map();
+    groupRefs.forEach(groupRef => {
+        const group = dualGet(captureContext.worldEnemyGroupById, groupRef.groupId);
+        const seenPetInGroup = new Set();
+        parseIdList(group?.enemyList).forEach(packId => {
+            const pack = dualGet(captureContext.enemyPackById, packId);
+            catchableKibosForEnemyPack(pack, captureContext).forEach(({ pet, enemy }) => {
+                const petId = String(pet.id);
+                const groupPetKey = `${groupRef.key}\0${petId}`;
+                if (seenPetInGroup.has(groupPetKey)) return;
+                seenPetInGroup.add(groupPetKey);
+                const sourceKey = groupRef.randomGroupId
+                    ? `random:${groupRef.randomGroupId}:${groupRef.randomSourceField || ''}`
+                    : `fixed:${groupRef.sourceField}`;
+                const key = `${petId}\0${sourceKey}`;
+                const probability = Number.isFinite(Number(groupRef.probability)) ? Number(groupRef.probability) : null;
+                if (!entriesByKey.has(key)) {
+                    entriesByKey.set(key, {
+                        petId,
+                        kiboName: petDisplayName(pet, captureContext),
+                        enemyIds: [],
+                        enemyNames: [],
+                        enemyPackIds: [],
+                        groupIds: [],
+                        sourceField: groupRef.sourceField,
+                        sourceValue: groupRef.sourceValue,
+                        matchedBy: groupRef.matchedBy,
+                        randomGroupId: groupRef.randomGroupId || '',
+                        timeKeys: [],
+                        randomSourceField: groupRef.randomSourceField || '',
+                        probability: 0,
+                        probabilityUnknown: false,
+                        weights: [],
+                        sourceFiles: [
+                            'Assets/ResourcesAssets/Config/NewTable/world_enemy_group.json',
+                            groupRef.randomGroupId ? 'Assets/ResourcesAssets/Config/NewTable/world_enemy_group_random.json' : '',
+                            'Assets/ResourcesAssets/Config/NewTable/enemy_pack.json',
+                            'Assets/ResourcesAssets/Config/NewTable/enemy.json',
+                            'Assets/ResourcesAssets/Config/NewTable/pet.json',
+                            'Assets/ResourcesLang/chs/Table/lang_pet.json'
+                        ].filter(Boolean)
+                    });
+                }
+                const entry = entriesByKey.get(key);
+                entry.enemyIds.push(String(enemy.id));
+                entry.enemyNames.push(enemyDisplayName(enemy, captureContext));
+                entry.enemyPackIds.push(String(pack.id));
+                entry.groupIds.push(String(groupRef.groupId));
+                if (groupRef.randomTimeKey) entry.timeKeys.push(String(groupRef.randomTimeKey));
+                if (probability == null) {
+                    entry.probabilityUnknown = true;
+                } else {
+                    entry.probability += probability;
+                }
+                if (groupRef.randomWeight != null) {
+                    const timeText = groupRef.randomTimeKey ? `时段${groupRef.randomTimeKey} ` : '';
+                    entry.weights.push(`${timeText}${groupRef.randomWeight}/${groupRef.randomTotalWeight || '?'}`);
+                }
+            });
+        });
+    });
+
+    const entries = Array.from(entriesByKey.values())
+        .map(entry => {
+            const probability = entry.probabilityUnknown ? null : Math.min(1, entry.probability);
+            return {
+                ...entry,
+                enemyIds: uniqueList(entry.enemyIds),
+                enemyNames: uniqueList(entry.enemyNames),
+                enemyPackIds: uniqueList(entry.enemyPackIds),
+                groupIds: uniqueList(entry.groupIds),
+                timeKeys: uniqueList(entry.timeKeys),
+                weights: uniqueList(entry.weights),
+                probability,
+                probabilityPercent: formatProbabilityPercent(probability)
+            };
+        })
+        .sort((a, b) => a.kiboName.localeCompare(b.kiboName, 'zh-CN') || String(a.randomGroupId).localeCompare(String(b.randomGroupId), 'zh-CN'));
+
+    if (entries.length === 0) return null;
+    const names = uniqueList(entries.map(entry => entry.kiboName).filter(Boolean));
+    return {
+        source: 'knowledge_base.world_map_point_enemy_group',
+        names,
+        summary: entries.map(entry => `${entry.kiboName}${entry.probabilityPercent ? ` ${entry.probabilityPercent}` : ''}`).join('、'),
+        entries
+    };
 }
 
 function buildPlayableGuideTitleMap(playables) {
@@ -1007,6 +1309,7 @@ function buildDataset(targetKey) {
     const worldItemById = new Map(worldItems.map(row => [Number(row.id), row]));
     const playableById = new Map(playables.map(row => [Number(row.id), row]));
     const commonWorldRepairById = new Map(commonWorldRepairs.map(row => [Number(row.id), row]));
+    const captureContext = buildCaptureContext();
     const exploreBySpawnerId = new Map();
     explores.forEach(row => {
         String(row.fillerspawner || '').split('|').filter(Boolean).forEach(spawnerId => {
@@ -1061,7 +1364,26 @@ function buildDataset(targetKey) {
             playableObjectSpawnerIds: objectSpawnerIds,
             playableObjectResourcePaths: objectResourcePaths
         };
-        const classification = classifyPoint(row, refs);
+        const baseClassification = classifyPoint(row, refs);
+        const capture = buildCaptureInfo(row, refs, captureContext, worldResourceById);
+        const classification = capture
+            ? withMarker('capturable_kibo', '可捕捉奇波', {
+                markerType: 'creature',
+                markerCategory: 'creature',
+                category: 'capturable_kibo',
+                categoryLabel: '可捕捉奇波',
+                displayName: capture.names.length === 1 ? `可捕捉：${capture.names[0]}` : '可捕捉奇波',
+                semantic: {
+                    source: 'knowledge_base.world_map_point_enemy_group',
+                    captureSummary: capture.summary,
+                    originalType: baseClassification.type,
+                    originalTypeLabel: baseClassification.typeLabel,
+                    originalCategory: baseClassification.category,
+                    originalCategoryLabel: baseClassification.categoryLabel,
+                    originalSemantic: baseClassification.semantic || null
+                }
+            })
+            : baseClassification;
         const displayName = chooseDisplayName(row, classification, refs);
         const inBounds = isPointInTargetBounds(map, mapSize, target);
         points.push({
@@ -1083,6 +1405,7 @@ function buildDataset(targetKey) {
                 y: position.y,
                 z: position.z
             },
+            capture,
             raw: {
                 id: row.id,
                 cityId: row.cityId,
@@ -1164,6 +1487,13 @@ function buildDataset(targetKey) {
                 worldItem: worldItem ? 'Assets/ResourcesAssets/Config/NewTable/world_item.json' : '',
                 playable: playable ? 'Assets/ResourcesAssets/Config/NewTable/playable.json' : '',
                 commonWorldRepair: commonWorldRepair ? 'Assets/ResourcesAssets/Config/NewTable/common_world_repair.json' : '',
+                enemyGroup: capture ? 'Assets/ResourcesAssets/Config/NewTable/world_enemy_group.json' : '',
+                enemyGroupRandom: capture?.entries?.some(entry => entry.randomGroupId) ? 'Assets/ResourcesAssets/Config/NewTable/world_enemy_group_random.json' : '',
+                enemyPack: capture ? 'Assets/ResourcesAssets/Config/NewTable/enemy_pack.json' : '',
+                enemy: capture ? 'Assets/ResourcesAssets/Config/NewTable/enemy.json' : '',
+                pet: capture ? 'Assets/ResourcesAssets/Config/NewTable/pet.json' : '',
+                langPet: capture ? 'Assets/ResourcesLang/chs/Table/lang_pet.json' : '',
+                langEnemy: capture ? 'Assets/ResourcesLang/chs/Table/lang_enemy.json' : '',
                 langFilterMark: filterMark ? 'Assets/ResourcesLang/chs/Table/lang_world_filter_mark.json' : '',
                 langSpawner: spawner ? 'Assets/ResourcesLang/chs/Table/lang_world_spawner.json' : ''
             }

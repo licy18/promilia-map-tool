@@ -12,6 +12,14 @@ npm start
 
 `Ctrl+Shift+O` 切换鼠标穿透和可交互模式。首次使用先切到可交互模式，选择地图后点“校准 / 开始”，拖拽覆盖游戏大地图区域。
 
+如果从网页端启动覆盖层，先在项目根目录注册一次本机启动协议：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools/register-overlay-control-protocol.ps1
+```
+
+注册后网页按钮会在 `8766` 控制服务未运行时自动唤起隐藏控制服务，再启动覆盖层。
+
 ## 数据和状态
 
 - 地图数据：`../data/official/{mapId}-worldmap.json`

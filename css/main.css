@@ -489,6 +489,46 @@ body {
     font-size: 0.85em;
 }
 
+.official-capture-list {
+    display: grid;
+    gap: 6px;
+    margin: 8px 0;
+    padding: 8px;
+    background: rgba(255, 107, 157, 0.12);
+    border: 1px solid rgba(255, 107, 157, 0.28);
+    border-radius: 6px;
+}
+
+.official-capture-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffd6e6;
+    font-size: 0.86em;
+    font-weight: 700;
+}
+
+.official-capture-item {
+    display: grid;
+    gap: 3px;
+    padding: 6px;
+    background: rgba(10, 10, 21, 0.24);
+    border-radius: 5px;
+    color: #eef6ff;
+    font-size: 0.82em;
+}
+
+.official-capture-item span,
+.official-capture-source {
+    color: #aebdca;
+}
+
+.official-capture-prob {
+    color: #ffd166;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
 .tracker-panel {
     margin-top: 18px;
 }

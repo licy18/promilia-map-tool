@@ -60,6 +60,8 @@ python3 -m http.server 8000
 - ✅ **游戏内点位覆盖层** - 可从网页启动本地 Electron 透明覆盖层，把官方点位投到游戏大地图窗口上。
 - ✅ **自动视觉校准** - 覆盖层通过 OpenCV sidecar 匹配游戏大地图画面，支持全局重锁、局部参考缓存和光流跟随。
 
+首次使用网页“启动覆盖层”按钮前，可运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File tools/register-overlay-control-protocol.ps1` 注册本机启动协议；注册后按钮会在 `8766` 控制服务未运行时自动唤起它。
+
 ---
 
 ## 📁 文件结构
