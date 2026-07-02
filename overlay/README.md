@@ -1,4 +1,4 @@
-# 游戏内点位覆盖层 v0.2
+# 游戏内点位覆盖层 v0.3
 
 透明置顶 Electron 覆盖层，只读取 `../data/official/*.json`，不注入游戏、不读内存、不修改客户端。
 
@@ -26,7 +26,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tools/register-overlay-control-pro
 - 校准状态：`localStorage` 的 `overlay-calibration:{mapId}`
 - 自动校准缓存：`overlay/cache/vision/`
 - 支持地图：`shalulu`、`xinaya`、`fulisi`
-- v0.2 只做大地图界面的点位投影，不追踪小地图、玩家坐标或世界空间。
+- v0.3 只做大地图界面的点位投影，不追踪小地图、玩家坐标或世界空间。
 
 ## 自动校准
 

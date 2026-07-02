@@ -7,7 +7,7 @@
 [![Made with 🐸](https://img.shields.io/badge/made%20with-%F0%9F%90%B8-green.svg?style=flat-square)](https://github.com/licy18/promilia-map-tool)
 
 **📦 GitHub:** https://github.com/licy18/promilia-map-tool  
-**🏷️ 最新版本:** v4.1.0 (2026-06-29)
+**🏷️ 最新版本:** v4.2.0 (2026-07-02)
 
 ---
 
@@ -66,7 +66,7 @@ python3 -m http.server 8000
 
 ## 📁 文件结构
 
-### v4.1.0 当前模块化结构
+### v4.2.0 当前模块化结构
 
 ```
 promilia-map-tool/
@@ -316,6 +316,13 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 ## 📝 更新日志
+
+### v4.2.0 (2026-07-02) - 覆盖层点位控制升级
+- 优化游戏内覆盖层点位控制，增加更细的显示状态、交互控制和覆盖层样式。
+- 更新官方点位数据生成流程和输出数据，补充更多运行时所需字段。
+- 网页覆盖层启动器新增本机协议唤起路径，控制服务未运行时可自动拉起。
+- 新增 `tools/register-overlay-control-protocol.ps1` 和 `tools/start-overlay-control-protocol.ps1`，方便注册和启动本地控制服务。
+- 同步更新 `tracker.py` 识别逻辑，提升覆盖层与地图追踪链路的一致性。
 
 ### v4.1.0 (2026-06-29) - 官方点位与游戏内覆盖层
 - 新增官方点位只读图层，支持按分类筛选、搜索、聚合显示和点位详情查看。
@@ -688,5 +695,5 @@ https://your-site.com#index.html#data=eyJtYXJrZXJzIjpbXX0=
 ---
 
 **开发：** 呱呱 (Guāguā) 🐸
-**最后更新：** 2026-06-29
-**最新版本：** v4.1.0
+**最后更新：** 2026-07-02
+**最新版本：** v4.2.0
